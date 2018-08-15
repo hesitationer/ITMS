@@ -1,0 +1,15 @@
+<?xml version = "1.0"?>
+<opencv_storage>
+
+<AllVehicleArea>1000</AllVehicleArea>
+<HeavyVehicleArea>2000</HeavyVehicleArea>
+<LightVehicleArea>100</LightVehicleArea>
+<BikeArea>50</BikeArea>
+<HumanArea>20</HumanArea>
+<VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
+<StartX>0</StartX>
+<StartY>0.6</StartY>
+<EndX>1</EndX>
+<EndY>0.6</EndY>
+
+</opencv_storage>
