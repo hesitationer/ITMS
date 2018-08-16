@@ -42,6 +42,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
 double distanceBetweenPoints(cv::Point point1, cv::Point point2);
+ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels);
 void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName);
 void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);
@@ -90,6 +91,8 @@ int minVisibleCount = 3;	// minimum survival consecutive frame for noise removal
 int maxCenterPts = 300;		// maximum number of center points (frames)
 int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
+int movingThresholdInPixels = 2;              // motion threshold in pixels
+LaneDirection ldirection = LD_VERTICAL; // vertical lane
 
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
@@ -100,7 +103,8 @@ int main(void) {
   std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
 
     int trackId = 0;          // unique object id
-    int showId = 0;           // 
+    int showId = 0;           //     
+    
 
     cv::VideoCapture capVideo;
 
@@ -362,13 +366,14 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 			&& existingBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) { 
 			// remove from the list of existingBlobs			
 			if (debugTrace) {
-				cout << " (!)! Old blob id: " << existingBlob->id << " is eliminated(blobs Capacity: "<< existingBlobs.capacity()<<")" << endl;				
+				cout << " (!)! Old blob id: " << existingBlob->id << " is eliminated (blobs Capacity: "<< existingBlobs.capacity()<<")" << endl;				
 			}
 			existingBlob= existingBlobs.erase(existingBlob);			
 		}
 		else {
 			existingBlob->blnCurrentMatchFoundOrNewBlob = false;
 			existingBlob->predictNextPosition();
+      existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels);
 			++existingBlob;
 		}
     }
@@ -461,6 +466,37 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
     existingBlobs.push_back(currentFrameBlob);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// it should inspect after predicting the next position
+ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels) {
+  ObjectStatus objectstatus; 
+  if (lanedirection == LD_HORIZONTAL) { // vehicels move horizontally
+    int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
+    if (abs(deltaX) <= movingThresholdInPixels)
+      objectstatus = OS_STOPPED;
+    else { // moving anyway
+      if (deltaX > 0) // moving positively
+        objectstatus = OS_MOVING_FORWARD;
+      else
+        objectstatus = OS_MOVING_BACKWARD;
+    }
+  }
+  else if (lanedirection == LD_VERTICAL) {
+    int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y;
+    if (abs(deltaY) <= movingThresholdInPixels)
+      objectstatus = OS_STOPPED;
+    else { // moving anyway
+      if (deltaY > 0) // moving positively
+        objectstatus = OS_MOVING_FORWARD;
+      else
+        objectstatus = OS_MOVING_BACKWARD;
+    }
+  }
+  else {
+    objectstatus = OS_NOTDETERMINED;
+  }
+  return objectstatus;
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 double distanceBetweenPoints(cv::Point point1, cv::Point point2) {
 
@@ -570,13 +606,25 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
     for (unsigned int i = 0; i < blobs.size(); i++) {
 
         if (blobs[i].blnStillBeingTracked == true && blobs[i].totalVisibleCount > 5) {
-            cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_RED, 2);
+            cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_BLUE, 2);
 
             int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
             double dblFontScale = blobs[i].dblCurrentDiagonalSize / 60.0;
             int intFontThickness = (int)std::round(dblFontScale * 1.0);
+            string infostr, status;
+            if (blobs[i].os == OS_STOPPED)
+              status = " STOP";
+            else if (blobs[i].os == OS_MOVING_FORWARD)
+              status = " MV";
+            else if (blobs[i].os == OS_MOVING_BACKWARD) {
+              status = " WWR"; // wrong way on a road
+              cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_RED, 2);
+            }
+            else
+              status = " ND"; // not determined
 
-            cv::putText(imgFrame2Copy, std::to_string(blobs[i].id), blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
+            infostr = std::to_string(blobs[i].id) + status;
+            cv::putText(imgFrame2Copy, /*infostr*/std::to_string(blobs[i].id), blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
             if (debugTrace) {
               // draw the trace of object
               std::vector<cv::Point> centroids2= blobs[i].centerPositions;

@@ -4,6 +4,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {
+
   Blob::Blob(std::vector<cv::Point> _contour) {
 
     currentContour = _contour;
@@ -29,6 +30,10 @@ namespace itms {
     age = 1;
     totalVisibleCount = 1;
     showId = 0;
+    // object status information
+    oc = OC_OTHER;
+    os = OS_NOTDETERMINED;
+    od = OD_ND; // lane direction will affect the result, and the lane direction will be given
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
