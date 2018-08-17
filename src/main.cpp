@@ -38,9 +38,11 @@ using namespace itms;
 const cv::Scalar SCALAR_BLACK = cv::Scalar(0.0, 0.0, 0.0);
 const cv::Scalar SCALAR_WHITE = cv::Scalar(255.0, 255.0, 255.0);
 const cv::Scalar SCALAR_YELLOW = cv::Scalar(0.0, 255.0, 255.0);
-const cv::Scalar SCALAR_GREEN = cv::Scalar(0.0, 200.0, 0.0);
+const cv::Scalar SCALAR_GREEN = cv::Scalar(0.0, 255.0, 0.0);
 const cv::Scalar SCALAR_RED = cv::Scalar(0.0, 0.0, 255.0);
-const cv::Scalar SCALAR_BLUE = cv::Scalar(0.0, 255.0, 0.0);
+const cv::Scalar SCALAR_BLUE = cv::Scalar(255.0, 0.0, 0.0);
+const cv::Scalar SCALAR_MAGENTA = cv::Scalar(255.0, 0.0, 255.0);
+const cv::Scalar SCALAR_CYAN = cv::Scalar(255.0, 255.0, 0.0);
 
 
 // function prototypes ////////////////////////////////////////////////////////////////////////////
@@ -104,7 +106,7 @@ int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 2;              // motion threshold in pixels
 LaneDirection ldirection = LD_VERTICAL; // vertical lane
-BgSubType bgsubtype = BGS_CNT;
+BgSubType bgsubtype = BGS_DIF;
 
 
 
@@ -632,14 +634,16 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
     for (unsigned int i = 0; i < blobs.size(); i++) {
 
         if (blobs[i].blnStillBeingTracked == true && blobs[i].totalVisibleCount > 5) {
-            cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_BLUE, 2);
+            cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_GREEN, 2);
 
             int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
             double dblFontScale = blobs[i].dblCurrentDiagonalSize / 60.0;
             int intFontThickness = (int)std::round(dblFontScale * 1.0);
             string infostr, status;
-            if (blobs[i].os == OS_STOPPED)
+            if (blobs[i].os == OS_STOPPED) {
               status = " STOP";
+              cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_BLUE, 2);
+            }
             else if (blobs[i].os == OS_MOVING_FORWARD)
               status = " MV";
             else if (blobs[i].os == OS_MOVING_BACKWARD) {
