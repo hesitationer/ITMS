@@ -9,8 +9,14 @@
 #include <time.h>
 
 #include "../src/itms_Blob.h"
+#include "../src/bgsubcnt.h"
 
 #define SHOW_STEPS            // un-comment or comment this line to show steps or not
+//#define HAVE_OPENCV_CONTRIB
+#ifdef HAVE_OPENCV_CONTRIB
+#include <opencv2/video/background_segm.hpp>
+using namespace cv::bgsegm;
+#endif
 using namespace cv;
 using namespace std;
 using namespace itms;
@@ -81,6 +87,11 @@ void loadConfig()
   strcpy(FAV1::VideoPath, VP);
   cvReleaseFileStorage(&fs);
 }
+enum BgSubType { // background substractor type
+	BGS_DIF = 0, // difference
+	BGS_CNT = 1, // COUNTER
+	BGS_ACC = 2  // ACCUMULATER
+};
 // parameters
 bool debugShowImages = true;
 bool debugShowImagesDetail = true;
@@ -93,70 +104,81 @@ int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 2;              // motion threshold in pixels
 LaneDirection ldirection = LD_VERTICAL; // vertical lane
+BgSubType bgsubtype = BGS_CNT;
+
+
 
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
 #if _DEBUG
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 #endif	
-  std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
+	std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
 
-    int trackId = 0;          // unique object id
-    int showId = 0;           //     
-    
+	int trackId = 0;          // unique object id
+	int showId = 0;           //     
 
-    cv::VideoCapture capVideo;
 
-    cv::Mat imgFrame1;
-    cv::Mat imgFrame2;
+	cv::VideoCapture capVideo;
 
-    std::vector<Blob> blobs;
+	cv::Mat imgFrame1;
+	cv::Mat imgFrame2;
 
-    cv::Point crossingLine[2];
+	std::vector<Blob> blobs;
 
-    int carCount = 0;
-    int truckCount = 0;
-    int bikeCount = 0;
-    int humanCount = 0;
-    int videoLength = 0;
-    loadConfig();
-    bool b = capVideo.open(FAV1::VideoPath);
+	cv::Point crossingLine[2];
 
-    //capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/CarsDrivingUnderBridge.mp4");
+	int carCount = 0;
+	int truckCount = 0;
+	int bikeCount = 0;
+	int humanCount = 0;
+	int videoLength = 0;
+	loadConfig();
+	bool b = capVideo.open(FAV1::VideoPath);
+
+	//capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/CarsDrivingUnderBridge.mp4");
    //capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/Relaxinghighwaytraffic.mp4");  // 768x576.avi
-    //capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/768x576.avi");  // 
-    //capVideo.open("C:/Users/MMC/Downloads/20180329_202747.mp4"); //20180329_202049
-    //capVideo.open("C:/Users/MMC/Downloads/20180329_202049.mp4");
-    //capVideo.open("D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/안개영상/400M이상.avi");
+	//capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/768x576.avi");  // 
+	//capVideo.open("C:/Users/MMC/Downloads/20180329_202747.mp4"); //20180329_202049
+	//capVideo.open("C:/Users/MMC/Downloads/20180329_202049.mp4");
+	//capVideo.open("D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/안개영상/400M이상.avi");
 
-    std::vector<Point> Road_ROI_Pts;
-    // relaxinghighwaytraffic.mp4
-    Road_ROI_Pts.push_back(Point(380, 194));
-    Road_ROI_Pts.push_back(Point(433, 194));
-    Road_ROI_Pts.push_back(Point(344, 423));
-    Road_ROI_Pts.push_back(Point(89, 423));
+	std::vector<Point> Road_ROI_Pts;
+	// relaxinghighwaytraffic.mp4
+	Road_ROI_Pts.push_back(Point(380, 194));
+	Road_ROI_Pts.push_back(Point(433, 194));
+	Road_ROI_Pts.push_back(Point(344, 423));
+	Road_ROI_Pts.push_back(Point(89, 423));
 
 
-    if (!capVideo.isOpened()) {                                                 // if unable to open video file
-        std::cout << "error reading video file" << std::endl << std::endl;      // show error message
-        _getch();                   // it may be necessary to change or remove this line if not using Windows
-        return(0);                                                              // and exit program
-    }
+	if (!capVideo.isOpened()) {                                                 // if unable to open video file
+		std::cout << "error reading video file" << std::endl << std::endl;      // show error message
+		_getch();                   // it may be necessary to change or remove this line if not using Windows
+		return(0);                                                              // and exit program
+	}
 
-    if (capVideo.get(CV_CAP_PROP_FRAME_COUNT) < 2) {
-      std::cout << "error: video file must have at least two frames" << std::endl;
-        _getch();                   // it may be necessary to change or remove this line if not using Windows
-        return(0);
-    }
-    // video information
-    int fps = 15;
-    bool hasFile = true;
-    if (hasFile)
-    {
-      fps = int(capVideo.get(CAP_PROP_FPS));
-      cout << "Video FPS: " << fps << endl;
-    }
+	if (capVideo.get(CV_CAP_PROP_FRAME_COUNT) < 2) {
+		std::cout << "error: video file must have at least two frames" << std::endl;
+		_getch();                   // it may be necessary to change or remove this line if not using Windows
+		return(0);
+	}
+	/* Event Notice */
+	std::cout << "Press 'ESC' to quit..." << std::endl;
+
+	// video information
+	int fps = 15;
+	bool hasFile = true;
+	if (hasFile)
+	{
+		fps = int(capVideo.get(CAP_PROP_FPS));
+		cout << "Video FPS: " << fps << endl;
+	}
+	/* Fast BSA */ // by sangkny
+	//if(bgsubtype == BGS_CNT){ // type selection
+		Ptr<BackgroundSubtractor> pBgSub;
+		pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
+	//}
 
     capVideo.read(imgFrame1);
     capVideo.read(imgFrame2);
@@ -219,6 +241,7 @@ int main(void) {
     cv::Mat structuringElement7x7 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
     cv::Mat structuringElement15x15 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));
 
+	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
 		double t1 = (double)cvGetTickCount();
@@ -235,8 +258,11 @@ int main(void) {
 
         cv::GaussianBlur(imgFrame1Copy, imgFrame1Copy, cv::Size(5, 5), 0);
         cv::GaussianBlur(imgFrame2Copy, imgFrame2Copy, cv::Size(5, 5), 0);
-
-        cv::absdiff(imgFrame1Copy, imgFrame2Copy, imgDifference);
+		if (bgsubtype == BGS_CNT)
+			pBgSub->apply(imgFrame2Copy, imgDifference);
+		else {
+			cv::absdiff(imgFrame1Copy, imgFrame2Copy, imgDifference);
+		}
 
         cv::threshold(imgDifference, imgThresh, 30, 255.0, CV_THRESH_BINARY);
 		if (debugShowImages && debugShowImagesDetail) {

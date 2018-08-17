@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\bgsubcnt.cpp" />
     <ClCompile Include="src\itms_Blob.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
