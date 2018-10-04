@@ -180,6 +180,7 @@ int main(void) {
 	//if(bgsubtype == BGS_CNT){ // type selection
 		Ptr<BackgroundSubtractor> pBgSub;
 		pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
+		//pBgSub = createBackgroundSubtractorMOG2();
 	//}
 
     capVideo.read(imgFrame1);
@@ -260,8 +261,11 @@ int main(void) {
 
         cv::GaussianBlur(imgFrame1Copy, imgFrame1Copy, cv::Size(5, 5), 0);
         cv::GaussianBlur(imgFrame2Copy, imgFrame2Copy, cv::Size(5, 5), 0);
-		if (bgsubtype == BGS_CNT)
+		if (bgsubtype == BGS_CNT) {
 			pBgSub->apply(imgFrame2Copy, imgDifference);
+			// only shadow part
+			//cv::threshold(imgDifference, imgDifference, 125, 255, cv::THRESH_BINARY);
+		}
 		else {
 			cv::absdiff(imgFrame1Copy, imgFrame2Copy, imgDifference);
 		}
@@ -312,6 +316,7 @@ int main(void) {
             }
         }
 		if (debugShowImages && debugShowImagesDetail) {
+			// all of the currentFrameBlobs at this stage have 1 visible count yet. 
 			drawAndShowContours(imgThresh.size(), currentFrameBlobs, "imgCurrentFrameBlobs");
 		}
 
@@ -552,7 +557,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
     std::vector<std::vector<cv::Point> > contours;
 
     for (auto &blob : blobs) {
-        if (blob.blnStillBeingTracked == true && blob.totalVisibleCount>= minVisibleCount) {
+        if (blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/) {
             contours.push_back(blob.currentContour);
         }
     }
