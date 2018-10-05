@@ -127,6 +127,9 @@ int main(void) {
 	cv::Mat imgFrame1;
 	cv::Mat imgFrame2;
 
+  float scaleFactor = 0.25;
+
+
 	std::vector<Blob> blobs;
 
 	cv::Point crossingLine[2];
@@ -170,7 +173,7 @@ int main(void) {
 
 	// video information
 	int fps = 15;
-	bool hasFile = true;
+	bool hasFile = true;  
 	if (hasFile)
 	{
 		fps = int(capVideo.get(CAP_PROP_FPS));
@@ -183,9 +186,13 @@ int main(void) {
 		//pBgSub = createBackgroundSubtractorMOG2();
 	//}
 
-    capVideo.read(imgFrame1);
+    capVideo.read(imgFrame1);    
     capVideo.read(imgFrame2);
-    
+    if (imgFrame1.empty() || imgFrame2.empty())
+      return 0;
+    resize(imgFrame1, imgFrame1, Size(), scaleFactor, scaleFactor);
+    resize(imgFrame2, imgFrame2, Size(), scaleFactor, scaleFactor);
+
 
 
     /*int intHorizontalLinePosition = (int)std::round((double)imgFrame1.rows * 0.5);
@@ -357,7 +364,8 @@ int main(void) {
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is
 
         if ((capVideo.get(CV_CAP_PROP_POS_FRAMES) + 1) < capVideo.get(CV_CAP_PROP_FRAME_COUNT)) {
-            capVideo.read(imgFrame2);
+            capVideo.read(imgFrame2);            
+            resize(imgFrame2, imgFrame2, Size(), scaleFactor, scaleFactor);
             if (imgFrame2.empty()) {
               std::cout << "The input image is empty!! Please check the video file!!" << std::endl;
               _getch();
