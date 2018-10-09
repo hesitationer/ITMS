@@ -127,7 +127,7 @@ int main(void) {
 	cv::Mat imgFrame1;
 	cv::Mat imgFrame2;
 
-  float scaleFactor = 0.25;
+  float scaleFactor = 0.5;
 
 
 	std::vector<Blob> blobs;
