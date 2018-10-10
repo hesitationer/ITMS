@@ -106,7 +106,7 @@ int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 2;              // motion threshold in pixels
 LaneDirection ldirection = LD_VERTICAL; // vertical lane
-BgSubType bgsubtype = BGS_DIF;
+BgSubType bgsubtype = BGS_CNT;
 
 
 
@@ -127,7 +127,7 @@ int main(void) {
 	cv::Mat imgFrame1;
 	cv::Mat imgFrame2;
 
-  float scaleFactor = 0.5;
+  float scaleFactor = 1;
 
 
 	std::vector<Blob> blobs;
@@ -139,6 +139,7 @@ int main(void) {
 	int bikeCount = 0;
 	int humanCount = 0;
 	int videoLength = 0;
+  
 	loadConfig();
 	bool b = capVideo.open(FAV1::VideoPath);
 
@@ -163,7 +164,9 @@ int main(void) {
 		return(0);                                                              // and exit program
 	}
 
-	if (capVideo.get(CV_CAP_PROP_FRAME_COUNT) < 2) {
+  int max_frames = capVideo.get(CV_CAP_PROP_FRAME_COUNT);
+
+	if ( max_frames< 2) {
 		std::cout << "error: video file must have at least two frames" << std::endl;
 		_getch();                   // it may be necessary to change or remove this line if not using Windows
 		return(0);
@@ -270,6 +273,11 @@ int main(void) {
         cv::GaussianBlur(imgFrame2Copy, imgFrame2Copy, cv::Size(5, 5), 0);
 		if (bgsubtype == BGS_CNT) {
 			pBgSub->apply(imgFrame2Copy, imgDifference);
+      if(debugShowImages && debugShowImagesDetail){
+        Mat bgImage = Mat::zeros(imgFrame2Copy.size(), imgFrame2Copy.type());
+        pBgSub->getBackgroundImage(bgImage);
+        cv::imshow("backgroundImage", bgImage);
+      }
 			// only shadow part
 			//cv::threshold(imgDifference, imgDifference, 125, 255, cv::THRESH_BINARY);
 		}
@@ -382,7 +390,7 @@ int main(void) {
 		if (debugTime) {
 			double t2 = (double)cvGetTickCount();
 			double t3 = (t2 - t1) / (double)getTickFrequency();
-			cout << "Processing time>>  #:" << (frameCount - 1) << " --> " << t3*1000.0<<"msec, "<< 1./t3 << "fps \n";
+			cout << "Processing time>>  #:" << (frameCount - 1) <<"/("<< max_frames<<")"<< " --> " << t3*1000.0<<"msec, "<< 1./t3 << "fps \n";
 		}
     }
 

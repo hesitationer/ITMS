@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\utils\realtimeVideoStabilization.cpp" />
     <ClCompile Include="..\..\src\utils\realtimeVideoStabilizationMain.cpp" />
+    <ClCompile Include="..\..\src\utils\videostab_Kalman_trajectory_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\utils\itms_utils.h" />
