@@ -1,0 +1,17 @@
+// 시뮬레이션 파일 재생
+void PlayFile()
+{ 
+ int iWidth = 0, iHeight = 0, iChannels = 0;
+ CString m_MediaPath = "Filename";
+ CMjpgFile* mjpgEmul = new CMjpgFile(m_MediaPath);
+ iWidth = mjpgEmul->m_width;
+ iHeight = mjpgEmul->m_height;
+ iChannels = mjpgEmul->m_nChannels;
+
+ if (mjpgEmul->GetFramePosition() > 0)
+ {
+  char* pRGB = mjpgEmul->ReadFrame();
+  memcpy(pRGB24, pRGB, iWidth * iHeight * iChannels);
+  OnFrame();
+ }
+}
