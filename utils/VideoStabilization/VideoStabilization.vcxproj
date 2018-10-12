@@ -19,7 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\utils\itms_utils.cpp" />
     <ClCompile Include="..\..\src\utils\realtimeVideoStabilization.cpp" />
+    <ClCompile Include="..\..\src\utils\realtimeVideoStabilizationMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\utils\itms_utils.h" />

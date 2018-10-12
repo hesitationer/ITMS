@@ -10,6 +10,7 @@ MJPG Player Main
 #include <fstream>
 
 #include "MJPG\MjpgFile.h"
+//#include "itms_utils.h"
 
 using namespace std;
 using namespace cv;
@@ -19,7 +20,7 @@ using namespace cv;
 
 //const int SMOOTHING_RADIUS = 15; // In frames. The larger the more stable the video, but less reactive to sudden panning
 const int HORIZONTAL_BORDER_CROP = 20; // In pixels. Crops the border to reduce the black borders from stabilisation being too noticeable.
-bool flagWriteVideo = false;
+bool flagWriteVideo = true;
 bool flagWriteFile = false;
 bool debugTime = true;
 bool debugImshows = true;
@@ -109,26 +110,43 @@ int main(int argc, char **argv)
   std::string mjpgfile = "";
 
   int iWidth = 0, iHeight = 0, iChannels = 0;
-  CString m_MediaPath = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/20180911_161751_cam_0.mjpg";
+  //CString m_MediaPath = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/20180911_161751_cam_0.mjpg";
+  CString m_MediaPath = "E:/Camera2/주간/주간 - 추가 - 복합 - 역주행(2) - 역주행(3)/20180911_172930_cam_0.mjpg";
   CMjpgFile* mjpgEmul = new CMjpgFile(m_MediaPath);
   iWidth = mjpgEmul->m_width;
   iHeight = mjpgEmul->m_height;
   iChannels = mjpgEmul->m_nChannels;
 
-  Mat Frame = Mat::zeros(Size(iWidth, iHeight), CV_8UC3);
-  long max_frame_numbers = 800;
-  while (mjpgEmul->GetFramePosition() <max_frame_numbers && chCheckForEscKey != 27)
+  Mat Frame = Mat::zeros(Size(iWidth, iHeight), CV_8UC3);  
+  // output the video to avi  
+  CString outputVideoName = m_MediaPath;
+  outputVideoName.Replace(_T(".mjpg"), _T(".avi"));  
+  // conversion from CString to string
+  CT2CA pszConvertedAnsiString(outputVideoName);
+  std::string strVideoName(pszConvertedAnsiString);
+  // conversion end  
+  VideoWriter mjpg2aviVideo;
+  mjpg2aviVideo.open(strVideoName, CV_FOURCC('X', 'V', 'I', 'D'), 30, cv::Size(iWidth, iHeight), true);
+  long max_frame_numbers = 100;
+  while (mjpgEmul->GetFramePosition() <min(mjpgEmul->GetFrameLength(),max_frame_numbers) && chCheckForEscKey != 27)
   {
     char* pRGB = mjpgEmul->ReadFrame();
     //memcpy(pRGB24, pRGB, iWidth * iHeight * iChannels);
     memcpy(Frame.data, pRGB, iWidth * iHeight * iChannels);
     //OnFrame();
+    if (flagWriteVideo) {
+      //  mjpgvideo.write(Frame);
+      mjpg2aviVideo.write(Frame);
+    }
     imshow("A Frame", Frame);
     cout << "#:" << mjpgEmul->GetFramePosition() << "/(" << mjpgEmul->GetFrameLength() << ")" << endl;
     chCheckForEscKey = waitKey(10);
   }
   if (mjpgEmul)
     delete mjpgEmul;
+  if (flagWriteVideo && mjpg2aviVideo.isOpened())
+    mjpg2aviVideo.release();
+
 
   // mjpg player end
 

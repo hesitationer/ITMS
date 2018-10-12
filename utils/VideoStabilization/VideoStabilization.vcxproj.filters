@@ -18,6 +18,12 @@
     <ClCompile Include="..\..\src\utils\realtimeVideoStabilization.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\utils\itms_utils.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utils\realtimeVideoStabilizationMain.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\utils\itms_utils.h">

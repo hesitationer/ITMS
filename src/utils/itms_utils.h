@@ -7,29 +7,30 @@
 #ifndef _ITMS_UTILS_H
 #define _ITMS_UTILS_H
 
+#include <iostream>
 #include "opencv/cv.hpp"
+
+
 using namespace cv;
 
 namespace itms {
-	void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle,int gabbetweenimages)
-	{
-		if (before.size() != after.size() || before.type() != after.type()) {
-			std::cout << "Please check the input file formats including size() and type() (!).\n";
-			return;
-		}
-		int gab = max(5, gabbetweenimages);
-		Mat canvas = Mat::zeros(after.rows, after.cols * 2 + gab, after.type());
-
-		before.copyTo(canvas(Range::all(), Range(0, after.cols)));
-
-		after.copyTo(canvas(Range::all(), Range(after.cols + gab, after.cols * 2 + gab)));
-
-		if (canvas.cols > 1920)
-		{
-			resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
-		}
-		imshow(windowtitle, canvas);
-	}
+  void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages);
+	
+  // Wrapper over OpenCV cv::VideoWriter class, with option write or not to write to file.
+  // ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize)
+  class ITMSVideoWriter {
+  public:
+    ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color = true);
+    void write(Mat& frame);
+    ~ITMSVideoWriter() {
+      if (writeToFile)
+        if (writer.isOpened())
+          writer.release();
+    }
+  private:
+    VideoWriter writer;
+    bool writeToFile; // defines whether we need to write frames to file or not (for easy debugging and readability)
+  };
 }
 #endif // _ITMS_UTILS_H
 

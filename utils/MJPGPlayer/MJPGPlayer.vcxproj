@@ -19,9 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\utils\itms_utils.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\src\utils\MJPGPlayer_main.cpp" />
     <ClCompile Include="..\..\src\utils\MJPG\MjpgFile.cpp" />
   </ItemGroup>

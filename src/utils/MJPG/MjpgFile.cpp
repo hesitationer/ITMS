@@ -345,7 +345,7 @@ BOOL CMjpgFile::Open(LPCTSTR lpszFileName, UINT nOpenFlags, int* pWidth, int* pH
 				nextFramePos += (MJPG_HEADER_SIZE + 4 + nLength);
 			
 				if (nextFramePos >= UINT_MAX) {
-					//TRACE("CMgCVMJPG::if (nextFramePos(%d) >= UINT_MAX(%d)\n", nextFramePos, UINT_MAX);
+					TRACE("CMgCVMJPG::if (nextFramePos(%d) >= UINT_MAX(%d)\n", nextFramePos, UINT_MAX);
 					break;
 				}
 

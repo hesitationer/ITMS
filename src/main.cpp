@@ -11,6 +11,7 @@
 #include "../src/itms_Blob.h"
 #include "../src/bgsubcnt.h"
 
+
 #define SHOW_STEPS            // un-comment or comment this line to show steps or not
 //#define HAVE_OPENCV_CONTRIB
 #ifdef HAVE_OPENCV_CONTRIB
@@ -104,9 +105,12 @@ int minVisibleCount = 3;	// minimum survival consecutive frame for noise removal
 int maxCenterPts = 300;		// maximum number of center points (frames)
 int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
-int movingThresholdInPixels = 2;              // motion threshold in pixels
+int movingThresholdInPixels = 1;              // motion threshold in pixels affected by scaleFactor
+
+bool isWriteToFile = false;
+
 LaneDirection ldirection = LD_VERTICAL; // vertical lane
-BgSubType bgsubtype = BGS_CNT;
+BgSubType bgsubtype = BGS_DIF;
 
 
 
@@ -150,12 +154,38 @@ int main(void) {
 	//capVideo.open("C:/Users/MMC/Downloads/20180329_202049.mp4");
 	//capVideo.open("D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/안개영상/400M이상.avi");
 
-	std::vector<Point> Road_ROI_Pts;
-	// relaxinghighwaytraffic.mp4
-	Road_ROI_Pts.push_back(Point(380, 194));
-	Road_ROI_Pts.push_back(Point(433, 194));
-	Road_ROI_Pts.push_back(Point(344, 423));
-	Road_ROI_Pts.push_back(Point(89, 423));
+	//std::vector<Point> Road_ROI_Pts;
+	//// relaxinghighwaytraffic.mp4
+	//Road_ROI_Pts.push_back(Point(380, 194)*scaleFactor);
+	//Road_ROI_Pts.push_back(Point(433, 194)*scaleFactor);
+	//Road_ROI_Pts.push_back(Point(344, 423)*scaleFactor);
+	//Road_ROI_Pts.push_back(Point(89, 423)*scaleFactor);
+
+  std::vector<Point> road_roi_pts;
+  std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
+  // relaxinghighwaytraffic.mp4 for new one
+  // side walk1
+  road_roi_pts.push_back(Point(387.00,  189.00)*scaleFactor);
+  road_roi_pts.push_back(Point(392.00,  189.00)*scaleFactor);
+  road_roi_pts.push_back(Point(14.00,   479.00)*scaleFactor);
+  road_roi_pts.push_back(Point(4.00,    378.00)*scaleFactor);
+  Road_ROI_Pts.push_back(road_roi_pts);
+  road_roi_pts.clear();
+  // car lane
+  road_roi_pts.push_back(Point(391.00, 189.00)*scaleFactor);
+  road_roi_pts.push_back(Point(483.00, 187.00)*scaleFactor);
+  road_roi_pts.push_back(Point(797.00, 478.00)*scaleFactor);
+  road_roi_pts.push_back(Point(13.00, 478.00)*scaleFactor);
+  Road_ROI_Pts.push_back(road_roi_pts);
+  road_roi_pts.clear();
+  // side walk2
+  road_roi_pts.push_back(Point(480.00, 187.00)*scaleFactor);
+  road_roi_pts.push_back(Point(496.00, 187.00)*scaleFactor);
+  road_roi_pts.push_back(Point(853.00, 419.00)*scaleFactor);
+  road_roi_pts.push_back(Point(4.00, 378.00)*scaleFactor);
+  Road_ROI_Pts.push_back(road_roi_pts);
+  road_roi_pts.clear();
+
 
 
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
@@ -254,6 +284,18 @@ int main(void) {
     cv::Mat structuringElement7x7 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
     cv::Mat structuringElement15x15 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));
 
+    // road mask generation
+    cv::Mat road_mask = cv::Mat::zeros(imgFrame1.size(), imgFrame1.type());
+    for(int ir=0; ir<Road_ROI_Pts.size(); ir++)
+      fillConvexPoly(road_mask, Road_ROI_Pts.at(ir).data(), Road_ROI_Pts.at(ir).size(), Scalar(255, 255, 255), 8);
+    
+    if (road_mask.channels() > 1)
+      cvtColor(road_mask, road_mask, CV_BGR2GRAY);
+    if (debugShowImages && debugShowImagesDetail) {
+      imshow("road mask", road_mask);
+      waitKey(1);
+    }
+
 	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
@@ -277,6 +319,12 @@ int main(void) {
         Mat bgImage = Mat::zeros(imgFrame2Copy.size(), imgFrame2Copy.type());
         pBgSub->getBackgroundImage(bgImage);
         cv::imshow("backgroundImage", bgImage);
+        if (isWriteToFile && frameCount == 100) {
+          string filename = FAV1::VideoPath;
+          filename.append("_"+to_string(scaleFactor)+"x.jpg");
+          cv::imwrite(filename, bgImage);
+          std::cout << " background image has been generated !!\n";
+        }
       }
 			// only shadow part
 			//cv::threshold(imgDifference, imgDifference, 125, 255, cv::THRESH_BINARY);
@@ -284,7 +332,10 @@ int main(void) {
 		else {
 			cv::absdiff(imgFrame1Copy, imgFrame2Copy, imgDifference);
 		}
-
+    // roi applied
+    if (!road_mask.empty()) {
+      bitwise_and(road_mask, imgDifference, imgDifference);
+    }
         cv::threshold(imgDifference, imgThresh, 30, 255.0, CV_THRESH_BINARY);
 		if (debugShowImages && debugShowImagesDetail) {
 			cv::imshow("imgThresh", imgThresh);
@@ -320,7 +371,7 @@ int main(void) {
         for (auto &convexHull : convexHulls) {
             Blob possibleBlob(convexHull);
 
-            if (possibleBlob.currentBoundingRect.area() > 400 &&
+            /*if (possibleBlob.currentBoundingRect.area() > 400 &&
                 possibleBlob.dblCurrentAspectRatio > 0.2 &&
                 possibleBlob.dblCurrentAspectRatio < 4.0 &&
                 possibleBlob.currentBoundingRect.width > 30 &&
@@ -328,6 +379,15 @@ int main(void) {
                 possibleBlob.dblCurrentDiagonalSize > 60.0 &&
                 (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
                 currentFrameBlobs.push_back(possibleBlob);
+            }*/
+            if (possibleBlob.currentBoundingRect.area() > 100 &&
+              possibleBlob.dblCurrentAspectRatio > 0.2 &&
+              possibleBlob.dblCurrentAspectRatio < 4.0 &&
+              possibleBlob.currentBoundingRect.width > 15 &&
+              possibleBlob.currentBoundingRect.height > 15 &&
+              possibleBlob.dblCurrentDiagonalSize > 19.0 &&
+              (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
+              currentFrameBlobs.push_back(possibleBlob);
             }
         }
 		if (debugShowImages && debugShowImagesDetail) {
@@ -675,7 +735,7 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
               status = " ND"; // not determined
 
             infostr = std::to_string(blobs[i].id) + status;
-            cv::putText(imgFrame2Copy, /*infostr*/std::to_string(blobs[i].id), blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
+            cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
             if (debugTrace) {
               // draw the trace of object
               std::vector<cv::Point> centroids2= blobs[i].centerPositions;
