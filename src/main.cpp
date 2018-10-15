@@ -105,7 +105,7 @@ int minVisibleCount = 3;	// minimum survival consecutive frame for noise removal
 int maxCenterPts = 300;		// maximum number of center points (frames)
 int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
-int movingThresholdInPixels = 1;              // motion threshold in pixels affected by scaleFactor
+int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor
 
 bool isWriteToFile = false;
 
@@ -182,7 +182,7 @@ int main(void) {
   road_roi_pts.push_back(Point(480.00, 187.00)*scaleFactor);
   road_roi_pts.push_back(Point(496.00, 187.00)*scaleFactor);
   road_roi_pts.push_back(Point(853.00, 419.00)*scaleFactor);
-  road_roi_pts.push_back(Point(4.00, 378.00)*scaleFactor);
+  road_roi_pts.push_back(Point(791.00, 478.00)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
 
@@ -581,7 +581,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
   ObjectStatus objectstatus; 
   if (lanedirection == LD_HORIZONTAL) { // vehicels move horizontally
     int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
-    if (abs(deltaX) <= movingThresholdInPixels)
+    if (abs(deltaX) <= movingThresholdInPixels /*&& blob.totalVisibleCount >=3*/)
       objectstatus = OS_STOPPED;
     else { // moving anyway
       if (deltaX > 0) // moving positively
@@ -592,7 +592,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
   }
   else if (lanedirection == LD_VERTICAL) {
     int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y;
-    if (abs(deltaY) <= movingThresholdInPixels)
+    if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3)
       objectstatus = OS_STOPPED;
     else { // moving anyway
       if (deltaY > 0) // moving positively
