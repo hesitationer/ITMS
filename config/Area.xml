@@ -6,9 +6,9 @@
 <LightVehicleArea>100</LightVehicleArea>
 <BikeArea>50</BikeArea>
 <HumanArea>20</HumanArea>
-<VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
-<!--
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>
+<!--
+<VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
 <VideoPath>"C:\\NEXPA\\rawdata.avi"</VideoPath>
 <VideoPath>"TrafficVideo\\20180912_134130_cam_0.avi"</VideoPath>
 -->

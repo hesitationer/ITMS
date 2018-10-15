@@ -106,6 +106,7 @@ int maxCenterPts = 300;		// maximum number of center points (frames)
 int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor
+int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30)
 
 bool isWriteToFile = false;
 
@@ -131,7 +132,7 @@ int main(void) {
 	cv::Mat imgFrame1;
 	cv::Mat imgFrame2;
 
-  float scaleFactor = 1;
+  float scaleFactor = 0.5;
 
 
 	std::vector<Blob> blobs;
@@ -164,28 +165,50 @@ int main(void) {
   std::vector<Point> road_roi_pts;
   std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
   // relaxinghighwaytraffic.mp4 for new one
+  //// side walk1
+  //road_roi_pts.push_back(Point(387.00,  189.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(392.00,  189.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(14.00,   479.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(4.00,    378.00)*scaleFactor);
+  //Road_ROI_Pts.push_back(road_roi_pts);
+  //road_roi_pts.clear();
+  //// car lane
+  //road_roi_pts.push_back(Point(391.00, 189.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(483.00, 187.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(797.00, 478.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(13.00, 478.00)*scaleFactor);
+  //Road_ROI_Pts.push_back(road_roi_pts);
+  //road_roi_pts.clear();
+  //// side walk2
+  //road_roi_pts.push_back(Point(480.00, 187.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(496.00, 187.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(853.00, 419.00)*scaleFactor);
+  //road_roi_pts.push_back(Point(791.00, 478.00)*scaleFactor);
+  //Road_ROI_Pts.push_back(road_roi_pts);
+  //road_roi_pts.clear();
+
+  //20180911_172930_
   // side walk1
-  road_roi_pts.push_back(Point(387.00,  189.00)*scaleFactor);
-  road_roi_pts.push_back(Point(392.00,  189.00)*scaleFactor);
-  road_roi_pts.push_back(Point(14.00,   479.00)*scaleFactor);
-  road_roi_pts.push_back(Point(4.00,    378.00)*scaleFactor);
+  road_roi_pts.push_back(Point(1057.25, 83.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1069.25, 92.75)*scaleFactor);
+  road_roi_pts.push_back(Point(289.25, 1036.25)*scaleFactor);
+  road_roi_pts.push_back(Point(103.25, 1009.25)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
   // car lane
-  road_roi_pts.push_back(Point(391.00, 189.00)*scaleFactor);
-  road_roi_pts.push_back(Point(483.00, 187.00)*scaleFactor);
-  road_roi_pts.push_back(Point(797.00, 478.00)*scaleFactor);
-  road_roi_pts.push_back(Point(13.00, 478.00)*scaleFactor);
+  road_roi_pts.push_back(Point(1063.25, 89.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1135.25, 92.75)*scaleFactor);
+  road_roi_pts.push_back(Point(955.25, 1033.25)*scaleFactor);
+  road_roi_pts.push_back(Point(253.25, 1039.25)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
   // side walk2
-  road_roi_pts.push_back(Point(480.00, 187.00)*scaleFactor);
-  road_roi_pts.push_back(Point(496.00, 187.00)*scaleFactor);
-  road_roi_pts.push_back(Point(853.00, 419.00)*scaleFactor);
-  road_roi_pts.push_back(Point(791.00, 478.00)*scaleFactor);
+  road_roi_pts.push_back(Point(1129.25, 91.25)*scaleFactor);
+  road_roi_pts.push_back(Point(1157.75, 95.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1231.25, 1034.75)*scaleFactor);
+  road_roi_pts.push_back(Point(941.75, 1031.75)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
-
 
 
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
@@ -215,8 +238,8 @@ int main(void) {
 	/* Fast BSA */ // by sangkny
 	//if(bgsubtype == BGS_CNT){ // type selection
 		Ptr<BackgroundSubtractor> pBgSub;
-		pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
-		//pBgSub = createBackgroundSubtractorMOG2();
+		//pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
+		pBgSub = createBackgroundSubtractorMOG2();
 	//}
 
     capVideo.read(imgFrame1);    
@@ -311,7 +334,7 @@ int main(void) {
         cv::cvtColor(imgFrame1Copy, imgFrame1Copy, CV_BGR2GRAY);
         cv::cvtColor(imgFrame2Copy, imgFrame2Copy, CV_BGR2GRAY);
 
-        cv::GaussianBlur(imgFrame1Copy, imgFrame1Copy, cv::Size(5, 5), 0);
+        cv::GaussianBlur(imgFrame1Copy, imgFrame1Copy, cv::Size(5, 5), 0); // was 5x5
         cv::GaussianBlur(imgFrame2Copy, imgFrame2Copy, cv::Size(5, 5), 0);
 		if (bgsubtype == BGS_CNT) {
 			pBgSub->apply(imgFrame2Copy, imgDifference);
@@ -319,7 +342,7 @@ int main(void) {
         Mat bgImage = Mat::zeros(imgFrame2Copy.size(), imgFrame2Copy.type());
         pBgSub->getBackgroundImage(bgImage);
         cv::imshow("backgroundImage", bgImage);
-        if (isWriteToFile && frameCount == 100) {
+        if (isWriteToFile && frameCount == 150) {
           string filename = FAV1::VideoPath;
           filename.append("_"+to_string(scaleFactor)+"x.jpg");
           cv::imwrite(filename, bgImage);
@@ -336,16 +359,17 @@ int main(void) {
     if (!road_mask.empty()) {
       bitwise_and(road_mask, imgDifference, imgDifference);
     }
-        cv::threshold(imgDifference, imgThresh, 30, 255.0, CV_THRESH_BINARY);
+        cv::threshold(imgDifference, imgThresh, img_dif_th, 255.0, CV_THRESH_BINARY);
 		if (debugShowImages && debugShowImagesDetail) {
 			cv::imshow("imgThresh", imgThresh);
 			cv::waitKey(1);
 		}        
 
         for (unsigned int i = 0; i < 1; i++) {
+            /*cv::dilate(imgThresh, imgThresh, structuringElement5x5);
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-            cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-            cv::erode(imgThresh, imgThresh, structuringElement5x5);
+            cv::erode(imgThresh, imgThresh, structuringElement5x5);*/          
+          cv::morphologyEx(imgThresh, imgThresh, CV_MOP_CLOSE, structuringElement7x7);
         }
 
         cv::Mat imgThreshCopy = imgThresh.clone();
@@ -380,12 +404,12 @@ int main(void) {
                 (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
                 currentFrameBlobs.push_back(possibleBlob);
             }*/
-            if (possibleBlob.currentBoundingRect.area() > 100 &&
+            if (possibleBlob.currentBoundingRect.area() > 10 &&
               possibleBlob.dblCurrentAspectRatio > 0.2 &&
-              possibleBlob.dblCurrentAspectRatio < 4.0 &&
-              possibleBlob.currentBoundingRect.width > 15 &&
-              possibleBlob.currentBoundingRect.height > 15 &&
-              possibleBlob.dblCurrentDiagonalSize > 19.0 &&
+              possibleBlob.dblCurrentAspectRatio < 6.0 &&
+              possibleBlob.currentBoundingRect.width > 2 &&
+              possibleBlob.currentBoundingRect.height > 2 &&
+              possibleBlob.dblCurrentDiagonalSize > 3.0 &&
               (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
               currentFrameBlobs.push_back(possibleBlob);
             }
