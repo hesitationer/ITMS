@@ -23,10 +23,21 @@ namespace itms {
     OS_MOVING_BACKWARD= 2, // wrong way on a street
     OS_NOTDETERMINED  = 3   // and other cases
   };
-  enum LaneDirection {
+  /*enum LaneDirection {
     LD_NONE       = 0,
     LD_HORIZONTAL = 1,
     LD_VERTICAL   = 2
+  };*/
+  enum LaneDirection { // ACTUALLY, IT IS CORRECT CAR-MOVING DIRECTION
+    LD_NONE     = 0,
+    LD_NORTH    = 1,
+    LD_NORTHEAST= 2,
+    LD_EAST     = 3,
+    LD_SOUTHEAST= 4,
+    LD_SOUTH    = 5,
+    LD_SOUTHWEST= 6,
+    LD_WEST     = 7,
+    LD_NORTHWEST= 8
   };
   enum ObjectDirection {
     OD_AB = 0,              // correct direction

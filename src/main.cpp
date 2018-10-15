@@ -110,7 +110,7 @@ int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~3
 
 bool isWriteToFile = false;
 
-LaneDirection ldirection = LD_VERTICAL; // vertical lane
+LaneDirection ldirection = LD_NORTHEAST; // vertical lane
 BgSubType bgsubtype = BGS_DIF;
 
 
@@ -603,31 +603,97 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
 // it should inspect after predicting the next position
 ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels) {
   ObjectStatus objectstatus; 
-  if (lanedirection == LD_HORIZONTAL) { // vehicels move horizontally
-    int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
-    if (abs(deltaX) <= movingThresholdInPixels /*&& blob.totalVisibleCount >=3*/)
+  
+  int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
+  int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
+  switch (lanedirection)  {       
+    
+  //case LD_SOUTH:    
+  //  if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+  //    objectstatus = OS_STOPPED;
+  //  else { // moving anyway
+  //    if (deltaY > 0) // moving positively
+  //      objectstatus = OS_MOVING_FORWARD;
+  //    else
+  //      objectstatus = OS_MOVING_BACKWARD;
+  //  }
+  //  break;
+  //case LD_NORTH:
+  //  if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+  //    objectstatus = OS_STOPPED;
+  //  else { // moving anyway
+  //    if (deltaY > 0) // moving positively
+  //      objectstatus = OS_MOVING_BACKWARD;
+  //    else
+  //      objectstatus = OS_MOVING_FORWARD;
+  //  }
+  //  break;
+  case LD_SOUTH:
+  case LD_NORTH:
+    if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
       objectstatus = OS_STOPPED;
     else { // moving anyway
-      if (deltaX > 0) // moving positively
-        objectstatus = OS_MOVING_FORWARD;
-      else
-        objectstatus = OS_MOVING_BACKWARD;
+      objectstatus = (lanedirection == LD_SOUTH)? (deltaY > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaY > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
     }
-  }
-  else if (lanedirection == LD_VERTICAL) {
-    int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y;
-    if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3)
+    break;
+
+  case LD_EAST:
+  case LD_WEST:
+    if (abs(deltaX) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
       objectstatus = OS_STOPPED;
     else { // moving anyway
-      if (deltaY > 0) // moving positively
-        objectstatus = OS_MOVING_FORWARD;
-      else
-        objectstatus = OS_MOVING_BACKWARD;
+      objectstatus = (lanedirection == LD_EAST) ? (deltaX > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaX > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
     }
-  }
-  else {
+    break;
+
+  case LD_NORTHEAST:
+  case LD_SOUTHWEST:    
+    if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+      objectstatus = OS_STOPPED;
+    else { // moving anyway
+      objectstatus = (lanedirection == LD_NORTHEAST) ? ((deltaX > 0 || deltaY < 0 )? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY <0)? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+    }
+    break;
+
+  case LD_SOUTHEAST:
+  case LD_NORTHWEST:  
+    if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+      objectstatus = OS_STOPPED;
+    else { // moving anyway
+      objectstatus = (lanedirection == LD_SOUTHEAST) ? ((deltaX > 0 || deltaY > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+    }
+    break;
+
+  default:
     objectstatus = OS_NOTDETERMINED;
+    break;
   }
+
+  //if (lanedirection == LD_EAST) { // vehicels move horizontally
+  //  int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
+  //  if (abs(deltaX) <= movingThresholdInPixels /*&& blob.totalVisibleCount >=3*/)
+  //    objectstatus = OS_STOPPED;
+  //  else { // moving anyway
+  //    if (deltaX > 0) // moving positively
+  //      objectstatus = OS_MOVING_FORWARD;
+  //    else
+  //      objectstatus = OS_MOVING_BACKWARD;
+  //  }
+  //}
+  //else if (lanedirection == LD_SOUTH) { // 
+  //  int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering
+  //  if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+  //    objectstatus = OS_STOPPED;
+  //  else { // moving anyway
+  //    if (deltaY > 0) // moving positively
+  //      objectstatus = OS_MOVING_FORWARD;
+  //    else
+  //      objectstatus = OS_MOVING_BACKWARD;
+  //  }
+  //}
+  //else {
+  //  objectstatus = OS_NOTDETERMINED;
+  //}
   return objectstatus;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
