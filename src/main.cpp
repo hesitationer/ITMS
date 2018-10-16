@@ -100,15 +100,15 @@ bool debugShowImages = true;
 bool debugShowImagesDetail = true;
 bool debugTrace = true;
 bool debugTime = true;
-int numberOfTracePoints = 15;	// 추적 그림에 나타내어지는 트랙킹 포인트 개수
-int minVisibleCount = 3;		// minimum survival consecutive frame for noise removal effect
-int maxCenterPts = 300;			// maximum number of center points (frames), about 10 sec.
+int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
+int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
+int maxCenterPts = 300;			  // maximum number of center points (frames), about 10 sec.
 int maxNumOfConsecutiveInFramesWithoutAMatch = 5; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
-int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30)
+int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30) at day, 
 
-bool isWriteToFile = false;
+bool isWriteToFile = true;
 
 LaneDirection ldirection = LD_NORTHEAST; // vertical lane
 BgSubType bgsubtype = BGS_DIF;
@@ -601,6 +601,8 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // it should inspect after predicting the next position
+// it determines the status away at most 5 frame distance from past locations
+// it shoud comes from the average but for efficiency, does come from the several past location. 
 ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount) {
   ObjectStatus objectstatus=ObjectStatus::OS_NOTDETERMINED; 
   if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
@@ -608,6 +610,17 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
 
   int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
   int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
+  int numPositions = (int)blob.centerPositions.size();
+  int maxNumPosition = 5;
+
+  if (numPositions <= 1) {
+    deltaX = 0; deltaY = 0;
+  }
+  else {
+    deltaX = blob.predictedNextPosition.x - blob.centerPositions[min(numPositions,maxNumPosition) - 1].x;
+    deltaY = blob.predictedNextPosition.y - blob.centerPositions[min(numPositions, maxNumPosition) - 1].y;
+  }
+  // moving average가 필요하면 predictNextPosition 참조.
   switch (lanedirection)  {       
     
   //case LD_SOUTH:    
