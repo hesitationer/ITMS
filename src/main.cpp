@@ -51,7 +51,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
 double distanceBetweenPoints(cv::Point point1, cv::Point point2);
-ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels);
+ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount=3);
 void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName);
 void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);
@@ -100,12 +100,12 @@ bool debugShowImages = true;
 bool debugShowImagesDetail = true;
 bool debugTrace = true;
 bool debugTime = true;
-int numberOfTracePoints = 15;
-int minVisibleCount = 3;	// minimum survival consecutive frame for noise removal effect
-int maxCenterPts = 300;		// maximum number of center points (frames)
-int maxNumOfConsecutiveInFramesWithoutAMatch = 5;
+int numberOfTracePoints = 15;	// 추적 그림에 나타내어지는 트랙킹 포인트 개수
+int minVisibleCount = 3;		// minimum survival consecutive frame for noise removal effect
+int maxCenterPts = 300;			// maximum number of center points (frames), about 10 sec.
+int maxNumOfConsecutiveInFramesWithoutAMatch = 5; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
-int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor
+int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
 int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30)
 
 bool isWriteToFile = false;
@@ -506,7 +506,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		else {
 			existingBlob->blnCurrentMatchFoundOrNewBlob = false;
 			existingBlob->predictNextPosition();
-      existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels);
+      existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
 			++existingBlob;
 		}
     }
@@ -601,9 +601,11 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // it should inspect after predicting the next position
-ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels) {
-  ObjectStatus objectstatus; 
-  
+ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount) {
+  ObjectStatus objectstatus=ObjectStatus::OS_NOTDETERMINED; 
+  if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
+	  return objectstatus;
+
   int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
   int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
   switch (lanedirection)  {       
@@ -630,7 +632,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
   //  break;
   case LD_SOUTH:
   case LD_NORTH:
-    if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+    if (abs(deltaY) <= movingThresholdInPixels ) 
       objectstatus = OS_STOPPED;
     else { // moving anyway
       objectstatus = (lanedirection == LD_SOUTH)? (deltaY > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaY > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -639,7 +641,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
 
   case LD_EAST:
   case LD_WEST:
-    if (abs(deltaX) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+    if (abs(deltaX) <= movingThresholdInPixels) // 
       objectstatus = OS_STOPPED;
     else { // moving anyway
       objectstatus = (lanedirection == LD_EAST) ? (deltaX > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaX > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -648,7 +650,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
 
   case LD_NORTHEAST:
   case LD_SOUTHWEST:    
-    if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+    if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
       objectstatus = OS_STOPPED;
     else { // moving anyway
       objectstatus = (lanedirection == LD_NORTHEAST) ? ((deltaX > 0 || deltaY < 0 )? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY <0)? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -657,7 +659,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
 
   case LD_SOUTHEAST:
   case LD_NORTHWEST:  
-    if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
+    if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
       objectstatus = OS_STOPPED;
     else { // moving anyway
       objectstatus = (lanedirection == LD_SOUTHEAST) ? ((deltaX > 0 || deltaY > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
