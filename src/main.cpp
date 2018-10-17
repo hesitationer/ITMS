@@ -47,6 +47,7 @@ const cv::Scalar SCALAR_CYAN = cv::Scalar(255.0, 255.0, 0.0);
 
 
 // function prototypes ////////////////////////////////////////////////////////////////////////////
+void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs);
 void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
@@ -98,6 +99,7 @@ enum BgSubType { // background substractor type
 // parameters
 bool debugShowImages = true;
 bool debugShowImagesDetail = true;
+bool debugGeneral = true;
 bool debugTrace = true;
 bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
@@ -441,6 +443,18 @@ int main(void) {
 			// all of the currentFrameBlobs at this stage have 1 visible count yet. 
 			drawAndShowContours(imgThresh.size(), currentFrameBlobs, "imgCurrentFrameBlobs");
 		}
+    // merge assuming
+    // blobs are in the ROI because of ROI map
+    // 남북 이동시는 가로가 세로보다 커야 한다.
+    // 
+    
+    mergeBlobsInCurrentFrameBlobs(currentFrameBlobs);
+    if (debugShowImages && debugShowImagesDetail) {
+      drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
+      waitKey(100);
+    }
+
+
 
         if (blnFirstFrame == true) {
             for (auto &currentFrameBlob : currentFrameBlobs) {
@@ -512,7 +526,96 @@ int main(void) {
 #endif // _sk_Memory_Leakag_Detector	
     return(0);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void copyBlob2Blob(Blob &srcBlob, Blob &tgtBlob) {
 
+  tgtBlob.currentContour.clear();
+  for (int i = 0; i < srcBlob.currentContour.size(); i++)
+    tgtBlob.currentContour.push_back(srcBlob.currentContour.at(i));
+
+  tgtBlob.currentBoundingRect = srcBlob.currentBoundingRect;
+  
+  tgtBlob.centerPositions.clear();
+  tgtBlob.centerPositions.push_back(srcBlob.centerPositions.back());
+
+  
+  tgtBlob.dblCurrentDiagonalSize = srcBlob.dblCurrentDiagonalSize;
+
+  tgtBlob.dblCurrentAspectRatio = srcBlob.dblCurrentAspectRatio;
+
+  tgtBlob.blnStillBeingTracked = srcBlob.blnStillBeingTracked;
+  tgtBlob.blnCurrentMatchFoundOrNewBlob = tgtBlob.blnCurrentMatchFoundOrNewBlob;
+
+  tgtBlob.intNumOfConsecutiveFramesWithoutAMatch = srcBlob.intNumOfConsecutiveFramesWithoutAMatch;
+
+  tgtBlob.age = srcBlob.age;
+  tgtBlob.totalVisibleCount = srcBlob.totalVisibleCount;
+  tgtBlob.showId = srcBlob.showId;
+  // object status information
+  tgtBlob.oc = srcBlob.oc;
+  tgtBlob.os = srcBlob.os;
+  tgtBlob.od = srcBlob.od; // lane direction will affect the result, and the lane direction will be given
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
+  std::vector<Blob>::iterator currentBlob = currentFrameBlobs.begin();
+  while (currentBlob != currentFrameBlobs.end()) {
+    int intIndexOfLeastDistance = -1;
+    double dblLeastDistance = 100000.0;
+    for (unsigned int i = 0; i < currentFrameBlobs.size(); i++) {     
+
+      double dblDistance = distanceBetweenPoints(currentBlob->centerPositions.back(), currentFrameBlobs[i].centerPositions.back());      
+      
+      if (dblDistance > 1/* same object */ &&  dblDistance < dblLeastDistance) { // center locations should be in the range
+
+        dblLeastDistance = dblDistance;
+        intIndexOfLeastDistance = i;
+      }
+    }
+    // at this point we have nearest countours
+    if (intIndexOfLeastDistance < 0) {
+      ++currentBlob;
+      continue;
+    }
+    
+    // check the conditions
+    if (dblLeastDistance < currentBlob->dblCurrentDiagonalSize*1.25/*should be car size */) {
+      cv::Rect cFBrect = currentFrameBlobs[intIndexOfLeastDistance].currentBoundingRect;
+      Point cB = currentBlob->centerPositions.back();
+      bool flagMerge = false;
+      if (ldirection == LD_EAST || ldirection == LD_WEST /* horizontal*/) {
+        if ((cB.y >= cFBrect.y - (round)((float)(cFBrect.height) / 2.)) && (cB.y <= cFBrect.y + (round)((float)(cFBrect.height) / 2.)))
+          flagMerge = true;
+      }
+      else { // other lane direction only considers width and its center point
+        if ((cB.x >= cFBrect.x - (round)((float)(cFBrect.width) / 2.)) && (cB.x <= cFBrect.x + (round)((float)(cFBrect.width) / 2.)))
+          flagMerge = true;
+      }
+      // merge and erase index blob
+      if (flagMerge) {
+        if(debugGeneral)
+        cout << "mergeing with " << to_string(intIndexOfLeastDistance)<<" in blob" <<currentBlob->centerPositions.back() << endl;
+
+        // countour merging
+        std::vector<cv::Point> points, contour;
+        points.insert(points.end(), currentBlob->currentContour.begin(), currentBlob->currentContour.end());
+        points.insert(points.end(), currentFrameBlobs[intIndexOfLeastDistance].currentContour.begin(), currentFrameBlobs[intIndexOfLeastDistance].currentContour.end());
+        convexHull(cv::Mat(points), contour);
+        itms::Blob blob(contour);
+        //currentBlob = blob;
+        copyBlob2Blob(blob, *currentBlob);
+        std::vector<Blob>::iterator tempBlob = currentFrameBlobs.begin();
+       currentBlob = currentFrameBlobs.erase(tempBlob+intIndexOfLeastDistance);       
+       // do something after real merge
+       continue;
+      }    
+      
+    }    
+      ++currentBlob;    
+  }
+  
+ 
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
 	std::vector<Blob>::iterator existingBlob = existingBlobs.begin();
@@ -644,28 +747,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
     deltaY = blob.predictedNextPosition.y - blob.centerPositions[min(numPositions, maxNumPosition) - 1].y;
   }
   // moving average가 필요하면 predictNextPosition 참조.
-  switch (lanedirection)  {       
-    
-  //case LD_SOUTH:    
-  //  if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
-  //    objectstatus = OS_STOPPED;
-  //  else { // moving anyway
-  //    if (deltaY > 0) // moving positively
-  //      objectstatus = OS_MOVING_FORWARD;
-  //    else
-  //      objectstatus = OS_MOVING_BACKWARD;
-  //  }
-  //  break;
-  //case LD_NORTH:
-  //  if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
-  //    objectstatus = OS_STOPPED;
-  //  else { // moving anyway
-  //    if (deltaY > 0) // moving positively
-  //      objectstatus = OS_MOVING_BACKWARD;
-  //    else
-  //      objectstatus = OS_MOVING_FORWARD;
-  //  }
-  //  break;
+  switch (lanedirection)  { 
   case LD_SOUTH:
   case LD_NORTH:
     if (abs(deltaY) <= movingThresholdInPixels ) 
@@ -706,32 +788,7 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
     objectstatus = OS_NOTDETERMINED;
     break;
   }
-
-  //if (lanedirection == LD_EAST) { // vehicels move horizontally
-  //  int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
-  //  if (abs(deltaX) <= movingThresholdInPixels /*&& blob.totalVisibleCount >=3*/)
-  //    objectstatus = OS_STOPPED;
-  //  else { // moving anyway
-  //    if (deltaX > 0) // moving positively
-  //      objectstatus = OS_MOVING_FORWARD;
-  //    else
-  //      objectstatus = OS_MOVING_BACKWARD;
-  //  }
-  //}
-  //else if (lanedirection == LD_SOUTH) { // 
-  //  int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering
-  //  if (abs(deltaY) <= movingThresholdInPixels && blob.totalVisibleCount >= 3) // !! parameter
-  //    objectstatus = OS_STOPPED;
-  //  else { // moving anyway
-  //    if (deltaY > 0) // moving positively
-  //      objectstatus = OS_MOVING_FORWARD;
-  //    else
-  //      objectstatus = OS_MOVING_BACKWARD;
-  //  }
-  //}
-  //else {
-  //  objectstatus = OS_NOTDETERMINED;
-  //}
+ 
   return objectstatus;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -769,7 +826,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
     cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
 
     cv::imshow(strImageName, image);
-    cv::waitKey(1);
+    cv::waitKey(10);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
