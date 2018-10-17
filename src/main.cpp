@@ -103,14 +103,14 @@ bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
 int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
 int maxCenterPts = 300;			  // maximum number of center points (frames), about 10 sec.
-int maxNumOfConsecutiveInFramesWithoutAMatch = 5; // it is used for track update
+int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
 int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30) at day, 
 
-bool isWriteToFile = true;
+bool isWriteToFile = false;
 
-LaneDirection ldirection = LD_NORTHEAST; // vertical lane
+LaneDirection ldirection = LD_NORTH; // vertical lane
 BgSubType bgsubtype = BGS_DIF;
 
 
@@ -187,26 +187,49 @@ int main(void) {
   //Road_ROI_Pts.push_back(road_roi_pts);
   //road_roi_pts.clear();
 
-  //20180911_172930_
+  ////20180911_172930_
+  //// side walk1
+  //road_roi_pts.push_back(Point(1057.25, 83.75)*scaleFactor);
+  //road_roi_pts.push_back(Point(1069.25, 92.75)*scaleFactor);
+  //road_roi_pts.push_back(Point(289.25, 1036.25)*scaleFactor);
+  //road_roi_pts.push_back(Point(103.25, 1009.25)*scaleFactor);
+  //Road_ROI_Pts.push_back(road_roi_pts);
+  //road_roi_pts.clear();
+  //// car lane
+  //road_roi_pts.push_back(Point(1063.25, 89.75)*scaleFactor);
+  //road_roi_pts.push_back(Point(1135.25, 92.75)*scaleFactor);
+  //road_roi_pts.push_back(Point(955.25, 1033.25)*scaleFactor);
+  //road_roi_pts.push_back(Point(253.25, 1039.25)*scaleFactor);
+  //Road_ROI_Pts.push_back(road_roi_pts);
+  //road_roi_pts.clear();
+  //// side walk2
+  //road_roi_pts.push_back(Point(1129.25, 91.25)*scaleFactor);
+  //road_roi_pts.push_back(Point(1157.75, 95.75)*scaleFactor);
+  //road_roi_pts.push_back(Point(1231.25, 1034.75)*scaleFactor);
+  //road_roi_pts.push_back(Point(941.75, 1031.75)*scaleFactor);
+  //Road_ROI_Pts.push_back(road_roi_pts);
+  //road_roi_pts.clear();
+
+  //20180912_112338
   // side walk1
-  road_roi_pts.push_back(Point(1057.25, 83.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1069.25, 92.75)*scaleFactor);
-  road_roi_pts.push_back(Point(289.25, 1036.25)*scaleFactor);
-  road_roi_pts.push_back(Point(103.25, 1009.25)*scaleFactor);
+  road_roi_pts.push_back(Point(932.75, 100.25)*scaleFactor);
+  road_roi_pts.push_back(Point(952.25, 106.25)*scaleFactor);
+  road_roi_pts.push_back(Point(434.75, 1055.75)*scaleFactor);
+  road_roi_pts.push_back(Point(235.25, 1054.25)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
   // car lane
-  road_roi_pts.push_back(Point(1063.25, 89.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1135.25, 92.75)*scaleFactor);
-  road_roi_pts.push_back(Point(955.25, 1033.25)*scaleFactor);
-  road_roi_pts.push_back(Point(253.25, 1039.25)*scaleFactor);
+  road_roi_pts.push_back(Point(949.25, 104.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1015.25, 103.25)*scaleFactor);
+  road_roi_pts.push_back(Point(1105.25, 1048.25)*scaleFactor);
+  road_roi_pts.push_back(Point(416.75, 1057.25)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
   // side walk2
-  road_roi_pts.push_back(Point(1129.25, 91.25)*scaleFactor);
-  road_roi_pts.push_back(Point(1157.75, 95.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1231.25, 1034.75)*scaleFactor);
-  road_roi_pts.push_back(Point(941.75, 1031.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1009.25, 101.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1045.25, 98.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1397.75, 1052.75)*scaleFactor);
+  road_roi_pts.push_back(Point(1087.25, 1049.75)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
 
@@ -368,7 +391,7 @@ int main(void) {
         for (unsigned int i = 0; i < 1; i++) {
             /*cv::dilate(imgThresh, imgThresh, structuringElement5x5);
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-            cv::erode(imgThresh, imgThresh, structuringElement5x5);*/          
+            cv::erode(imgThresh, imgThresh, structuringElement5x5);      */    
           cv::morphologyEx(imgThresh, imgThresh, CV_MOP_CLOSE, structuringElement7x7);
         }
 
