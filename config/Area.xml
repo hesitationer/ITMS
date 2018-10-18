@@ -6,14 +6,15 @@
 <LightVehicleArea>100</LightVehicleArea>
 <BikeArea>50</BikeArea>
 <HumanArea>20</HumanArea>
-  <VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>  // ì£¼ê°„ ë‹¨ë… ë³´í–‰ í›„ , ì£¼í–‰
-  <!--
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>  // ë³´í–‰ 2ëª… ì°¨ëŸ‰ ì •ì°¨ ì‹¤í—˜
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  // ÁÖ°£ ´Üµ¶ º¸Çà ÈÄ , ÁÖÇà
+<!--
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>  // ÁÖ°£ ´Üµ¶ º¸Çà ÈÄ , ÁÖÇà
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>  // º¸Çà 2¸í Â÷·® Á¤Â÷ ½ÇÇè
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
 
-<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>  // ì•¼ê°„ ê°€ë‹¤ ì„œë‹¤ 
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>  // ¾ß°£ °¡´Ù ¼­´Ù 
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath> // ë‹¨ìˆœ ì—­ì£¼í–‰ìœ¼ë¡œ ì˜ ì•ˆë³´ì„
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath> // ´Ü¼ø ¿ªÁÖÇàÀ¸·Î Àß ¾Èº¸ÀÓ
 <VideoPath>"C:\\NEXPA\\rawdata.avi"</VideoPath>
 <VideoPath>"TrafficVideo\\20180912_134130_cam_0.avi"</VideoPath>
 -->

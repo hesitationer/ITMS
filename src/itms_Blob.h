@@ -76,7 +76,7 @@ namespace itms {
     // function prototypes ////////////////////////////////////////////////////////////////////////
     Blob(std::vector<cv::Point> _contour);
     void predictNextPosition(void); // 
-
+	void operator = (const Blob &rhBlob);	// operator overloading
   };
 }
 

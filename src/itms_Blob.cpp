@@ -115,4 +115,32 @@ namespace itms {
     }
 
   }
+  void Blob::operator=(const Blob &rhBlob) { 
+	  currentContour.clear();
+	  for (int i = 0; i < rhBlob.currentContour.size(); i++)
+		  currentContour.push_back(rhBlob.currentContour.at(i));
+
+	  currentBoundingRect = rhBlob.currentBoundingRect;
+
+	  centerPositions.clear();
+	  centerPositions.push_back(rhBlob.centerPositions.back());
+
+
+	  dblCurrentDiagonalSize = rhBlob.dblCurrentDiagonalSize;
+
+	  dblCurrentAspectRatio = rhBlob.dblCurrentAspectRatio;
+
+	  blnStillBeingTracked = rhBlob.blnStillBeingTracked;
+	  blnCurrentMatchFoundOrNewBlob = rhBlob.blnCurrentMatchFoundOrNewBlob;
+
+	  intNumOfConsecutiveFramesWithoutAMatch = rhBlob.intNumOfConsecutiveFramesWithoutAMatch;
+
+	  age = rhBlob.age;
+	  totalVisibleCount = rhBlob.totalVisibleCount;
+	  showId = rhBlob.showId;
+	  // object status information
+	  oc = rhBlob.oc;
+	  os = rhBlob.os;
+	 od = rhBlob.od; // lane direction will affect the result, and the lane direction will be given
+  }
 }

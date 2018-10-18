@@ -544,7 +544,7 @@ void copyBlob2Blob(Blob &srcBlob, Blob &tgtBlob) {
   tgtBlob.dblCurrentAspectRatio = srcBlob.dblCurrentAspectRatio;
 
   tgtBlob.blnStillBeingTracked = srcBlob.blnStillBeingTracked;
-  tgtBlob.blnCurrentMatchFoundOrNewBlob = tgtBlob.blnCurrentMatchFoundOrNewBlob;
+  tgtBlob.blnCurrentMatchFoundOrNewBlob = srcBlob.blnCurrentMatchFoundOrNewBlob;
 
   tgtBlob.intNumOfConsecutiveFramesWithoutAMatch = srcBlob.intNumOfConsecutiveFramesWithoutAMatch;
 
@@ -602,8 +602,8 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
         points.insert(points.end(), currentFrameBlobs[intIndexOfLeastDistance].currentContour.begin(), currentFrameBlobs[intIndexOfLeastDistance].currentContour.end());
         convexHull(cv::Mat(points), contour);
         itms::Blob blob(contour);
-        //currentBlob = blob;
-        copyBlob2Blob(blob, *currentBlob);
+        *currentBlob = blob;
+        //copyBlob2Blob(blob, *currentBlob);
         std::vector<Blob>::iterator tempBlob = currentFrameBlobs.begin();
        currentBlob = currentFrameBlobs.erase(tempBlob+intIndexOfLeastDistance);       
        // do something after real merge
@@ -826,7 +826,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
     cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
 
     cv::imshow(strImageName, image);
-    cv::waitKey(10);
+    cv::waitKey(1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
