@@ -22,6 +22,7 @@
     <ClCompile Include="src\bgsubcnt.cpp" />
     <ClCompile Include="src\itms_Blob.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\utils\itms_utils.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}</ProjectGuid>

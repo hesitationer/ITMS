@@ -11,6 +11,9 @@
 #include "../src/itms_Blob.h"
 #include "../src/bgsubcnt.h"
 
+#include "utils/itms_utils.h"
+
+
 
 #define SHOW_STEPS            // un-comment or comment this line to show steps or not
 //#define HAVE_OPENCV_CONTRIB
@@ -113,7 +116,7 @@ int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~3
 bool isWriteToFile = false;
 
 LaneDirection ldirection = LD_NORTH; // vertical lane
-BgSubType bgsubtype = BGS_DIF;
+BgSubType bgsubtype = BGS_CNT;
 
 
 
@@ -234,6 +237,39 @@ int main(void) {
   road_roi_pts.push_back(Point(1087.25, 1049.75)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
+
+  //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p
+  float camera_height = 11.0 * 100; // camera height 11 meter
+  float lane_length = 200.0 * 100;  // lane length
+  float lane2lane_width = 3.5 * 3* 100; // lane width
+  std::vector<cv::Point2f> srcPts; // skewed ROI source points
+  std::vector<cv::Point2f> tgtPts; // deskewed reference ROI points (rectangular. Top-to-bottom representation but, should be bottom-to-top measure in practice
+
+  srcPts.push_back(Point2f(949.25, 104.75)*scaleFactor); // detect region left-top p0
+  srcPts.push_back(Point2f(1045.25, 98.75)*scaleFactor); // detect region right-top p1
+  srcPts.push_back(Point2f(1397.75, 1052.75)*scaleFactor); // detect region right-bottom p2 
+  srcPts.push_back(Point2f(416.75, 1057.25)*scaleFactor); // detect region left-bottom  p3
+
+  tgtPts.push_back(Point2f(0, 0));                        // pp0
+  tgtPts.push_back(Point2f(lane2lane_width,0));           // pp1
+  tgtPts.push_back(Point2f(lane2lane_width, lane_length));// pp2
+  tgtPts.push_back(Point2f(0, lane_length));              // pp3
+
+  cv::Mat transmtx = cv::getPerspectiveTransform(srcPts, tgtPts);
+  transmtx.convertTo(transmtx, CV_32F);
+
+  cout << " transfromation matrix H: " << transmtx << endl;
+  
+
+  //cv::Point testPx = cv::Point(500, 500)*scaleFactor, HtestPx;
+  cv::Point testPx = cv::Point(Point2f(949.25, 104.75)*scaleFactor), HtestPx;
+  cv::Vec3f testPxVec= cv::Vec3f(testPx.x, testPx.y, 0.);
+  cv::Mat HtestPxVec = transmtx*Mat(testPxVec, transmtx.type());
+
+  cout << " transformed point from " << testPxVec << " to " << HtestPxVec << endl;
+  getchar();
+
+  return 0;
 
 
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
@@ -391,10 +427,10 @@ int main(void) {
 		}        
 
         for (unsigned int i = 0; i < 1; i++) {
-            /*cv::dilate(imgThresh, imgThresh, structuringElement5x5);
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-            cv::erode(imgThresh, imgThresh, structuringElement5x5);      */    
-          cv::morphologyEx(imgThresh, imgThresh, CV_MOP_CLOSE, structuringElement7x7);
+            cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+            cv::erode(imgThresh, imgThresh, structuringElement5x5);      
+          //cv::morphologyEx(imgThresh, imgThresh, CV_MOP_CLOSE, structuringElement7x7);
         }
 
         cv::Mat imgThreshCopy = imgThresh.clone();
@@ -465,11 +501,10 @@ int main(void) {
         }
 		imgFrame2Copy = imgFrame2.clone();          // get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 		if (debugShowImages && debugShowImagesDetail) {
-			drawAndShowContours(imgThresh.size(), blobs, "imgBlobs");
+			drawAndShowContours(imgThresh.size(), blobs, "All imgBlobs");
 		
 			drawBlobInfoOnImage(blobs, imgFrame2Copy);  // blob(tracked) information
-		}
-
+		}    
         //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, intHorizontalLinePosition, carCount);
         bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1],carCount, truckCount, bikeCount);
 
