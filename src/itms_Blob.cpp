@@ -29,6 +29,7 @@ namespace itms {
 
     age = 1;
     totalVisibleCount = 1;
+    id = 0; // track id
     showId = 0;
     // object status information
     oc = OC_OTHER;

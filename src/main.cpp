@@ -60,10 +60,13 @@ float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &tra
 
 // getNCC gets NCC value between background image and a foreground image
 float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
-// 
+
+// type2srt returns the type of cv::Mat
+string type2str(int type); // get Math type()
+
 
 ///////////// callback function --------------------   ///////////////////////////
-void MatchingMethod(int, void*);
+//void MatchingMethod(int, void*);
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -90,6 +93,7 @@ namespace FAV1
   int humanArea = 0;
 
   char VideoPath[512];
+  char BGImagePath[512];
   double StartX = 0;
   double EndX = 0;
   double StartY = 0;
@@ -109,7 +113,9 @@ void loadConfig()
   FAV1::EndY =      cvReadRealByName(fs, 0, "EndY", 0);
 
   const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
+  const char *BGP = cvReadStringByName(fs, NULL, "BGImagePath", NULL);
   strcpy(FAV1::VideoPath, VP);
+  strcpy(FAV1::BGImagePath, BGP);
   cvReleaseFileStorage(&fs);
 }
 enum BgSubType { // background substractor type
@@ -131,17 +137,16 @@ int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track updat
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
 int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30) at day, 
+float BlobNCC_Th = 0.5;                       // blob NCC threshold <0.5 means no BG
 
 bool isWriteToFile = false;
 
 LaneDirection ldirection = LD_NORTH; // vertical lane
-BgSubType bgsubtype = BGS_CNT;
+BgSubType bgsubtype = BGS_DIF;
 
 // template matching algorithm implementation, demo
+
 bool use_mask = false;
-Mat img; Mat templ; Mat result; Mat mask;
-char* image_window = "Source Image";
-char* result_window = "Result window";
 int match_method = cv::TM_CCOEFF_NORMED;
 int max_Trackbar = 5;
 
@@ -177,15 +182,10 @@ int main(void) {
 	int videoLength = 0;
   
 	loadConfig();
-	bool b = capVideo.open(FAV1::VideoPath);
-
-	//capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/CarsDrivingUnderBridge.mp4");
-   //capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/Relaxinghighwaytraffic.mp4");  // 768x576.avi
-	//capVideo.open("c:/sangkny/software/Projects/OpenCV_3_Car_Counting_Cpp-master/OpenCV_3_Car_Counting_Cpp-master/768x576.avi");  // 
-	//capVideo.open("C:/Users/MMC/Downloads/20180329_202747.mp4"); //20180329_202049
-	//capVideo.open("C:/Users/MMC/Downloads/20180329_202049.mp4");
-	//capVideo.open("D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/안개영상/400M이상.avi");
-
+	bool b = capVideo.open(FAV1::VideoPath);  
+  // load background image	
+  cv::Mat BGImage = imread(FAV1::BGImagePath);
+  
 	//std::vector<Point> Road_ROI_Pts;
 	//// relaxinghighwaytraffic.mp4
 	//Road_ROI_Pts.push_back(Point(380, 194)*scaleFactor);
@@ -337,8 +337,8 @@ int main(void) {
 	/* Fast BSA */ // by sangkny
 	//if(bgsubtype == BGS_CNT){ // type selection
 		Ptr<BackgroundSubtractor> pBgSub;
-		//pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
-		pBgSub = createBackgroundSubtractorMOG2();
+		pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
+		//pBgSub = createBackgroundSubtractorMOG2();
 	//}
 
     capVideo.read(imgFrame1);    
@@ -347,7 +347,16 @@ int main(void) {
       return 0;
     resize(imgFrame1, imgFrame1, Size(), scaleFactor, scaleFactor);
     resize(imgFrame2, imgFrame2, Size(), scaleFactor, scaleFactor);
-
+    
+    // background image // gray
+    if (!BGImage.empty()) {
+      resize(BGImage, BGImage, Size(), scaleFactor, scaleFactor);
+      if (BGImage.channels() > 1)
+        cv::cvtColor(BGImage, BGImage, CV_BGR2GRAY);
+    }
+    if (debugShowImages && debugShowImagesDetail) {
+      imshow("BGImage", BGImage);      
+    }
 
 
     /*int intHorizontalLinePosition = (int)std::round((double)imgFrame1.rows * 0.5);
@@ -413,55 +422,24 @@ int main(void) {
     
     if (road_mask.channels() > 1)
       cvtColor(road_mask, road_mask, CV_BGR2GRAY);
-    if (debugShowImages && debugShowImagesDetail) {
+    if (0&& debugShowImages && debugShowImagesDetail) {
       imshow("road mask", road_mask);
       waitKey(1);
     }
 	
-	//// template matching algorithm implementation, demo
-	//bool use_mask=false;
-	//Mat img; Mat templ; Mat result; Mat mask;
-	//char* image_window = "Source Image";
-	//char* result_window = "Result window";
-	//int match_method =cv::TM_CCOEFF_NORMED;
-	//int max_Trackbar = 5;
-	cv::Rect roiRect(200, 200, 50, 50);
-	img = imgFrame1(roiRect);
-	//cvtColor(imgFrame1, img, CV_BGR2GRAY);	
-	//templ = img(roiRect);
-	cvtColor(img, img, CV_BGR2GRAY);
-	templ = img.clone()(Rect(0,0, 50,50));
+	////// template matching algorithm implementation, test code
+	//
+	//cv::Rect roiRect(200, 200, 50, 50);
+	//cv::Mat img = imgFrame1(roiRect);
+	//
+	//cvtColor(img, img, CV_BGR2GRAY);
+	//cv::Mat templ = img.clone()(Rect(0,0, 50,50));
 
-	float NCC = getNCC(img, templ, Mat(), match_method, use_mask);
-	// // replaced by getNCC -------------------------------------------------------
-	//bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
-	//imshow("img", img);
-	//imshow("template image", templ);
-	//if (use_mask && method_accepts_mask)
-	//{
-	//	matchTemplate(img, templ, result, match_method, mask);
-	//}
-	//else
-	//{		
-	//	matchTemplate(img, templ, result, match_method);
-	//}
-	//cout << " NCC value is : " << result << endl;
-	//float ncc = result.at<float>(0,0); // should be float type
-	//cout << " variable ncc: " << ncc << endl;
-	// // end replaced by getNCC --------------------------------------------------
-	// demo starts from here
-	//namedWindow(image_window, WINDOW_AUTOSIZE);
-	//namedWindow(result_window, WINDOW_AUTOSIZE);
+	//float NCC = getNCC(img, templ, Mat(), match_method, use_mask);
+	//
+	//// end template matching algorithm
 
-	//char* trackbar_label = "Method: \n 0: SQDIFF \n 1: SQDIFF NORMED \n 2: TM CCORR \n 3: TM CCORR NORMED \n 4: TM COEFF \n 5: TM COEFF NORMED";
-	//createTrackbar(trackbar_label, image_window, &match_method, max_Trackbar, MatchingMethod);
-	//MatchingMethod(0, 0);
-
-	// end template matching algorithm
-
-	waitKey(0);
-	return 0;
-
+	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
 		double t1 = (double)cvGetTickCount();
@@ -484,11 +462,11 @@ int main(void) {
         Mat bgImage = Mat::zeros(imgFrame2Copy.size(), imgFrame2Copy.type());
         pBgSub->getBackgroundImage(bgImage);
         cv::imshow("backgroundImage", bgImage);
-        if (isWriteToFile && frameCount == 150) {
+        if (isWriteToFile && frameCount == 200) {
           string filename = FAV1::VideoPath;
           filename.append("_"+to_string(scaleFactor)+"x.jpg");
           cv::imwrite(filename, bgImage);
-          std::cout << " background image has been generated !!\n";
+          std::cout << " background image has been generated (!!)\n";
         }
       }
 			// only shadow part
@@ -553,7 +531,25 @@ int main(void) {
               possibleBlob.currentBoundingRect.height > 2 &&
               possibleBlob.dblCurrentDiagonalSize > 3.0 &&
               (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
-              currentFrameBlobs.push_back(possibleBlob);
+              //  new approach according to 
+              // 1. distance, 2. correlation within certain range
+              std::vector<cv::Point2f> blob_ntPts;
+              blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));
+              float realDistance = getDistanceInMeterFromPixels(blob_ntPts, transmtxH, lane_length, false);
+              cv::Rect roi_rect = possibleBlob.currentBoundingRect;
+              float blobncc = 0;
+              if (debugGeneral) {
+                cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" <<cv::Size(roi_rect.width, roi_rect.height)<<" is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+              }
+              // bg image
+              // currnt image
+              
+              /*imshow("bgimage", BGImage(roi_rect));
+              imshow("blob image_roi", imgFrame2Copy(roi_rect));
+              waitKey(0);*/
+              blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask);
+              if(blobncc <= abs(BlobNCC_Th)) // check the correlation with bgground
+                currentFrameBlobs.push_back(possibleBlob);
             }
         }
 		if (debugShowImages && debugShowImagesDetail) {
@@ -565,10 +561,10 @@ int main(void) {
     // 남북 이동시는 가로가 세로보다 커야 한다.
     // 
     
-    mergeBlobsInCurrentFrameBlobs(currentFrameBlobs);
+    mergeBlobsInCurrentFrameBlobs(currentFrameBlobs); // need to consider the distance
     if (debugShowImages && debugShowImagesDetail) {
       drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
-      waitKey(100);
+      waitKey(1);
     }
 
 
@@ -598,9 +594,7 @@ int main(void) {
 			drawCarCountOnImage(carCount, imgFrame2Copy);
 			cv::imshow("imgFrame2Copy", imgFrame2Copy);
 			cv::waitKey(1);
-		}
-
-        //cv::waitKey(0);                 // uncomment this line to go frame by frame for debugging
+		}        
 
         // now we prepare for the next iteration
 
@@ -834,10 +828,12 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
 
   if (currentFrameBlob.totalVisibleCount > 1)
     int temp = 0;
+    // check the size according to the distance from the starting point because NCC is already performed.
+
     currentFrameBlob.blnCurrentMatchFoundOrNewBlob = true;
     currentFrameBlob.id = id;
 	id = (id > 2048) ? 0 : ++id; // reset id according to the max number of type (int) or time (day or week)
-
+   
     existingBlobs.push_back(currentFrameBlob);
 }
 
@@ -1086,6 +1082,12 @@ float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &tra
 
 float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
 	//// template matching algorithm implementation, demo	
+  if (debugGeneralDetail) {
+    string ty = type2str(bgimg.type());
+    printf("Matrix: %s %dx%d \n", ty.c_str(), bgimg.cols, bgimg.rows);
+    ty = type2str(fgtempl.type());
+    printf("Matrix: %s %dx%d \n", ty.c_str(), fgtempl.cols, fgtempl.rows);
+  }
 	assert(bgimg.type() == fgtempl.type());
 	
 	cv::Mat bgimg_gray,fgtempl_gray,res;
@@ -1100,7 +1102,7 @@ float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method
 	}
 
 	bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
-	if (debugShowImages && debugShowImagesDetail) {
+	if (0&& debugShowImages && debugShowImagesDetail) {
 		imshow("img", bgimg_gray);
 		imshow("template image", fgtempl_gray);
 		waitKey(1);
@@ -1124,38 +1126,68 @@ float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method
 }
 
 // call back functions 
-void MatchingMethod(int, void*)
-{
-	Mat img_display;
-	img.copyTo(img_display);
-	int result_cols = img.cols - templ.cols + 1;
-	int result_rows = img.rows - templ.rows + 1;
-	result.create(result_rows, result_cols, CV_32FC1);
-	bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
-	if (use_mask && method_accepts_mask)
-	{
-		matchTemplate(img, templ, result, match_method, mask);
-	}
-	else
-	{
-		matchTemplate(img, templ, result, match_method);
-	}
-	
-	normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
-	double minVal; double maxVal; Point minLoc; Point maxLoc;
-	Point matchLoc;
-	minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
-	if (match_method == TM_SQDIFF || match_method == TM_SQDIFF_NORMED)
-	{
-		matchLoc = minLoc;
-	}
-	else
-	{
-		matchLoc = maxLoc;
-	}
-	rectangle(img_display, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
-	rectangle(result, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
-	imshow(image_window, img_display);
-	imshow(result_window, result);
-	return;
+//// template matching algorithm implementation, demo
+//bool use_mask = false;
+//Mat img; Mat templ; Mat result; Mat mask;
+//char* image_window = "Source Image";
+//char* result_window = "Result window";
+//int match_method = cv::TM_CCOEFF_NORMED;
+//int max_Trackbar = 5;
+//void MatchingMethod(int, void*)
+//{
+//	Mat img_display;
+//	img.copyTo(img_display);
+//	int result_cols = img.cols - templ.cols + 1;
+//	int result_rows = img.rows - templ.rows + 1;
+//	result.create(result_rows, result_cols, CV_32FC1);
+//	bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
+//	if (use_mask && method_accepts_mask)
+//	{
+//		matchTemplate(img, templ, result, match_method, mask);
+//	}
+//	else
+//	{
+//		matchTemplate(img, templ, result, match_method);
+//	}
+//	
+//	normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
+//	double minVal; double maxVal; Point minLoc; Point maxLoc;
+//	Point matchLoc;
+//	minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
+//	if (match_method == TM_SQDIFF || match_method == TM_SQDIFF_NORMED)
+//	{
+//		matchLoc = minLoc;
+//	}
+//	else
+//	{
+//		matchLoc = maxLoc;
+//	}
+//	rectangle(img_display, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
+//	rectangle(result, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
+//	imshow(image_window, img_display);
+//	imshow(result_window, result);
+//	return;
+//}
+
+string type2str(int type) {
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch (depth) {
+  case CV_8U:  r = "8U"; break;
+  case CV_8S:  r = "8S"; break;
+  case CV_16U: r = "16U"; break;
+  case CV_16S: r = "16S"; break;
+  case CV_32S: r = "32S"; break;
+  case CV_32F: r = "32F"; break;
+  case CV_64F: r = "64F"; break;
+  default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans + '0');
+
+  return r;
 }
