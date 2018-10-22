@@ -50,6 +50,24 @@ const cv::Scalar SCALAR_CYAN = cv::Scalar(255.0, 255.0, 0.0);
 
 
 // function prototypes ////////////////////////////////////////////////////////////////////////////
+// utils
+// get distance in Meters from the image locations according to the predefined ROI 
+float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &transmtx /* 3x3*/, float _laneLength=20000, bool flagLaneDirectionTop2Bottom=false);
+// srcPx: pixel location in the image
+// transmtx: H matrix
+// _laneLength: lane distance 0 to the end of roi
+// flagLaneDirectionTop2Bottom : true -> image coord direction is same with distance measure direction, false: opposite
+
+// getNCC gets NCC value between background image and a foreground image
+float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
+// 
+
+///////////// callback function --------------------   ///////////////////////////
+void MatchingMethod(int, void*);
+
+//////////////////////////////////////////////////////////////////////////////////
+
+// general
 void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs);
 void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
@@ -103,6 +121,7 @@ enum BgSubType { // background substractor type
 bool debugShowImages = true;
 bool debugShowImagesDetail = true;
 bool debugGeneral = true;
+bool debugGeneralDetail = false;
 bool debugTrace = true;
 bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
@@ -118,6 +137,13 @@ bool isWriteToFile = false;
 LaneDirection ldirection = LD_NORTH; // vertical lane
 BgSubType bgsubtype = BGS_CNT;
 
+// template matching algorithm implementation, demo
+bool use_mask = false;
+Mat img; Mat templ; Mat result; Mat mask;
+char* image_window = "Source Image";
+char* result_window = "Result window";
+int match_method = cv::TM_CCOEFF_NORMED;
+int max_Trackbar = 5;
 
 
 int main(void) {
@@ -255,23 +281,35 @@ int main(void) {
   tgtPts.push_back(Point2f(lane2lane_width, lane_length));// pp2
   tgtPts.push_back(Point2f(0, lane_length));              // pp3
 
-  cv::Mat transmtx = cv::getPerspectiveTransform(srcPts, tgtPts);
-  transmtx.convertTo(transmtx, CV_32F);
-
-  cout << " transfromation matrix H: " << transmtx << endl;
+  cv::Mat transmtxH = cv::getPerspectiveTransform(srcPts, tgtPts); // homography
   
+  // --------------  confirmation test  -----------------------------------------------------------------
+  // get distance in Meters from the image locations according to the predefined ROI 
+  // get float distanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, HtestPx, cv::Mat &trasmtx /* 3x3*/) 
+  
+  if (debugGeneralDetail) {
+	  cout << " transfromation matrix H: " << transmtxH << endl;	  
+	  std::vector<cv::Point2f> testPx, HtestPx;
+	  testPx.push_back(Point2f(1000, 125)*scaleFactor);	  
+	  cv::perspectiveTransform(testPx, HtestPx, transmtxH);
+	  // test part if the given concept is working or not
+	  // one point mapping to find the real distance 
+	  cout << " transformed point from " << testPx << " to " << cv::Point(HtestPx.back()) << endl;
+	  cout << " the distance (meter) from the start point (bottom line): " << (lane_length - round(HtestPx.back().y)) / 100. << " meters" << endl;
+	  // multi point mapping test
+	  cv::perspectiveTransform(srcPts, tgtPts, transmtxH);
+	  cout << " src Points:\n" << srcPts << endl;
+	  cout << " to : \n" << tgtPts << endl;
+	  // ----------------------------- confirmation test completed --------------------------------------
+  }
+  // 
+  float distance = 0;
+  std::vector<cv::Point2f> testPx;
+  testPx.push_back(Point2f(1000, 125)*scaleFactor);
+  distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
+  cout << " distance: " << distance / 100 << " meters from the starting point.\n";
 
-  //cv::Point testPx = cv::Point(500, 500)*scaleFactor, HtestPx;
-  cv::Point testPx = cv::Point(Point2f(949.25, 104.75)*scaleFactor), HtestPx;
-  cv::Vec3f testPxVec= cv::Vec3f(testPx.x, testPx.y, 0.);
-  cv::Mat HtestPxVec = transmtx*Mat(testPxVec, transmtx.type());
-
-  cout << " transformed point from " << testPxVec << " to " << HtestPxVec << endl;
-  getchar();
-
-  return 0;
-
-
+  
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
 		std::cout << "error reading video file" << std::endl << std::endl;      // show error message
 		_getch();                   // it may be necessary to change or remove this line if not using Windows
@@ -379,8 +417,51 @@ int main(void) {
       imshow("road mask", road_mask);
       waitKey(1);
     }
-
 	
+	//// template matching algorithm implementation, demo
+	//bool use_mask=false;
+	//Mat img; Mat templ; Mat result; Mat mask;
+	//char* image_window = "Source Image";
+	//char* result_window = "Result window";
+	//int match_method =cv::TM_CCOEFF_NORMED;
+	//int max_Trackbar = 5;
+	cv::Rect roiRect(200, 200, 50, 50);
+	img = imgFrame1(roiRect);
+	//cvtColor(imgFrame1, img, CV_BGR2GRAY);	
+	//templ = img(roiRect);
+	cvtColor(img, img, CV_BGR2GRAY);
+	templ = img.clone()(Rect(0,0, 50,50));
+
+	float NCC = getNCC(img, templ, Mat(), match_method, use_mask);
+	// // replaced by getNCC -------------------------------------------------------
+	//bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
+	//imshow("img", img);
+	//imshow("template image", templ);
+	//if (use_mask && method_accepts_mask)
+	//{
+	//	matchTemplate(img, templ, result, match_method, mask);
+	//}
+	//else
+	//{		
+	//	matchTemplate(img, templ, result, match_method);
+	//}
+	//cout << " NCC value is : " << result << endl;
+	//float ncc = result.at<float>(0,0); // should be float type
+	//cout << " variable ncc: " << ncc << endl;
+	// // end replaced by getNCC --------------------------------------------------
+	// demo starts from here
+	//namedWindow(image_window, WINDOW_AUTOSIZE);
+	//namedWindow(result_window, WINDOW_AUTOSIZE);
+
+	//char* trackbar_label = "Method: \n 0: SQDIFF \n 1: SQDIFF NORMED \n 2: TM CCORR \n 3: TM CCORR NORMED \n 4: TM COEFF \n 5: TM COEFF NORMED";
+	//createTrackbar(trackbar_label, image_window, &match_method, max_Trackbar, MatchingMethod);
+	//MatchingMethod(0, 0);
+
+	// end template matching algorithm
+
+	waitKey(0);
+	return 0;
+
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
 		double t1 = (double)cvGetTickCount();
@@ -990,3 +1071,91 @@ void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy) {
 
 }
 
+// utils
+float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &transmtx /* 3x3*/, float _laneLength, bool flagLaneDirectionTop2Bottom) {
+	assert(transmtx.size() == cv::Size(3, 3));
+	std::vector<cv::Point2f> H_Px;
+	bool flagLaneDirection = flagLaneDirectionTop2Bottom;
+	float laneLength = _laneLength, distance = 0;
+
+	cv::perspectiveTransform(srcPx, H_Px, transmtx);
+	distance = (flagLaneDirection)? round(H_Px.back().y): laneLength - round(H_Px.back().y);
+	
+	return distance;
+}
+
+float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
+	//// template matching algorithm implementation, demo	
+	assert(bgimg.type() == fgtempl.type());
+	
+	cv::Mat bgimg_gray,fgtempl_gray,res;
+	float ncc;
+
+	if (bgimg.channels() > 1) {
+		cvtColor(bgimg, bgimg_gray, CV_BGR2GRAY);
+		cvtColor(fgtempl, fgtempl_gray, CV_BGR2GRAY);
+	} {
+		bgimg_gray = bgimg.clone();
+		fgtempl_gray = fgtempl.clone();
+	}
+
+	bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
+	if (debugShowImages && debugShowImagesDetail) {
+		imshow("img", bgimg_gray);
+		imshow("template image", fgtempl_gray);
+		waitKey(1);
+	}
+	if (use_mask && method_accepts_mask)
+	{
+		matchTemplate(bgimg_gray, fgtempl_gray, res, match_method, fgmask);
+	}
+	else
+	{
+		matchTemplate(bgimg_gray, fgtempl_gray, res, match_method);
+	}
+	ncc = res.at<float>(0, 0); // should be float type [-1 1]
+
+	if (debugGeneral) {
+		cout << " NCC value is : " << res << endl;
+		cout << " variable ncc: " << ncc << endl;
+	}
+
+	return ncc;
+}
+
+// call back functions 
+void MatchingMethod(int, void*)
+{
+	Mat img_display;
+	img.copyTo(img_display);
+	int result_cols = img.cols - templ.cols + 1;
+	int result_rows = img.rows - templ.rows + 1;
+	result.create(result_rows, result_cols, CV_32FC1);
+	bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
+	if (use_mask && method_accepts_mask)
+	{
+		matchTemplate(img, templ, result, match_method, mask);
+	}
+	else
+	{
+		matchTemplate(img, templ, result, match_method);
+	}
+	
+	normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
+	double minVal; double maxVal; Point minLoc; Point maxLoc;
+	Point matchLoc;
+	minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
+	if (match_method == TM_SQDIFF || match_method == TM_SQDIFF_NORMED)
+	{
+		matchLoc = minLoc;
+	}
+	else
+	{
+		matchLoc = maxLoc;
+	}
+	rectangle(img_display, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
+	rectangle(result, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar::all(0), 2, 8, 0);
+	imshow(image_window, img_display);
+	imshow(result_window, result);
+	return;
+}
