@@ -353,7 +353,14 @@ int main(void) {
       resize(BGImage, BGImage, Size(), scaleFactor, scaleFactor);
       if (BGImage.channels() > 1)
         cv::cvtColor(BGImage, BGImage, CV_BGR2GRAY);
-    }
+	}
+	else {
+		cout << "Background image is not selected. Please check this out (!)(!)\n";
+		BGImage = imgFrame1.clone();
+		//resize(BGImage, BGImage, Size(), scaleFactor, scaleFactor);
+		if (BGImage.channels() > 1)
+			cv::cvtColor(BGImage, BGImage, CV_BGR2GRAY);
+	}
     if (debugShowImages && debugShowImagesDetail) {
       imshow("BGImage", BGImage);      
     }
