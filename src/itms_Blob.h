@@ -76,6 +76,9 @@ namespace itms {
     // function prototypes ////////////////////////////////////////////////////////////////////////
     Blob(std::vector<cv::Point> _contour);
     void predictNextPosition(void); // 
+    cv::Point weightedPositionAverage(bool bWeighted=false); // weighted centerposition average
+    // numTap: # of coefficients, bWeighted: weighted or uniform (true/false)
+
 	void operator = (const Blob &rhBlob);	// operator overloading
   };
 }

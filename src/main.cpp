@@ -63,6 +63,7 @@ float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method
 
 // type2srt returns the type of cv::Mat
 string type2str(int type); // get Math type()
+int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2);
 
 
 ///////////// callback function --------------------   ///////////////////////////
@@ -742,8 +743,15 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 			&& existingBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) { 
 			// remove from the list of existingBlobs			
 			if (debugTrace) {
-				cout << " (!)! Old blob id: " << existingBlob->id << " is eliminated (blobs Capacity: "<< existingBlobs.capacity()<<")" << endl;				
+				cout << " (!)! Old blob id: " << existingBlob->id << " is eliminated at "<< existingBlob->centerPositions.back()<<"(blobs Capacity: "<< existingBlobs.capacity()<<")" << endl;				
 			}
+      /*if (debugShowImages && debugShowImagesDetail) {
+        cv::Rect rect = existingBlob->currentBoundingRect;
+        imshow("Eliminating blob..", )
+      }*/
+      // overlapping test
+      // if overlapped, we will keep this for next stage,
+
 			existingBlob= existingBlobs.erase(existingBlob);			
 		}
 		else {
@@ -852,20 +860,18 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
   ObjectStatus objectstatus=ObjectStatus::OS_NOTDETERMINED; 
   if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
 	  return objectstatus;
-
-  int deltaX = blob.predictedNextPosition.x - blob.centerPositions.back().x;
-  int deltaY = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
+  
   int numPositions = (int)blob.centerPositions.size();
-  int maxNumPosition = 5;
-
-  if (numPositions <= 1) {
-    deltaX = 0; deltaY = 0;
-  }
-  else {
-    deltaX = blob.predictedNextPosition.x - blob.centerPositions[min(numPositions,maxNumPosition) - 1].x;
-    deltaY = blob.predictedNextPosition.y - blob.centerPositions[min(numPositions, maxNumPosition) - 1].y;
-  }
-  // moving average가 필요하면 predictNextPosition 참조.
+  //int maxNumPosition = 5;
+  bool bweightedAvg = false; // true: weighted average, false: uniform average
+  Blob tmpBlob = blob;  
+  // it will affect the speed because of const Blob declaration in parameters !!!!
+  int deltaX;// = blob.predictedNextPosition.x - blob.centerPositions.back().x;
+  int deltaY;// = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
+  cv::Point wpa = tmpBlob.weightedPositionAverage(bweightedAvg);
+  deltaX = blob.predictedNextPosition.x - wpa.x;
+  deltaY = blob.predictedNextPosition.y - wpa.y;
+  
   switch (lanedirection)  { 
   case LD_SOUTH:
   case LD_NORTH:
@@ -1197,4 +1203,30 @@ string type2str(int type) {
   r += (chans + '0');
 
   return r;
+}
+int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2) {
+  // -------------------------------------
+  // returns intersection status
+  // no intersection -1,
+  // exist intersect 0
+  // rect1 includes rect2 1
+  // rect2 includes rect2 2
+  // -------------------------------------
+  int retvalue = -1;
+  
+  cv::Rect intRect = (rect1 & rect2);
+  bool intersects = (intRect.area() > 0); // intersection 
+  if (intersects) {
+    retvalue = 0;
+    if (rect1.area() > rect2.area()) {
+      if (rect2.area() == intRect.area())
+        retvalue = 1;
+    }
+    else {
+      if (rect1.area() == intRect.area())
+        retvalue = 2;
+    }
+  }    
+  
+  return retvalue;
 }
