@@ -720,7 +720,7 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
         points.insert(points.end(), currentFrameBlobs[intIndexOfLeastDistance].currentContour.begin(), currentFrameBlobs[intIndexOfLeastDistance].currentContour.end());
         convexHull(cv::Mat(points), contour);
         itms::Blob blob(contour);
-        *currentBlob = blob;
+        *currentBlob = blob;      // class Blob = operator overloading
         //copyBlob2Blob(blob, *currentBlob);
         std::vector<Blob>::iterator tempBlob = currentFrameBlobs.begin();
        currentBlob = currentFrameBlobs.erase(tempBlob+intIndexOfLeastDistance);       
@@ -741,18 +741,58 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		// check if a block is too old after disappeared in the screen
 		if (existingBlob->blnStillBeingTracked == false 
 			&& existingBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) { 
-			// remove from the list of existingBlobs			
-			if (debugTrace) {
-				cout << " (!)! Old blob id: " << existingBlob->id << " is eliminated at "<< existingBlob->centerPositions.back()<<"(blobs Capacity: "<< existingBlobs.capacity()<<")" << endl;				
-			}
-      /*if (debugShowImages && debugShowImagesDetail) {
-        cv::Rect rect = existingBlob->currentBoundingRect;
-        imshow("Eliminating blob..", )
-      }*/
-      // overlapping test
-      // if overlapped, we will keep this for next stage,
+			// removing a blob from the list of existingBlobs						
+      // overlapping test if overlapped or background, we will erase.
+      std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
+      int intIndexOfOverlapped = -1;
+      double dblLeastDistance = 100000.0;
+      for (unsigned int i = 0; i < existingBlobs.size(); i++) {
+        int intSect = InterSectionRect(existingBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
 
-			existingBlob= existingBlobs.erase(existingBlob);			
+        if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated
+          overlappedBobPair.push_back(std::pair<int, int>(i, intSect));
+        }
+      }
+
+      // erase the blob
+      if (overlappedBobPair.size() > 0) { // how about itself ? 
+        if (debugTrace /*&& debugGeneralDetail*/) {
+          cout << " (!)==> Old and deserted blob id: " << existingBlob->id << " is eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height)<<"\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
+          cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
+          cout << "age: " << existingBlob->age << endl;
+          cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
+        }
+        existingBlob = existingBlobs.erase(existingBlob);
+      }
+      else{ // partial or no overlapped
+        // conditional elimination
+        if (debugTrace /* && debugGeneralDetail*/) {
+          cout << " (!)! Old blob id: " << existingBlob->id << " is conditionally eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
+          cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
+          cout << "age: " << existingBlob->age << endl;
+          cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
+        }
+        if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
+          // this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
+          // 아직은 center 값을 늘렸음....
+          if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
+            cout << "\n\n\n\n ----------------------> stopped object eliminated \n\n\n\n";
+
+            existingBlob = existingBlobs.erase(existingBlob);
+            //waitKey(0);
+          } {
+            existingBlob->blnCurrentMatchFoundOrNewBlob = false;
+            existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
+            existingBlob->predictNextPosition();
+            existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
+            ++existingBlob;
+            continue;
+          }
+        }
+        else {
+          existingBlob = existingBlobs.erase(existingBlob);
+        }
+      }
 		}
 		else {
 			existingBlob->blnCurrentMatchFoundOrNewBlob = false;
@@ -760,11 +800,9 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
       existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
 			++existingBlob;
 		}
-    }
+  } // end while ( existingBlob != existingBlobs.end())
 	/*for (auto &existingBlob : existingBlobs) {	
-
 		existingBlob.blnCurrentMatchFoundOrNewBlob = false;
-
 		existingBlob.predictNextPosition();
 	}*/
 
@@ -943,7 +981,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
     std::vector<std::vector<cv::Point> > contours;
 
     for (auto &blob : blobs) {
-        if (blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/) {
+        if (1 || blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/) {
             contours.push_back(blob.currentContour);
         }
     }
