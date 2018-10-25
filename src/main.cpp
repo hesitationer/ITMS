@@ -77,7 +77,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
 double distanceBetweenPoints(cv::Point point1, cv::Point point2);
-ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount=3);
+ObjectStatus getObjectStatusFromBlobCenters(Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount=3);
 void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName);
 void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);
@@ -777,14 +777,13 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
           // 아직은 center 값을 늘렸음....
           if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
             cout << "\n\n\n\n ----------------------> stopped object eliminated \n\n\n\n";
-
             existingBlob = existingBlobs.erase(existingBlob);
             //waitKey(0);
           } {
             existingBlob->blnCurrentMatchFoundOrNewBlob = false;
             existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
             existingBlob->predictNextPosition();
-            existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
+            //existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
             ++existingBlob;
             continue;
           }
@@ -797,7 +796,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		else {
 			existingBlob->blnCurrentMatchFoundOrNewBlob = false;
 			existingBlob->predictNextPosition();
-      existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
+      //existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
 			++existingBlob;
 		}
   } // end while ( existingBlob != existingBlobs.end())
@@ -806,6 +805,9 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		existingBlob.predictNextPosition();
 	}*/
 
+  // serch around the nearest neighbor blob for tracking
+  // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
+  // with data, kalman or other tracking will be more accurate
     for (auto &currentFrameBlob : currentFrameBlobs) {
 
         int intIndexOfLeastDistance = 0;
@@ -836,7 +838,10 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
         }
 
     }
+
     // update tracks 
+    // 2018. 10. 25 getObjectStatusFromBlobCenters 을 전반부에서 이동.. 그리고, 각종 object status object classification을 여기서 함..
+
     for (auto &existingBlob : existingBlobs) { // update track routine
 
         if (existingBlob.blnCurrentMatchFoundOrNewBlob == false) { // unassigned tracks
@@ -853,7 +858,12 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
         if (existingBlob.intNumOfConsecutiveFramesWithoutAMatch >= maxNumOfConsecutiveInFramesWithoutAMatch/* 1sec. it should be a predefined threshold */) {
             existingBlob.blnStillBeingTracked = false; /* still in the list of blobs */			
         }
+        // object status, class update routine starts
+        // object status
+        existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
+        // object classfication according to distance and width/height ratio, area 
 
+        // object status, class update routine ends
     }
 
 }
@@ -883,10 +893,10 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
     int temp = 0;
     // check the size according to the distance from the starting point because NCC is already performed.
 
-    currentFrameBlob.blnCurrentMatchFoundOrNewBlob = true;
-    currentFrameBlob.id = id;
-	id = (id > 2048) ? 0 : ++id; // reset id according to the max number of type (int) or time (day or week)
-   
+    currentFrameBlob.blnCurrentMatchFoundOrNewBlob = true;    
+	  id = (id > 2048) ? 0 : ++id; // reset id according to the max number of type (int) or time (day or week)
+    currentFrameBlob.id = id;    
+    assert(currentFrameBlob.startPoint == currentFrameBlob.centerPositions.back()); // always true
     existingBlobs.push_back(currentFrameBlob);
 }
 
@@ -894,7 +904,7 @@ void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &i
 // it should inspect after predicting the next position
 // it determines the status away at most 5 frame distance from past locations
 // it shoud comes from the average but for efficiency, does come from the several past location. 
-ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount) {
+ObjectStatus getObjectStatusFromBlobCenters( Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount) {
   ObjectStatus objectstatus=ObjectStatus::OS_NOTDETERMINED; 
   if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
 	  return objectstatus;
@@ -951,7 +961,53 @@ ObjectStatus getObjectStatusFromBlobCenters(const Blob &blob, const LaneDirectio
     objectstatus = OS_NOTDETERMINED;
     break;
   }
- 
+
+  // update object state and return the current estimated state (redundant because we already update the os status and update again later outside the function
+  // 2018. 10. 25
+  // 0. current os status will be previous status after update
+  itms::ObjectStatus prevOS = blob.os;
+  switch (objectstatus) { // at this point, blob.os is the previous status !!!
+  case OS_NOTDETERMINED:
+    blob.os_notdetermined_cnter++;
+    blob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+    blob.os_NumOfConsecutivemvForward_cnter = 0;
+    blob.os_NumOfConsecutivemvBackward_cnter = 0; 
+
+    break;
+
+  case OS_STOPPED:
+    blob.os_stopped_cnter++;
+    blob.os_NumOfConsecutiveStopped_cnter = (prevOS == OS_STOPPED) ? blob.os_NumOfConsecutiveStopped_cnter + 1: 1;      
+    //blob.os_NumOfConsecutiveStopped_cnter = 1;  // reset the consecutive counter
+    blob.os_NumOfConsecutivemvForward_cnter = 0;
+    blob.os_NumOfConsecutivemvBackward_cnter = 0;
+
+    break;
+
+  case OS_MOVING_FORWARD:
+    blob.os_mvForward_cnter++;
+    blob.os_NumOfConsecutivemvForward_cnter =(prevOS == OS_MOVING_FORWARD)? blob.os_NumOfConsecutivemvForward_cnter+1: 1;    
+    blob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+    //blob.os_NumOfConsecutivemvForward_cnter = 1;
+    blob.os_NumOfConsecutivemvBackward_cnter = 0;
+    break;
+
+  case OS_MOVING_BACKWARD:
+    blob.os_mvBackward_cnter++;
+    blob.os_NumOfConsecutivemvBackward_cnter = (prevOS == OS_MOVING_BACKWARD)? blob.os_NumOfConsecutivemvBackward_cnter+1: 1;
+    blob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+    blob.os_NumOfConsecutivemvForward_cnter = 0;
+    //blob.os_NumOfConsecutivemvBackward_cnter = 1;
+    break;
+
+  defualt:
+    // no nothing...
+    cout << " object status is not correct!! inside getObjectStatusFromBlbCenters \n";
+    break;
+  }
+  // determine the object status with probability computations
+  
+
   return objectstatus;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////

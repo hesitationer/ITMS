@@ -58,14 +58,14 @@ namespace itms {
     double dblCurrentAspectRatio;
 
     bool blnCurrentMatchFoundOrNewBlob;
-
     bool blnStillBeingTracked;
-
     int intNumOfConsecutiveFramesWithoutAMatch;   // consecutiveInvisibleCount    
     int age;                                      // how many frames passed after birth
     int totalVisibleCount;                        // how many times Visible total whatever appear or disappeared
     int id;                                       // will be given
     int showId;                                   // display id
+    // distance from starting point (0 meter(x100 centimeters))
+    cv::Point startPoint; // save start center Point of the blob
 	// blob 
     // blob object status information
     ObjectClass oc;	
@@ -77,7 +77,7 @@ namespace itms {
 	int oc_other_cnter;
 	double oc_prob;		  // oc probability
 
-	int os_stopped_cnter; // object status counter
+	int os_stopped_cnter;                   // object status counter
 	int os_mvForward_cnter;	
 	int os_mvBackward_cnter;	
 	int os_notdetermined_cnter;

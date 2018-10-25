@@ -12,9 +12,12 @@ namespace itms {
     currentBoundingRect = cv::boundingRect(currentContour);
 
     cv::Point currentCenter;
-
+    
     currentCenter.x = (currentBoundingRect.x + currentBoundingRect.x + currentBoundingRect.width) / 2;
     currentCenter.y = (currentBoundingRect.y + currentBoundingRect.y + currentBoundingRect.height) / 2;
+
+    // object start center point to save the starting distance from the starting point later
+    startPoint = currentCenter;
 
     centerPositions.push_back(currentCenter);
 
@@ -31,6 +34,8 @@ namespace itms {
     totalVisibleCount = 1;
     id = 0; // track id
     showId = 0;
+    
+
     // object status information
     oc = OC_OTHER;
     os = OS_NOTDETERMINED;
@@ -159,6 +164,9 @@ namespace itms {
 	  age = rhBlob.age;
 	  totalVisibleCount = rhBlob.totalVisibleCount;
 	  showId = rhBlob.showId;
+    // starting point
+    startPoint = rhBlob.startPoint; // start in Y direction, it will initiated at adding new blob
+    
 	  // object status information
 	  oc = rhBlob.oc;
 	  os = rhBlob.os;
