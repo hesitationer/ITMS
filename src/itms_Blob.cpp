@@ -35,6 +35,26 @@ namespace itms {
     oc = OC_OTHER;
     os = OS_NOTDETERMINED;
     od = OD_ND; // lane direction will affect the result, and the lane direction will be given
+
+	// counters
+	oc_vehicle_cnter=0; // objectClass vehicle counter
+	oc_human_cnter = 0;
+	oc_other_cnter = 0;
+	oc_prob = 0;		  // oc probability
+
+	os_stopped_cnter = 0; // object status counter
+	os_mvForward_cnter = 0;
+	os_mvBackward_cnter = 0;
+	os_notdetermined_cnter = 0;
+	os_NumOfConsecutiveStopped_cnter = 0;
+	os_NumOfConsecutivemvForward_cnter = 0;	// number of consecutive moving forward counter, it can not be larger than os_mvForward_cnter
+	os_NumOfConsecutivemvBackward_cnter = 0;
+	os_pro = 0;			// os probability
+
+	//Objec NotifyMessage;	// message notification flag
+	bNotifyMessage = false;
+	oc_notified = OC_OTHER; // final notified object class
+	os_notified = OS_NOTDETERMINED; // final notified object status
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,6 +163,27 @@ namespace itms {
 	  oc = rhBlob.oc;
 	  os = rhBlob.os;
 	 od = rhBlob.od; // lane direction will affect the result, and the lane direction will be given
+
+					 // counters
+	 oc_vehicle_cnter = rhBlob.oc_vehicle_cnter; // objectClass vehicle counter
+	 oc_human_cnter = rhBlob.oc_human_cnter;
+	 oc_other_cnter = rhBlob.oc_other_cnter;
+	 oc_prob = rhBlob.oc_prob;		  // oc probability
+
+	 os_stopped_cnter = rhBlob.os_stopped_cnter; // object status counter
+	 os_mvForward_cnter = rhBlob.os_mvForward_cnter;
+	 os_mvBackward_cnter = rhBlob.os_mvBackward_cnter;
+	 os_notdetermined_cnter = rhBlob.os_notdetermined_cnter;
+	 os_NumOfConsecutiveStopped_cnter = rhBlob.os_NumOfConsecutiveStopped_cnter;
+	 os_NumOfConsecutivemvForward_cnter = rhBlob.os_NumOfConsecutivemvForward_cnter;	// number of consecutive moving forward counter, it can not be larger than os_mvForward_cnter
+	 os_NumOfConsecutivemvBackward_cnter = rhBlob.os_NumOfConsecutivemvBackward_cnter;
+	 os_pro = rhBlob.os_pro;			// os probability
+
+	 // Message Notification
+	 bNotifyMessage = rhBlob.bNotifyMessage;
+	 oc_notified = rhBlob.oc_notified; // final notified object class
+	 os_notified = rhBlob.os_notified; // final notified object status
+
   }
 
   cv::Point Blob::weightedPositionAverage(bool bWeighted) {

@@ -66,10 +66,29 @@ namespace itms {
     int totalVisibleCount;                        // how many times Visible total whatever appear or disappeared
     int id;                                       // will be given
     int showId;                                   // display id
+	// blob 
     // blob object status information
-    ObjectClass oc;
+    ObjectClass oc;	
     ObjectStatus os;
     ObjectDirection od; // lane direction will affect the result, and the lane direction will be given
+	// counters
+	int oc_vehicle_cnter; // objectClass vehicle counter
+	int oc_human_cnter;
+	int oc_other_cnter;
+	double oc_prob;		  // oc probability
+
+	int os_stopped_cnter; // object status counter
+	int os_mvForward_cnter;	
+	int os_mvBackward_cnter;	
+	int os_notdetermined_cnter;
+	int os_NumOfConsecutiveStopped_cnter;
+	int os_NumOfConsecutivemvForward_cnter;	// number of consecutive moving forward counter, it can not be larger than os_mvForward_cnter
+	int os_NumOfConsecutivemvBackward_cnter;
+	double os_pro;			// os probability
+
+	bool bNotifyMessage;	// message notification flag
+	ObjectClass oc_notified; // final notified object class
+	ObjectStatus os_notified; // final notified object status
 
     cv::Point predictedNextPosition; // corresponding to particles in Surveillance Camera
 
