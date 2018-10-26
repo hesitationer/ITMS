@@ -71,7 +71,7 @@ int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2);
 
 //////////////////////////////////////////////////////////////////////////////////
 
-// general
+// general : blob image processing (blob_imp)
 void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs);
 void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
@@ -84,6 +84,8 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLine
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, cv::Point Pt1, cv::Point Pt2, int &carCount, int &truckCount, int &bikeCount);
 void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy);
 void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
+void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus); // update simple blob properties including os counters
+ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace FAV1
@@ -805,7 +807,9 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		existingBlob.predictNextPosition();
 	}*/
 
-  // serch around the nearest neighbor blob for tracking
+  // candidate search only with distances between centers.
+  // add more property including area and h/w ratio
+  // serch around the nearest neighbor blob for tracking 
   // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
   // with data, kalman or other tracking will be more accurate
     for (auto &currentFrameBlob : currentFrameBlobs) {
@@ -965,68 +969,19 @@ ObjectStatus getObjectStatusFromBlobCenters( Blob &blob, const LaneDirection &la
   // update object state and return the current estimated state (redundant because we already update the os status and update again later outside the function
   // 2018. 10. 25
   // 0. current os status will be previous status after update
-  itms::ObjectStatus prevOS = blob.os;
-  switch (objectstatus) { // at this point, blob.os is the previous status !!!
-  case OS_NOTDETERMINED:
-    blob.os_notdetermined_cnter++;
-    blob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
-    blob.os_NumOfConsecutivemvForward_cnter = 0;
-    blob.os_NumOfConsecutivemvBackward_cnter = 0; 
-
-    break;
-
-  case OS_STOPPED:
-    blob.os_stopped_cnter++;
-    blob.os_NumOfConsecutiveStopped_cnter = (prevOS == OS_STOPPED) ? blob.os_NumOfConsecutiveStopped_cnter + 1: 1;      
-    //blob.os_NumOfConsecutiveStopped_cnter = 1;  // reset the consecutive counter
-    blob.os_NumOfConsecutivemvForward_cnter = 0;
-    blob.os_NumOfConsecutivemvBackward_cnter = 0;
-
-    break;
-
-  case OS_MOVING_FORWARD:
-    blob.os_mvForward_cnter++;
-    blob.os_NumOfConsecutivemvForward_cnter =(prevOS == OS_MOVING_FORWARD)? blob.os_NumOfConsecutivemvForward_cnter+1: 1;    
-    blob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
-    //blob.os_NumOfConsecutivemvForward_cnter = 1;
-    blob.os_NumOfConsecutivemvBackward_cnter = 0;
-    break;
-
-  case OS_MOVING_BACKWARD:
-    blob.os_mvBackward_cnter++;
-    blob.os_NumOfConsecutivemvBackward_cnter = (prevOS == OS_MOVING_BACKWARD)? blob.os_NumOfConsecutivemvBackward_cnter+1: 1;
-    blob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
-    blob.os_NumOfConsecutivemvForward_cnter = 0;
-    //blob.os_NumOfConsecutivemvBackward_cnter = 1;
-    break;
-
-  defualt:
-    // no nothing...
-    cout << " object status is not correct!! inside getObjectStatusFromBlbCenters \n";
-    break;
+ // weight policy : current status consecutive counter, others, 1
+  // 2018. 10. 26 -> replaced with below functions
+  
+  itms::Blob orgBlob = blob; // backup 
+  updateBlobProperties(blob, objectstatus); // update the blob properties including the os_prob
+  itms::ObjectStatus tmpOS = computeObjectStatusProbability(blob); // get the moving status according to the probability
+  if (tmpOS != objectstatus) {    
+    objectstatus = tmpOS;
+    // go back to original blob and update again correctly
+    blob = orgBlob;
+    updateBlobProperties(blob, objectstatus);
   }
-  // determine the object status with probability computations
-  // weight policy : current status consecutive counter, others, 1
-  float total_NumOfConsecutiveCounter = (1 + 1 + blob.os_NumOfConsecutivemvBackward_cnter + blob.os_NumOfConsecutivemvForward_cnter + blob.os_NumOfConsecutiveStopped_cnter);
-  float stop_prob = ((blob.os_NumOfConsecutiveStopped_cnter+1)*blob.os_stopped_cnter);
-  float forward_prob = ((blob.os_NumOfConsecutivemvForward_cnter+1)*blob.os_mvForward_cnter);
-  float backward_prob = ((blob.os_NumOfConsecutivemvBackward_cnter+1)*blob.os_mvBackward_cnter);
-  // find max vale
-  float os_max = -1;
-  int max_index = 0;
-  vector<float> os_vector; // put the same order with ObjectStatus
-  os_vector.push_back(stop_prob);
-  os_vector.push_back(forward_prob);
-  os_vector.push_back(backward_prob);
-  for (int i = 0; i < os_vector.size(); i++) {
-	  if (os_vector.at(i) > os_max) {
-		  os_max = os_vector.at(i);
-		  max_index = i;
-	  }
-  }
-  itms::ObjectStatus tmpOS = ObjectStatus(max_index);
-  if (tmpOS != objectstatus)
-	  objectstatus = tmpOS;
+  
 
   return objectstatus;
 }
@@ -1138,7 +1093,7 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
 
     for (unsigned int i = 0; i < blobs.size(); i++) {
 
-        if (blobs[i].blnStillBeingTracked == true && blobs[i].totalVisibleCount > 5) {
+        if (blobs[i].blnStillBeingTracked == true && blobs[i].totalVisibleCount >1) {
             cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_GREEN, 2);
 
             int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
@@ -1343,4 +1298,76 @@ int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2) {
   }    
   
   return retvalue;
+}
+
+// class Blob image processing blob_imp
+
+void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus) {
+  itms::ObjectStatus prevOS = updateBlob.os;  // previous object status
+  switch (curStatus) { // at this point, blob.os is the previous status !!!
+  case OS_NOTDETERMINED:
+    updateBlob.os_notdetermined_cnter++;
+    updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+    updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
+    updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
+
+    break;
+
+  case OS_STOPPED:
+    updateBlob.os_stopped_cnter++;
+    updateBlob.os_NumOfConsecutiveStopped_cnter = (prevOS == OS_STOPPED) ? updateBlob.os_NumOfConsecutiveStopped_cnter + 1 : 1;
+    //blob.os_NumOfConsecutiveStopped_cnter = 1;  // reset the consecutive counter
+    updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
+    updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
+    break;
+
+  case OS_MOVING_FORWARD:
+    updateBlob.os_mvForward_cnter++;
+    updateBlob.os_NumOfConsecutivemvForward_cnter = (prevOS == OS_MOVING_FORWARD) ? updateBlob.os_NumOfConsecutivemvForward_cnter + 1 : 1;
+    updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+                                                //blob.os_NumOfConsecutivemvForward_cnter = 1;
+    updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
+    break;
+
+  case OS_MOVING_BACKWARD:
+    updateBlob.os_mvBackward_cnter++;
+    updateBlob.os_NumOfConsecutivemvBackward_cnter = (prevOS == OS_MOVING_BACKWARD) ? updateBlob.os_NumOfConsecutivemvBackward_cnter + 1 : 1;
+    updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+    updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
+    //blob.os_NumOfConsecutivemvBackward_cnter = 1;
+    break;
+
+  defualt:
+    // no nothing...
+    cout << " object status is not correct!! inside updateBlobProperties \n";
+    break;
+  }
+  // update the os_prob, it needs to improve
+  updateBlob.os_pro = (float)updateBlob.totalVisibleCount / (float)max(1, updateBlob.age);
+
+}
+itms::ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob) {
+   //determine the object status with probability computations
+  // weight policy : current status consecutive counter, others, 1
+  float total_NumOfConsecutiveCounter = (1 + 1 + srcBlob.os_NumOfConsecutivemvBackward_cnter + srcBlob.os_NumOfConsecutivemvForward_cnter + srcBlob.os_NumOfConsecutiveStopped_cnter);
+  float stop_prob = ((srcBlob.os_NumOfConsecutiveStopped_cnter+1)*srcBlob.os_stopped_cnter);
+  float forward_prob = ((srcBlob.os_NumOfConsecutivemvForward_cnter+1)*srcBlob.os_mvForward_cnter);
+  float backward_prob = ((srcBlob.os_NumOfConsecutivemvBackward_cnter+1)*srcBlob.os_mvBackward_cnter);
+  float nondetermined_prob = 0; // dummy
+  // find max vale
+  float os_max = -1;
+  int max_index = 0;
+  vector<float> os_vector; // put the same order with ObjectStatus
+  os_vector.push_back(stop_prob);
+  os_vector.push_back(forward_prob);
+  os_vector.push_back(backward_prob);
+  os_vector.push_back(nondetermined_prob); // dummy
+  assert((int)(ObjectStatus::OS_NOTDETERMINED+1) == (int)os_vector.size());  // size check!
+  for (int i = 0; i < os_vector.size(); i++) {
+   if (os_vector.at(i) > os_max) {
+    os_max = os_vector.at(i);
+    max_index = i;
+   }
+  }
+  return  ObjectStatus(max_index);  
 }
