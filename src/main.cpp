@@ -1006,7 +1006,27 @@ ObjectStatus getObjectStatusFromBlobCenters( Blob &blob, const LaneDirection &la
     break;
   }
   // determine the object status with probability computations
-  
+  // weight policy : current status consecutive counter, others, 1
+  float total_NumOfConsecutiveCounter = (1 + 1 + blob.os_NumOfConsecutivemvBackward_cnter + blob.os_NumOfConsecutivemvForward_cnter + blob.os_NumOfConsecutiveStopped_cnter);
+  float stop_prob = ((blob.os_NumOfConsecutiveStopped_cnter+1)*blob.os_stopped_cnter);
+  float forward_prob = ((blob.os_NumOfConsecutivemvForward_cnter+1)*blob.os_mvForward_cnter);
+  float backward_prob = ((blob.os_NumOfConsecutivemvBackward_cnter+1)*blob.os_mvBackward_cnter);
+  // find max vale
+  float os_max = -1;
+  int max_index = 0;
+  vector<float> os_vector; // put the same order with ObjectStatus
+  os_vector.push_back(stop_prob);
+  os_vector.push_back(forward_prob);
+  os_vector.push_back(backward_prob);
+  for (int i = 0; i < os_vector.size(); i++) {
+	  if (os_vector.at(i) > os_max) {
+		  os_max = os_vector.at(i);
+		  max_index = i;
+	  }
+  }
+  itms::ObjectStatus tmpOS = ObjectStatus(max_index);
+  if (tmpOS != objectstatus)
+	  objectstatus = tmpOS;
 
   return objectstatus;
 }
