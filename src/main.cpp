@@ -636,7 +636,7 @@ int main(void) {
     }
 
     if (chCheckForEscKey != 27) {               // if the user did not press esc (i.e. we reached the end of the video)
-        cv::waitKey(0);                         // hold the windows open to allow the "end of video" message to show
+        cv::waitKey(10000);                         // hold the windows open to allow the "end of video" message to show
     }
     // note that if the user did press esc, we don't need to hold the windows open, we can simply let the program end which will close the windows
 #ifdef _sk_Memory_Leakag_Detector
@@ -807,7 +807,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		existingBlob.predictNextPosition();
 	}*/
 
-  // candidate search only with distances between centers.
+  // candidate search only with distances between centers of currentFrameBlobs and existing blobs.
   // add more property including area and h/w ratio
   // serch around the nearest neighbor blob for tracking 
   // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
@@ -815,18 +815,31 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
     for (auto &currentFrameBlob : currentFrameBlobs) {
 
         int intIndexOfLeastDistance = 0;
+		int intIndexOfHighestScore = 0;
         double dblLeastDistance = 100000.0;
-
+		double totalScore = 100.0, cutTotalScore = 60.0, maxTotalScore = 0.0;
+		float allowedPercentage = 0.25; // 20%
+		float minArea = currentFrameBlob.currentBoundingRect.area() *(1.0f - allowedPercentage);
+		float MaxArea = currentFrameBlob.currentBoundingRect.area() *(1.0f + allowedPercentage);
+		float minDiagonal = currentFrameBlob.dblCurrentDiagonalSize * (1.0f - allowedPercentage);
+		float maxDiagonal = currentFrameBlob.dblCurrentDiagonalSize * (1.0f + allowedPercentage);
         for (unsigned int i = 0; i < existingBlobs.size(); i++) {
 
             if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
                 // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
                 double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
+				totalScore -= dblDistance;
+				totalScore -= (existingBlobs[i].dblCurrentDiagonalSize<minDiagonal || existingBlobs[i].dblCurrentDiagonalSize>maxDiagonal) ? 10 : 0;
+				totalScore -= (existingBlobs[i].currentBoundingRect.area() < minArea || existingBlobs[i].currentBoundingRect.area() > MaxArea) ? 10 : 0;
 
-                if (dblDistance < dblLeastDistance) {
-                    dblLeastDistance = dblDistance;
-                    intIndexOfLeastDistance = i;
-                }
+				if (dblDistance < dblLeastDistance) {
+					dblLeastDistance = dblDistance;
+					intIndexOfLeastDistance = i;
+				}
+				if (maxTotalScore < totalScore) {
+					maxTotalScore = totalScore;
+					intIndexOfHighestScore = i;
+				}
             }
             else { // existingBlobs[i].bInStillBeingTracked == false;
               /* do something for unassinged tracks */
@@ -834,8 +847,10 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
             }
         }
 
-        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) {
-            addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
+        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
+			addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
+		//if(maxTotalScore>=cutTotalScore){
+		//	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
         }
         else { // this routine contains new and unassigned track(blob)s
             addNewBlob(currentFrameBlob, existingBlobs, id);
@@ -875,13 +890,46 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex) {
 // update the status or correcte the status
-    existingBlobs[intIndex].currentContour = currentFrameBlob.currentContour;
-    existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
+	// here, we need to control the gradual change of object except the center point	
+	float allowedPercentage = 1.0; // 20%
+	float minArea = existingBlobs[intIndex].currentBoundingRect.area() *(1.0f - allowedPercentage);
+	float MaxArea = existingBlobs[intIndex].currentBoundingRect.area() *(1.0f + allowedPercentage);
+	float minDiagonal = existingBlobs[intIndex].dblCurrentDiagonalSize * (1.0f - allowedPercentage);
+	float maxDiagonal = existingBlobs[intIndex].dblCurrentDiagonalSize * (1.0f + allowedPercentage);
+	if (0&&(currentFrameBlob.currentBoundingRect.area() < minArea ||
+		currentFrameBlob.currentBoundingRect.area() > MaxArea || 
+		currentFrameBlob.dblCurrentDiagonalSize < minDiagonal ||
+		currentFrameBlob.dblCurrentDiagonalSize > maxDiagonal)) {
+		
+		// if the given current frame blob's size is not propriate, we just move the center point of the existing blob
+		// 2018. 10. 27
+		// change the center point only to currentFrameBlob
+		std::vector<cv::Point> newContourPts = existingBlobs[intIndex].currentContour;
+		cv::Point cFBlobctrPt = currentFrameBlob.centerPositions.back();
+		cv::Point extBlobctrPt = existingBlobs[intIndex].centerPositions.back();
+		for(int i= 0; i<newContourPts.size(); i++)
+			newContourPts[i] += (cFBlobctrPt - extBlobctrPt); // center point movement to existing Blob
 
-    existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
+		existingBlobs[intIndex].currentContour = newContourPts;
+		//existingBlobs[intIndex].currentBoundingRect = cv::boundingRect(newContourPts); // actually it is same as existingBlobs[intIndex]
 
-    existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize;
-    existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
+		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
+
+		//existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize; 
+		//existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
+
+	}
+	else {
+		
+		// if the given current frame blob's size is not propriate, we just move the center point of the existing blob
+		existingBlobs[intIndex].currentContour = currentFrameBlob.currentContour;
+		existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
+
+		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
+
+		existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize;
+		existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
+	}
 
     //if (existingBlobs[intIndex].totalVisibleCount >= 8 /* it should be a predefined threshold */)
       existingBlobs[intIndex].blnStillBeingTracked = true; /* it is easy to be exposed to noise, so it put constraints to this */
@@ -988,8 +1036,8 @@ ObjectStatus getObjectStatusFromBlobCenters( Blob &blob, const LaneDirection &la
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 double distanceBetweenPoints(cv::Point point1, cv::Point point2) {
 
-    int intX = abs(point1.x - point2.x);
-    int intY = abs(point1.y - point2.y);
+    int intX = (point1.x - point2.x);
+    int intY = (point1.y - point2.y);
 
     return(sqrt(pow(intX, 2) + pow(intY, 2)));
 }
@@ -1113,7 +1161,7 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
             else
               status = " ND"; // not determined
 
-            infostr = std::to_string(blobs[i].id) + status;
+            infostr = std::to_string(blobs[i].id) + status + std::to_string(blobs[i].os_pro);
             cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
             if (debugTrace) {
               // draw the trace of object
