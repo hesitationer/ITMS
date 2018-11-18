@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\detector\Object_Detection_YOLO.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{124ED325-5E61-45FC-A8F7-5B7AF73B6597}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Object_Detector_YOLO</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)\$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)\$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Detector;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Detector\vibe_src;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Detector\Subsense;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker\HungarianAlg;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker\graph;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker\graph\GTL\include;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master;C:\sangkny\desktop\opencv\build342;C:\sangkny\desktop\opencv-3.4.2\include;C:\sangkny\desktop\opencv-3.4.2\include\opencv;C:\sangkny\desktop\opencv-3.4.2\modules\core\include;C:\sangkny\desktop\opencv-3.4.2\modules\flann\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\hdf\include;C:\sangkny\desktop\opencv-3.4.2\modules\imgproc\include;C:\sangkny\desktop\opencv-3.4.2\modules\ml\include;C:\sangkny\desktop\opencv-3.4.2\modules\objdetect\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\phase_unwrapping\include;C:\sangkny\desktop\opencv-3.4.2\modules\photo\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\plot\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\reg\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\surface_matching\include;C:\sangkny\desktop\opencv-3.4.2\modules\video\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\xphoto\include;C:\sangkny\desktop\opencv-3.4.2\modules\dnn\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\face\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\fuzzy\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\hfs\include;C:\sangkny\desktop\opencv-3.4.2\modules\imgcodecs\include;C:\sangkny\desktop\opencv-3.4.2\modules\shape\include;C:\sangkny\desktop\opencv-3.4.2\modules\videoio\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\xobjdetect\include;C:\sangkny\desktop\opencv-3.4.2\modules\highgui\include;C:\sangkny\desktop\opencv-3.4.2\modules\superres\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\bioinspired\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\dnn_objdetect\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\dpm\include;C:\sangkny\desktop\opencv-3.4.2\modules\features2d\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\line_descriptor\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\saliency\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\text\include;C:\sangkny\desktop\opencv-3.4.2\modules\calib3d\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\ccalib\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\datasets\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\rgbd\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\stereo\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\structured_light\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\tracking\include;C:\sangkny\desktop\opencv-3.4.2\modules\videostab\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\xfeatures2d\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\ximgproc\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\aruco\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\bgsegm\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\optflow\include;C:\sangkny\desktop\opencv-3.4.2\modules\stitching\include;C:\sangkny\desktop\opencv-3.4.2\modules\world\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\img_hash\include;C:\sangkny\desktop\opencv-3.4.2\modules\ts\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_img_hash342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;C:\sangkny\desktop\opencv\build342\lib\Debug\opencv_world342d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Detector;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Detector\vibe_src;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Detector\Subsense;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker\HungarianAlg;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker\graph;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master\Tracker\graph\GTL\include;D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\Multitarget-tracker-master;C:\sangkny\desktop\opencv\build342;C:\sangkny\desktop\opencv-3.4.2\include;C:\sangkny\desktop\opencv-3.4.2\include\opencv;C:\sangkny\desktop\opencv-3.4.2\modules\core\include;C:\sangkny\desktop\opencv-3.4.2\modules\flann\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\hdf\include;C:\sangkny\desktop\opencv-3.4.2\modules\imgproc\include;C:\sangkny\desktop\opencv-3.4.2\modules\ml\include;C:\sangkny\desktop\opencv-3.4.2\modules\objdetect\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\phase_unwrapping\include;C:\sangkny\desktop\opencv-3.4.2\modules\photo\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\plot\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\reg\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\surface_matching\include;C:\sangkny\desktop\opencv-3.4.2\modules\video\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\xphoto\include;C:\sangkny\desktop\opencv-3.4.2\modules\dnn\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\face\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\fuzzy\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\hfs\include;C:\sangkny\desktop\opencv-3.4.2\modules\imgcodecs\include;C:\sangkny\desktop\opencv-3.4.2\modules\shape\include;C:\sangkny\desktop\opencv-3.4.2\modules\videoio\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\xobjdetect\include;C:\sangkny\desktop\opencv-3.4.2\modules\highgui\include;C:\sangkny\desktop\opencv-3.4.2\modules\superres\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\bioinspired\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\dnn_objdetect\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\dpm\include;C:\sangkny\desktop\opencv-3.4.2\modules\features2d\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\line_descriptor\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\saliency\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\text\include;C:\sangkny\desktop\opencv-3.4.2\modules\calib3d\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\ccalib\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\datasets\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\rgbd\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\stereo\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\structured_light\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\tracking\include;C:\sangkny\desktop\opencv-3.4.2\modules\videostab\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\xfeatures2d\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\ximgproc\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\aruco\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\bgsegm\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\optflow\include;C:\sangkny\desktop\opencv-3.4.2\modules\stitching\include;C:\sangkny\desktop\opencv-3.4.2\modules\world\include;C:\sangkny\desktop\opencv_contrib-3.4.2\modules\img_hash\include;C:\sangkny\desktop\opencv-3.4.2\modules\ts\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>C:\sangkny\desktop\opencv\build342\lib\Release\opencv_world342.lib;C:\sangkny\desktop\opencv\build342\lib\Release\opencv_img_hash342.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

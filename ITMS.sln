@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoStabilization", "utils
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MJPGPlayer", "utils\MJPGPlayer\MJPGPlayer.vcxproj", "{251497BE-4D12-43FE-A890-225E184EE0EA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Object_Detector_YOLO", "utils\ObjectYoloDetector\Object_Detector_YOLO.vcxproj", "{124ED325-5E61-45FC-A8F7-5B7AF73B6597}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{251497BE-4D12-43FE-A890-225E184EE0EA}.Release|x64.Build.0 = Release|x64
 		{251497BE-4D12-43FE-A890-225E184EE0EA}.Release|x86.ActiveCfg = Release|Win32
 		{251497BE-4D12-43FE-A890-225E184EE0EA}.Release|x86.Build.0 = Release|Win32
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Debug|x64.ActiveCfg = Debug|x64
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Debug|x64.Build.0 = Debug|x64
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Debug|x86.ActiveCfg = Debug|Win32
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Debug|x86.Build.0 = Debug|Win32
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x64.ActiveCfg = Release|x64
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x64.Build.0 = Release|x64
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x86.ActiveCfg = Release|Win32
+		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
