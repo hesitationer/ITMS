@@ -1,5 +1,6 @@
 // main.cpp
 
+
 #include<opencv2/core/core.hpp>
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
@@ -7,6 +8,11 @@
 
 #include<iostream>			// cout etc
 #include<fstream>			// file stream (i/ofstream) etc
+
+
+// dnn: deep neural network
+#include <opencv2/dnn.hpp>
+#include <sstream>
 #include<conio.h>           // it may be necessary to change or remove this line if not using Windows
 #include <time.h>
 
@@ -14,7 +20,6 @@
 #include "../src/bgsubcnt.h"
 
 #include "utils/itms_utils.h"
-
 
 
 #define SHOW_STEPS            // un-comment or comment this line to show steps or not
@@ -27,6 +32,7 @@ using namespace cv;
 using namespace std;
 using namespace dnn;
 using namespace itms;
+using namespace dnn;
 
 #define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
@@ -90,6 +96,16 @@ void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
 void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus); // update simple blob properties including os counters
 ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
 
+// Remove the bounding boxes with low confidence using non-maxima suppression
+void postprocess(Mat& frame, const vector<Mat>& out);
+
+// Draw the predicted bounding box
+void drawPred(int classId, float conf, int left, int top, int right, int bottom, Mat& frame);
+
+// Get the names of the output layers
+vector<String> getOutputsNames(const Net& net);
+
+//-------------------- dnn related -------------------------------/
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace FAV1
 {
@@ -166,16 +182,9 @@ int inpWidth = (inpWidthorg) % 32 == 0 ? inpWidthorg : inpWidthorg + (32 - (inpW
 int inpHeight = (inpHeightorg) % 32 == 0 ? inpHeightorg : inpHeightorg + (32 - (inpHeightorg % 32));// 720 / 4;  //64;// 160;// 1080 / 2;// 416; // Height of network's input image
 vector<string> classes;
 
-// Remove the bounding boxes with low confidence using non-maxima suppression
-void postprocess(Mat& frame, const vector<Mat>& out);
-
-// Draw the predicted bounding box
-void drawPred(int classId, float conf, int left, int top, int right, int bottom, Mat& frame);
-
-// Get the names of the output layers
-vector<String> getOutputsNames(const Net& net);
 void getPredicInfo(const vector<Mat>& outs, vector<int>& classIds, vector<float>& confidences, vector<Rect>& boxes);
 regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& outs);
+cv::Size adjustNetworkInputSize(Size inSize);
 // dnn-based approach ends
 
 int main(void) {
@@ -472,24 +481,24 @@ int main(void) {
 	//float NCC = getNCC(img, templ, Mat(), match_method, use_mask);
 	//
 	//// end template matching algorithm
-	/* dnn-based aproach*/
-	std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";
-	string classesFile = runtime_data_dir + "coco.names";
-	ifstream ifs(classesFile.c_str());
-	// Load names of classes
-	string line;
-	while (getline(ifs, line)) classes.push_back(line);
 
-	// Give the configuration and weight files for the model
-	String modelConfiguration = runtime_data_dir + "yolov3-tiny.cfg"; // was yolov3.cfg
-	String modelWeights = runtime_data_dir + "yolov3-tiny.weights";   // was ylov3.weights
-																	  //String modelConfiguration = runtime_data_dir + "tiny-yolo.cfg"; // was 
-																	  //String modelWeights = runtime_data_dir + "tiny-yolo.weights";   // was 
-																	  // Load the network
-	Net net = readNetFromDarknet(modelConfiguration, modelWeights);
-	net.setPreferableBackend(DNN_BACKEND_OPENCV);
-	net.setPreferableTarget(DNN_TARGET_CPU);
+  // Deep learning based Detection and Classification //
+    std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";
+    string classesFile = runtime_data_dir + "coco.names";
+    ifstream ifs(classesFile.c_str());
+    string line;
+    while (getline(ifs, line)) classes.push_back(line);
+
 	// dnn-based approach
+    // Give the configuration and weight files for the model
+    String modelConfiguration = runtime_data_dir + "yolov3-tiny.cfg"; // was yolov3.cfg
+    String modelWeights = runtime_data_dir + "yolov3-tiny.weights";   // was ylov3.weights
+                                                                      //String modelConfiguration = runtime_data_dir + "tiny-yolo.cfg"; // was 
+                                                                      //String modelWeights = runtime_data_dir + "tiny-yolo.weights";   // was 
+                                                                      // Load the network
+    Net net = readNetFromDarknet(modelConfiguration, modelWeights);
+    net.setPreferableBackend(DNN_BACKEND_OPENCV);
+    net.setPreferableTarget(DNN_TARGET_CPU);
 	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
@@ -590,17 +599,25 @@ int main(void) {
               cv::Rect roi_rect = possibleBlob.currentBoundingRect;
               float blobncc = 0;
               if (debugGeneral) {
-                cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" <<cv::Size(roi_rect.width, roi_rect.height)<<" is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+                cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
               }
               // bg image
               // currnt image
-              
+
               /*imshow("bgimage", BGImage(roi_rect));
               imshow("blob image_roi", imgFrame2Copy(roi_rect));
               waitKey(0);*/
               blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask);
-              if(blobncc <= abs(BlobNCC_Th)) // check the correlation with bgground
+              if (blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
+                regions_t tempRegion;
+                vector<Mat> outMat;                
+                tempRegion = DetectInCrop(net, imgFrame2(roi_rect), adjustNetworkInputSize(Size(max(32*3, min(416, roi_rect.width*2)), max(32*3, min(416, roi_rect.height*2)))), outMat);
+                if (tempRegion.size() > 0) {
+                  int kkk = 0;
+                }
                 currentFrameBlobs.push_back(possibleBlob);
+              }
+            
             }
         }
 		if (debugShowImages && debugShowImagesDetail) {
@@ -1470,7 +1487,7 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 	vector<Rect> boxes;
 	vector<int> indices;
 	regions_t tmpregions;
-	blobFromImage(colorMat, blob, 1 / 255.0, cvSize(inpWidth, inpHeight), Scalar(0, 0, 0), false, true);
+	blobFromImage(colorMat, blob, 1 / 255.0, crop, Scalar(0, 0, 0), false, true);
 	vector<cv::Mat > Blobs;
 	imagesFromBlob(blob, Blobs);
 	for (int ii = 0; ii < Blobs.size(); ii++) {
@@ -1480,7 +1497,20 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 	//Sets the input to the network
 	net.setInput(blob);
 	// Runs the forward pass to get output of the output layers	
-	net.forward(outs, getOutputsNames(net)); // forward pass for network layers	
+  try
+  {
+    net.forward(outs, getOutputsNames(net)); // forward pass for network layers	 
+  }
+  catch (...)
+  {
+    /*for (int ii = 0; ii < Blobs.size(); ii++) {
+      imshow(format("blob image: %d", ii), Blobs[ii]);
+      waitKey(0);
+    }*/
+    cout<<"cout not pass forward to the network \n";
+    return tmpregions;
+  }
+	
 
 	for (size_t i = 0; i < outs.size(); ++i)
 	{
@@ -1526,93 +1556,113 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 void getPredicInfo(const vector<Mat>& outs, vector<int>& classIds, vector<float>& confidences, vector<Rect>& boxes) {
 
 }
+
+
+// DNN -realted functions
 // Remove the bounding boxes with low confidence using non-maxima suppression
 void postprocess(Mat& frame, const vector<Mat>& outs)
 {
-	vector<int> classIds;
-	vector<float> confidences;
-	vector<Rect> boxes;
+  vector<int> classIds;
+  vector<float> confidences;
+  vector<Rect> boxes;
 
-	for (size_t i = 0; i < outs.size(); ++i)
-	{
-		// Scan through all the bounding boxes output from the network and keep only the
-		// ones with high confidence scores. Assign the box's class label as the class
-		// with the highest score for the box.
-		float* data = (float*)outs[i].data;
-		for (int j = 0; j < outs[i].rows; ++j, data += outs[i].cols)
-		{
-			Mat scores = outs[i].row(j).colRange(5, outs[i].cols);
-			Point classIdPoint;
-			double confidence;
-			// Get the value and location of the maximum score
-			minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
-			if (confidence > confThreshold)
-			{
-				int centerX = (int)(data[0] * frame.cols);
-				int centerY = (int)(data[1] * frame.rows);
-				int width = (int)(data[2] * frame.cols);
-				int height = (int)(data[3] * frame.rows);
-				int left = centerX - width / 2;				// adjust to Rect structure
-				int top = centerY - height / 2;
+  for (size_t i = 0; i < outs.size(); ++i)
+  {
+    // Scan through all the bounding boxes output from the network and keep only the
+    // ones with high confidence scores. Assign the box's class label as the class
+    // with the highest score for the box.
+    float* data = (float*)outs[i].data;
+    for (int j = 0; j < outs[i].rows; ++j, data += outs[i].cols)
+    {
+      Mat scores = outs[i].row(j).colRange(5, outs[i].cols);
+      Point classIdPoint;
+      double confidence;
+      // Get the value and location of the maximum score
+      minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
+      if (confidence > confThreshold)
+      {
+        int centerX = (int)(data[0] * frame.cols);
+        int centerY = (int)(data[1] * frame.rows);
+        int width = (int)(data[2] * frame.cols);
+        int height = (int)(data[3] * frame.rows);
+        int left = centerX - width / 2;
+        int top = centerY - height / 2;
 
-				classIds.push_back(classIdPoint.x);
-				confidences.push_back((float)confidence);
-				boxes.push_back(Rect(left, top, width, height));
-			}
-		}
-	}
+        classIds.push_back(classIdPoint.x);
+        confidences.push_back((float)confidence);
+        boxes.push_back(Rect(left, top, width, height));
+      }
+    }
+  }
 
-	// Perform non maximum suppression to eliminate redundant overlapping boxes with
-	// lower confidences
-	vector<int> indices;
-	NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
-	for (size_t i = 0; i < indices.size(); ++i)
-	{
-		int idx = indices[i];
-		Rect box = boxes[idx];
-		drawPred(classIds[idx], confidences[idx], box.x, box.y,
-			box.x + box.width, box.y + box.height, frame);
-	}
+  // Perform non maximum suppression to eliminate redundant overlapping boxes with
+  // lower confidences
+  vector<int> indices;
+  NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
+  for (size_t i = 0; i < indices.size(); ++i)
+  {
+    int idx = indices[i];
+    Rect box = boxes[idx];
+    /* drawPred(classIds[idx], confidences[idx], box.x, box.y,
+    box.x + box.width, box.y + box.height, frame);*/
+    drawPred(classIds[idx], confidences[idx], box.x - box.width / 2, box.y - box.height / 2,
+      box.x + box.width / 2, box.y + box.height / 2, frame);
+  }
 }
 
 // Draw the predicted bounding box
 void drawPred(int classId, float conf, int left, int top, int right, int bottom, Mat& frame)
 {
-	//Draw a rectangle displaying the bounding box
-	rectangle(frame, Point(left, top), Point(right, bottom), Scalar(255, 178, 50), 3);
+  //Draw a rectangle displaying the bounding box
+  rectangle(frame, Point(left, top), Point(right, bottom), Scalar(255, 178, 50), 3);
 
-	//Get the label for the class name and its confidence
-	string label = format("%.2f", conf);
-	if (!classes.empty())
-	{
-		CV_Assert(classId < (int)classes.size());
-		label = classes[classId] + ":" + label;
-	}
+  //Get the label for the class name and its confidence
+  string label = format("%.2f", conf);
+  if (!classes.empty())
+  {
+    CV_Assert(classId < (int)classes.size());
+    label = classes[classId] + ":" + label;
+  }
 
-	//Display the label at the top of the bounding box
-	int baseLine;
-	Size labelSize = getTextSize(label, FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
-	top = max(top, labelSize.height);
-	rectangle(frame, Point(left, top - round(1.5*labelSize.height)), Point(left + round(1.5*labelSize.width), top + baseLine), Scalar(255, 255, 255), FILLED);
-	putText(frame, label, Point(left, top), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0, 0, 0), 1);
+  //Display the label at the top of the bounding box
+  int baseLine;
+  Size labelSize = getTextSize(label, FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+  top = max(top, labelSize.height);
+  rectangle(frame, Point(left, top - round(1.5*labelSize.height)), Point(left + round(1.5*labelSize.width), top + baseLine), Scalar(255, 255, 255), FILLED);
+  putText(frame, label, Point(left, top), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0, 0, 0), 1);
 }
 
 // Get the names of the output layers
 vector<String> getOutputsNames(const Net& net)
 {
-	static vector<String> names;
-	if (names.empty())
-	{
-		//Get the indices of the output layers, i.e. the layers with unconnected outputs
-		vector<int> outLayers = net.getUnconnectedOutLayers();
+  static vector<String> names;
+  if (names.empty())
+  {
+    //Get the indices of the output layers, i.e. the layers with unconnected outputs
+    vector<int> outLayers = net.getUnconnectedOutLayers();
 
-		//get the names of all the layers in the network
-		vector<String> layersNames = net.getLayerNames();
+    //get the names of all the layers in the network
+    vector<String> layersNames = net.getLayerNames();
 
-		// Get the names of the output layers in names
-		names.resize(outLayers.size());
-		for (size_t i = 0; i < outLayers.size(); ++i)
-			names[i] = layersNames[outLayers[i] - 1];
-	}
-	return names;
+    // Get the names of the output layers in names
+    names.resize(outLayers.size());
+    for (size_t i = 0; i < outLayers.size(); ++i)
+      names[i] = layersNames[outLayers[i] - 1];
+  }
+  return names;
 }
+/*
+int inpWidthorg = 52;
+int inpHeightorg = 37;
+int inpWidth = (inpWidthorg) % 32 == 0 ? inpWidthorg : inpWidthorg + (32 - (inpWidthorg % 32));// 1280 / 4;  //min(416, int(1280. / 720.*64.*3.) + 1);// 160; //1920 / 2;// 416;  // Width of network's input image
+int inpHeight = (inpHeightorg) % 32 == 0 ? inpHeightorg : inpHeightorg + (32 - (inpHeightorg % 32));// 720 / 4;  //64;// 160;// 1080 / 2;// 416; // Height of network's input image
+*/
+cv::Size adjustNetworkInputSize(Size inSize) {  
+  int inpWidth = (inSize.width) % 32 == 0 ? inSize.width : inSize.width + (32 - (inSize.width % 32));// we make the input mutiples of 32
+  int inpHeight = (inSize.height) % 32 == 0 ? inSize.height : inSize.height + (32 - (inSize.height % 32));// it depends the network architecture
+  if (inpHeight > inpWidth)
+    inpWidth = inpHeight;
+  
+  return Size(inpWidth, inpHeight);
+}
+// ----------------------- DNN related functions  end ----------------------------------

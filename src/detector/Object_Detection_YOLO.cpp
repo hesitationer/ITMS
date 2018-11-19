@@ -213,7 +213,7 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 	vector<Rect> boxes;
 	vector<int> indices;
 	regions_t tmpregions;
-	blobFromImage(colorMat, blob, 1 / 255.0, cvSize(inpWidth, inpHeight), Scalar(0, 0, 0), false, true);
+	blobFromImage(colorMat, blob, 1 / 255.0, crop, Scalar(0, 0, 0), false, true);
 	vector<cv::Mat > Blobs;
 	imagesFromBlob(blob, Blobs);
 	for (int ii = 0; ii < Blobs.size(); ii++) {
