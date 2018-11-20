@@ -204,7 +204,7 @@ int main(void) {
 	cv::Mat imgFrame1;
 	cv::Mat imgFrame2;
 
-  float scaleFactor = 0.5;
+  float scaleFactor = .5;
 
 
 	std::vector<Blob> blobs;
@@ -587,8 +587,8 @@ int main(void) {
             if (possibleBlob.currentBoundingRect.area() > 10 &&
               possibleBlob.dblCurrentAspectRatio > 0.2 &&
               possibleBlob.dblCurrentAspectRatio < 6.0 &&
-              possibleBlob.currentBoundingRect.width > 2 &&
-              possibleBlob.currentBoundingRect.height > 2 &&
+              possibleBlob.currentBoundingRect.width > 6 &&
+              possibleBlob.currentBoundingRect.height > 6 &&
               possibleBlob.dblCurrentDiagonalSize > 3.0 &&
               (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
               //  new approach according to 
@@ -611,9 +611,13 @@ int main(void) {
               if (blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
                 regions_t tempRegion;
                 vector<Mat> outMat;                
-                tempRegion = DetectInCrop(net, imgFrame2(roi_rect), adjustNetworkInputSize(Size(max(32*3, min(416, roi_rect.width*2)), max(32*3, min(416, roi_rect.height*2)))), outMat);
+                float scaleRect = 1.5;
+                Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2.cols, imgFrame2.rows);
+                //Rect expRect = maxSqExpandRect(roi_rect, scaleRect, imgFrame2Copy.cols, imgFrame2Copy.rows);
+                tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
                 if (tempRegion.size() > 0) {
-                  int kkk = 0;
+                  for (int tr = 0; tr < tempRegion.size(); tr++)
+                    cout << "=========> (!)(!) class:" << tempRegion[tr].m_type << ", prob:" << tempRegion[tr].m_confidence << endl;
                 }
                 currentFrameBlobs.push_back(possibleBlob);
               }
@@ -634,9 +638,6 @@ int main(void) {
       drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
       waitKey(1);
     }
-
-
-
         if (blnFirstFrame == true) {
             for (auto &currentFrameBlob : currentFrameBlobs) {
                 blobs.push_back(currentFrameBlob);
@@ -1490,6 +1491,7 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 	blobFromImage(colorMat, blob, 1 / 255.0, crop, Scalar(0, 0, 0), false, true);
 	vector<cv::Mat > Blobs;
 	imagesFromBlob(blob, Blobs);
+  imshow("original blob", colorMat);
 	for (int ii = 0; ii < Blobs.size(); ii++) {
 		imshow(format("blob image: %d", ii), Blobs[ii]);
 		waitKey(1);
@@ -1658,8 +1660,8 @@ int inpWidth = (inpWidthorg) % 32 == 0 ? inpWidthorg : inpWidthorg + (32 - (inpW
 int inpHeight = (inpHeightorg) % 32 == 0 ? inpHeightorg : inpHeightorg + (32 - (inpHeightorg % 32));// 720 / 4;  //64;// 160;// 1080 / 2;// 416; // Height of network's input image
 */
 cv::Size adjustNetworkInputSize(Size inSize) {  
-  int inpWidth = (inSize.width) % 32 == 0 ? inSize.width : inSize.width + (32 - (inSize.width % 32));// we make the input mutiples of 32
-  int inpHeight = (inSize.height) % 32 == 0 ? inSize.height : inSize.height + (32 - (inSize.height % 32));// it depends the network architecture
+  int inpWidth = (inSize.width) % 13 == 0 ? inSize.width : inSize.width + (13 - (inSize.width % 13));// we make the input mutiples of 32
+  int inpHeight = (inSize.height) % 13 == 0 ? inSize.height : inSize.height + (13 - (inSize.height % 13));// it depends the network architecture
   if (inpHeight > inpWidth)
     inpWidth = inpHeight;
   

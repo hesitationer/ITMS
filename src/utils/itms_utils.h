@@ -43,6 +43,9 @@ typedef std::vector<CRegion> regions_t;
 
 namespace itms {
   void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages);
+  Rect expandRect(Rect original, int expandXPixels, int expandYPixels, int maxX, int maxY); // 
+  Rect maxSqRect(Rect& original, int maxX, int maxY); // make squre with max length
+  Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
 	
   // Wrapper over OpenCV cv::VideoWriter class, with option write or not to write to file.
   // ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize)
