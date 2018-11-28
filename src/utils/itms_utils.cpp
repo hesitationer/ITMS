@@ -1,6 +1,7 @@
 #include "itms_utils.h"
 
 namespace itms {
+	
   void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages)
   {
     if (before.size() != after.size() || before.type() != after.type()) {

@@ -299,7 +299,12 @@ int main(void) {
   road_roi_pts.push_back(Point(1087.25, 1049.75)*scaleFactor);
   Road_ROI_Pts.push_back(road_roi_pts);
   road_roi_pts.clear();
-
+  // object size LUT config
+  // sedan w
+  // seda h 
+  vector<float> sedan_h = {-0.0000f, 0.0175f, -2.2934f,  112.5277f};
+  ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
+  float value = polyvalue_sedan_w.getPolyValue(10.5);
   //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p
   float camera_height = 11.0 * 100; // camera height 11 meter
   float lane_length = 200.0 * 100;  // lane length

@@ -12,6 +12,7 @@
 
 
 using namespace cv;
+using namespace std;
 class CRegion
 {
 public:
@@ -61,6 +62,36 @@ namespace itms {
   private:
     VideoWriter writer;
     bool writeToFile; // defines whether we need to write frames to file or not (for easy debugging and readability)
+  };
+
+  // Object size fitting class
+  class ITMSPolyValues {
+  public:
+	  ITMSPolyValues() { mPolySize = 0; };
+	  // put polynomial coefficient from the index 0 to the end
+	  ITMSPolyValues(std::vector<float> polyCoeffs, int polyCoeffSize) {
+		  assert(polyCoeffs.size() == (size_t)polyCoeffSize);
+		  for (size_t i = 0; i < polyCoeffs.size();i++)
+			  mPolyCoeffs.push_back(polyCoeffs.at(i));
+		  mPolySize = mPolyCoeffs.size();
+	  };
+	  ~ITMSPolyValues() {};
+  
+	  // get a poly value 
+	  double getPolyValue(float fValue) {
+		  double pvalue=0;
+		  if (mPolySize == 0) {
+			  std::cout << "No polynomial coefficients exist!! in ITMSPolyValues (!)(!)" << std::endl;
+			  return -1;
+		  }
+		  for (int i = 0; i < mPolySize; i++)
+			  pvalue += (mPolyCoeffs.at(i)*pow(fValue, mPolySize - 1 - i));
+		  return pvalue;		
+	  };
+	  int getPolySize(void) { return mPolySize; };
+  private:
+	  std::vector<float> mPolyCoeffs;
+	  int mPolySize;
   };
 }
 #endif // _ITMS_UTILS_H
