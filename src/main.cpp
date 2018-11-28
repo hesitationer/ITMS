@@ -302,10 +302,25 @@ int main(void) {
   // object size LUT config
   // sedan w
   // seda h 
-  vector<float> sedan_h = {-0.0000f, 0.0175f, -2.2934f,  112.5277f};
+  vector<float> sedan_h = { -0.0000f, 0.0175f, -2.2934f,  112.5277f}; // scale factor 0.5
+  vector<float> sedan_w = { -0.0000f, 0.0145f, -1.9022f,   98.5669f};
+  vector<float> suv_h = { -0.0001f,   0.0222f, -2.7976f,  139.0639f};
+  vector<float> suv_w = { -0.0000f,   0.0188f, -2.4257f,  121.9226f};
+  vector<float> truck_h = { -0.0001f,  0.0237f, -3.0646f,  149.6536f};
+  vector<float> truck_w = { -0.0000f,  0.0152f, -2.0911f,  110.7545f};
+  vector<float> human_h = { -0.0000f,  0.0018f, -0.5058f,  49.2795f};
+  vector<float> human_w = { -0.0000f,  0.0016f, -0.3209f,  28.2362f};
+  ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
   ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
+  ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
+  ITMSPolyValues polyvalue_suv_w(suv_w, suv_w.size());
+  ITMSPolyValues polyvalue_truck_h(truck_h, truck_h.size());
+  ITMSPolyValues polyvalue_truck_w(truck_w, truck_w.size());
+  ITMSPolyValues polyvalue_human_h(human_h, human_h.size());
+  ITMSPolyValues polyvalue_human_w(human_w, human_w.size());
   float value = polyvalue_sedan_w.getPolyValue(10.5);
-  //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p
+
+  //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p  
   float camera_height = 11.0 * 100; // camera height 11 meter
   float lane_length = 200.0 * 100;  // lane length
   float lane2lane_width = 3.5 * 3* 100; // lane width

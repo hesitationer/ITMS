@@ -75,7 +75,9 @@ namespace itms {
 			  mPolyCoeffs.push_back(polyCoeffs.at(i));
 		  mPolySize = mPolyCoeffs.size();
 	  };
-	  ~ITMSPolyValues() {};
+	  ~ITMSPolyValues() {
+      mPolyCoeffs.clear();
+    };
   
 	  // get a poly value 
 	  double getPolyValue(float fValue) {
