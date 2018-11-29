@@ -96,6 +96,9 @@ void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
 void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus); // update simple blob properties including os counters
 ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
 
+// classificy an object with distance and its size
+void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability);
+
 // Remove the bounding boxes with low confidence using non-maxima suppression
 void postprocess(Mat& frame, const vector<Mat>& out);
 
@@ -1688,3 +1691,19 @@ cv::Size adjustNetworkInputSize(Size inSize) {
   return Size(inpWidth, inpHeight);
 }
 // ----------------------- DNN related functions  end ----------------------------------
+// classificy an object with distance and its size
+void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability)
+{
+  float fdistance = distFromZero, perc_Thres = 0.25; // 25% error range
+  int intWidth, intHeight;
+  // --- algorithm ---------------------------------------------------------------------
+  // get the pair infors for object, 
+  // 0. get the current object information of width and height
+  // 1. get the width and height of the reference class object from the given distance
+  // 2. compute the probability for each class, vector<pair<enum, float >>
+  // 3. sort with probabilty in descending order
+  // 4. determine the class for the given object
+  // ------------------------------------------------------------------------------------
+
+
+}
