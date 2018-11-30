@@ -190,6 +190,12 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 cv::Size adjustNetworkInputSize(Size inSize);
 // dnn-based approach ends
 
+// raod configuration related
+float camera_height = 11.0 * 100; // camera height 11 meter
+float lane_length = 200.0 * 100;  // lane length
+float lane2lane_width = 3.5 * 3 * 100; // lane width
+cv::Mat transmtxH;
+
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
 #if _DEBUG
@@ -305,14 +311,14 @@ int main(void) {
   // object size LUT config
   // sedan w
   // seda h 
-  vector<float> sedan_h = { -0.0000f, 0.0175f, -2.2934f,  112.5277f}; // scale factor 0.5
-  vector<float> sedan_w = { -0.0000f, 0.0145f, -1.9022f,   98.5669f};
-  vector<float> suv_h = { -0.0001f,   0.0222f, -2.7976f,  139.0639f};
-  vector<float> suv_w = { -0.0000f,   0.0188f, -2.4257f,  121.9226f};
-  vector<float> truck_h = { -0.0001f,  0.0237f, -3.0646f,  149.6536f};
-  vector<float> truck_w = { -0.0000f,  0.0152f, -2.0911f,  110.7545f};
-  vector<float> human_h = { -0.0000f,  0.0018f, -0.5058f,  49.2795f};
-  vector<float> human_w = { -0.0000f,  0.0016f, -0.3209f,  28.2362f};
+  vector<float> sedan_h = { -0.00004444328872f, 0.01751602326f, -2.293443176f, 112.527668f }; // scale factor 0.5
+  vector<float> sedan_w = { -0.00003734137716f, 0.01448943505f, -1.902199174f, 98.56691135f };
+  vector<float> suv_h = { -0.00005815785621f, 0.02216859672f, -2.797603666f, 139.0638999f };
+  vector<float> suv_w = { -0.00004854032314f, 0.01884736545f, -2.425686251f, 121.9226426f };
+  vector<float> truck_h = { -0.00006123592908f, 0.02373661426f, -3.064585294f, 149.6535855f };
+  vector<float> truck_w = { -0.00003778247771f, 0.015239317f, -2.091105041f, 110.7544702f };
+  vector<float> human_h = { -0.000002473245036f, 0.001813179193f, -0.5058008988f, 49.27950311f };
+  vector<float> human_w = { -0.000003459461125f, 0.001590306464f, -0.3208648543f, 28.23621306f };
   ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
   ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
   ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
@@ -324,9 +330,9 @@ int main(void) {
   float value = polyvalue_sedan_w.getPolyValue(10.5);
 
   //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p  
-  float camera_height = 11.0 * 100; // camera height 11 meter
-  float lane_length = 200.0 * 100;  // lane length
-  float lane2lane_width = 3.5 * 3* 100; // lane width
+  //float camera_height = 11.0 * 100; // camera height 11 meter
+  //float lane_length = 200.0 * 100;  // lane length
+  //float lane2lane_width = 3.5 * 3* 100; // lane width
   std::vector<cv::Point2f> srcPts; // skewed ROI source points
   std::vector<cv::Point2f> tgtPts; // deskewed reference ROI points (rectangular. Top-to-bottom representation but, should be bottom-to-top measure in practice
 
@@ -340,7 +346,7 @@ int main(void) {
   tgtPts.push_back(Point2f(lane2lane_width, lane_length));// pp2
   tgtPts.push_back(Point2f(0, lane_length));              // pp3
 
-  cv::Mat transmtxH = cv::getPerspectiveTransform(srcPts, tgtPts); // homography
+  transmtxH = cv::getPerspectiveTransform(srcPts, tgtPts); // homography
   
   // --------------  confirmation test  -----------------------------------------------------------------
   // get distance in Meters from the image locations according to the predefined ROI 
@@ -935,8 +941,19 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
 		//	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
         }
         else { // this routine contains new and unassigned track(blob)s
-            addNewBlob(currentFrameBlob, existingBlobs, id);
-			// do the inside
+          // add new blob
+          vector<Point2f> blobCenterPxs;
+          blobCenterPxs.push_back(currentFrameBlob.centerPositions.back());
+          float distance = getDistanceInMeterFromPixels(blobCenterPxs, transmtxH, lane_length, false);
+          if (debugGeneral)
+            cout << " distance: " << distance / 100 << " meters from the starting point.\n";
+          // do the inside
+          ObjectClass objclass;
+          float classProb = 0.f;
+          classifyObjectWithDistanceRatio(currentFrameBlob, distance / 100, objclass, classProb);
+
+          addNewBlob(currentFrameBlob, existingBlobs, id);
+            
         }
 
     }
@@ -1697,6 +1714,7 @@ auto cmp = [](std::pair<string, float > const & a, std::pair<string, float> cons
 {
 	return a.second > b.second; // descending order
 };
+
 // std::sort(items.begin(), items.end(), cmp);
 // classificy an object with distance and its size
 void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability)
@@ -1717,15 +1735,17 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	int tgtWidth, tgtHeight, refWidth, refHeight; // target, reference infors
 	tgtWidth = srcBlob.currentBoundingRect.width;
 	tgtHeight = srcBlob.currentBoundingRect.height;
+  vector<float> objWidth;     // for panelty against distance
+  vector<float> objHeight; 
 	// configuration 
-	vector<float> sedan_h = { -0.0000f, 0.0175f, -2.2934f,  112.5277f }; // scale factor 0.5
-	vector<float> sedan_w = { -0.0000f, 0.0145f, -1.9022f,   98.5669f };
-	vector<float> suv_h = { -0.0001f,   0.0222f, -2.7976f,  139.0639f };
-	vector<float> suv_w = { -0.0000f,   0.0188f, -2.4257f,  121.9226f };
-	vector<float> truck_h = { -0.0001f,  0.0237f, -3.0646f,  149.6536f };
-	vector<float> truck_w = { -0.0000f,  0.0152f, -2.0911f,  110.7545f };
-	vector<float> human_h = { -0.0000f,  0.0018f, -0.5058f,  49.2795f };
-	vector<float> human_w = { -0.0000f,  0.0016f, -0.3209f,  28.2362f };
+  vector<float> sedan_h = { -0.00004444328872f, 0.01751602326f, -2.293443176f, 112.527668f }; // scale factor 0.5
+  vector<float> sedan_w = { -0.00003734137716f, 0.01448943505f, -1.902199174f, 98.56691135f };
+  vector<float> suv_h = { -0.00005815785621f, 0.02216859672f, -2.797603666f, 139.0638999f };
+  vector<float> suv_w = { -0.00004854032314f, 0.01884736545f, -2.425686251f, 121.9226426f };
+  vector<float> truck_h = { -0.00006123592908f, 0.02373661426f, -3.064585294f, 149.6535855f };
+  vector<float> truck_w = { -0.00003778247771f, 0.015239317f, -2.091105041f, 110.7544702f };
+  vector<float> human_h = { -0.000002473245036f, 0.001813179193f, -0.5058008988f, 49.27950311f };
+  vector<float> human_w = { -0.000003459461125f, 0.001590306464f, -0.3208648543f, 28.23621306f };
 	ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
 	ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
 	ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
@@ -1734,6 +1754,27 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	ITMSPolyValues polyvalue_truck_w(truck_w, truck_w.size());
 	ITMSPolyValues polyvalue_human_h(human_h, human_h.size());
 	ITMSPolyValues polyvalue_human_w(human_w, human_w.size());
+  // 
+  objWidth.push_back(polyvalue_sedan_w.getPolyValue(fdistance));
+  objWidth.push_back(polyvalue_suv_w.getPolyValue(fdistance));
+  objWidth.push_back(polyvalue_truck_w.getPolyValue(fdistance));
+  objWidth.push_back(polyvalue_human_w.getPolyValue(fdistance));
+  sort(objWidth.begin(), objWidth.end(), greater<float>()); // descending order
+  float minRefWidth = objWidth.at(objWidth.size() - 1), maxRefWidth = objWidth.at(0);
+
+  objHeight.push_back(polyvalue_sedan_h.getPolyValue(fdistance));
+  objHeight.push_back(polyvalue_suv_h.getPolyValue(fdistance));
+  objHeight.push_back(polyvalue_truck_h.getPolyValue(fdistance));
+  objHeight.push_back(polyvalue_human_h.getPolyValue(fdistance));
+  sort(objHeight.begin(), objHeight.end(), greater<float>());
+  float minRefHeight = objWidth.at(objWidth.size() - 1), maxRefHeight = objWidth.at(0);
+
+  // size constraints
+  if (tgtWidth > maxRefWidth*(1 + perc_Thres) || tgtWidth < minRefWidth*(1 - perc_Thres))
+    tgtWidth = 0;
+  if (tgtHeight > maxRefHeight*(1 + perc_Thres) || tgtHeight < minRefHeight*(1 - perc_Thres))
+    tgtHeight = 0;
+
 	// sedan
 	refHeight = polyvalue_sedan_h.getPolyValue(fdistance);
 	refWidth = polyvalue_sedan_w.getPolyValue(fdistance);
@@ -1755,11 +1796,14 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	// human
 	refHeight = polyvalue_human_h.getPolyValue(fdistance);
 	refWidth = polyvalue_human_w.getPolyValue(fdistance);
-	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
-		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
+	prob = (1.f-fWidthHeightWeightRatio_Width)*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
+		(fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight; // height is more important for human 
 	objClassProbs.push_back(pair<string, float>("human", prob));
 
 	sort(objClassProbs.begin(), objClassProbs.end(), cmp); // sort the prob in decending order
 	string strClass = objClassProbs.at(0).first; // class
 	fprobability = objClassProbs.at(0).second;   // prob
+
+  
+  
 }
