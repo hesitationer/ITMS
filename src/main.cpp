@@ -936,6 +936,7 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
         }
         else { // this routine contains new and unassigned track(blob)s
             addNewBlob(currentFrameBlob, existingBlobs, id);
+			// do the inside
         }
 
     }
@@ -1691,11 +1692,15 @@ cv::Size adjustNetworkInputSize(Size inSize) {
   return Size(inpWidth, inpHeight);
 }
 // ----------------------- DNN related functions  end ----------------------------------
+
+auto cmp = [](std::pair<string, float > const & a, std::pair<string, float> const & b)
+{
+	return a.second > b.second; // descending order
+};
+// std::sort(items.begin(), items.end(), cmp);
 // classificy an object with distance and its size
 void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability)
-{
-  float fdistance = distFromZero, perc_Thres = 0.25; // 25% error range
-  int intWidth, intHeight;
+{  
   // --- algorithm ---------------------------------------------------------------------
   // get the pair infors for object, 
   // 0. get the current object information of width and height
@@ -1705,5 +1710,56 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
   // 4. determine the class for the given object
   // ------------------------------------------------------------------------------------
 
+	std::vector<std::pair<std::string, float>> objClassProbs; // object class with probabilities
+	float fdistance = distFromZero, prob=0.f, perc_Thres = 0.25; // 25% error range
+	float fWidthHeightWeightRatio_Width = 0.7; // width 0.7 height 0.3
+	
+	int tgtWidth, tgtHeight, refWidth, refHeight; // target, reference infors
+	tgtWidth = srcBlob.currentBoundingRect.width;
+	tgtHeight = srcBlob.currentBoundingRect.height;
+	// configuration 
+	vector<float> sedan_h = { -0.0000f, 0.0175f, -2.2934f,  112.5277f }; // scale factor 0.5
+	vector<float> sedan_w = { -0.0000f, 0.0145f, -1.9022f,   98.5669f };
+	vector<float> suv_h = { -0.0001f,   0.0222f, -2.7976f,  139.0639f };
+	vector<float> suv_w = { -0.0000f,   0.0188f, -2.4257f,  121.9226f };
+	vector<float> truck_h = { -0.0001f,  0.0237f, -3.0646f,  149.6536f };
+	vector<float> truck_w = { -0.0000f,  0.0152f, -2.0911f,  110.7545f };
+	vector<float> human_h = { -0.0000f,  0.0018f, -0.5058f,  49.2795f };
+	vector<float> human_w = { -0.0000f,  0.0016f, -0.3209f,  28.2362f };
+	ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
+	ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
+	ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
+	ITMSPolyValues polyvalue_suv_w(suv_w, suv_w.size());
+	ITMSPolyValues polyvalue_truck_h(truck_h, truck_h.size());
+	ITMSPolyValues polyvalue_truck_w(truck_w, truck_w.size());
+	ITMSPolyValues polyvalue_human_h(human_h, human_h.size());
+	ITMSPolyValues polyvalue_human_w(human_w, human_w.size());
+	// sedan
+	refHeight = polyvalue_sedan_h.getPolyValue(fdistance);
+	refWidth = polyvalue_sedan_w.getPolyValue(fdistance);
+	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
+		(1.f-fWidthHeightWeightRatio_Width)*(refHeight-fabs(refHeight-tgtHeight))/refHeight;
+	objClassProbs.push_back(pair<string, float>("sedan", prob));
+	// suv
+	refHeight = polyvalue_suv_h.getPolyValue(fdistance);
+	refWidth = polyvalue_suv_w.getPolyValue(fdistance);
+	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
+		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
+	objClassProbs.push_back(pair<string, float>("suv", prob));
+	// truck
+	refHeight = polyvalue_truck_h.getPolyValue(fdistance);
+	refWidth = polyvalue_truck_w.getPolyValue(fdistance);
+	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
+		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
+	objClassProbs.push_back(pair<string, float>("truck", prob));
+	// human
+	refHeight = polyvalue_human_h.getPolyValue(fdistance);
+	refWidth = polyvalue_human_w.getPolyValue(fdistance);
+	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
+		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
+	objClassProbs.push_back(pair<string, float>("human", prob));
 
+	sort(objClassProbs.begin(), objClassProbs.end(), cmp); // sort the prob in decending order
+	string strClass = objClassProbs.at(0).first; // class
+	fprobability = objClassProbs.at(0).second;   // prob
 }
