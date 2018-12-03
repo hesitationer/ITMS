@@ -1802,8 +1802,5 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 
 	sort(objClassProbs.begin(), objClassProbs.end(), cmp); // sort the prob in decending order
 	string strClass = objClassProbs.at(0).first; // class
-	fprobability = objClassProbs.at(0).second;   // prob
-
-  
-  
+	fprobability = objClassProbs.at(0).second;   // prob  
 }
