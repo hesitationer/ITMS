@@ -97,6 +97,8 @@ namespace itms {
     void predictNextPosition(void); // 
     cv::Point weightedPositionAverage(bool bWeighted=false); // weighted centerposition average
     // numTap: # of coefficients, bWeighted: weighted or uniform (true/false)
+    std::string getBlobStatus(void);
+    std::string getBlobClass(void);
 
 	void operator = (const Blob &rhBlob);	// operator overloading
   };

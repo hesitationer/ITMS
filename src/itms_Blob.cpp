@@ -259,5 +259,35 @@ namespace itms {
 
     return wpa;
   }
+  std::string Blob::getBlobStatus(void) {
+    std::string status;
+    if (os == OS_STOPPED) {
+      status = " STOP";      
+    }
+    else if (os == OS_MOVING_FORWARD)
+      status = " MV";
+    else if (os == OS_MOVING_BACKWARD) {
+      status = " WWR"; // wrong way on a road      
+    }
+    else
+      status = " ND"; // not determined
+
+    return status;
+  }
+  std::string Blob::getBlobClass(void) {
+    std::string status;
+    if (oc == ObjectClass::OC_HUMAN) {
+      status = " human";
+    }
+    else if (oc == ObjectClass::OC_VEHICLE)
+      status = " vehicle";
+    else if (oc == ObjectClass::OC_OTHER) {
+      status = " ND"; // wrong way on a road      
+    }
+    else
+      status = " somthing wrong (!)!!!(!)"; // not determined
+
+    return status;
+  }
     
 } // end of namespace itms

@@ -643,11 +643,11 @@ int main(void) {
                 float scaleRect = 1.5;
                 Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2.cols, imgFrame2.rows);
                 //Rect expRect = maxSqExpandRect(roi_rect, scaleRect, imgFrame2Copy.cols, imgFrame2Copy.rows);
-                tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
+                /*tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
                 if (tempRegion.size() > 0) {
                   for (int tr = 0; tr < tempRegion.size(); tr++)
                     cout << "=========> (!)(!) class:" << tempRegion[tr].m_type << ", prob:" << tempRegion[tr].m_confidence << endl;
-                }
+                }*/
                 currentFrameBlobs.push_back(possibleBlob);
               }
             
@@ -936,9 +936,9 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
         }
 
         if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
-			addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
-		//if(maxTotalScore>=cutTotalScore){
-		//	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
+			    addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
+		      //if(maxTotalScore>=cutTotalScore){
+		      //	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
         }
         else { // this routine contains new and unassigned track(blob)s
           // add new blob
@@ -948,11 +948,14 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
           if (debugGeneral)
             cout << " distance: " << distance / 100 << " meters from the starting point.\n";
           // do the inside
-          ObjectClass objclass;
-          float classProb = 0.f;
-          classifyObjectWithDistanceRatio(currentFrameBlob, distance / 100, objclass, classProb);
-
-          addNewBlob(currentFrameBlob, existingBlobs, id);
+          if (distance >= 100.00/* 1m */ && distance < 19900/*199m*/) {// between 1 meter and 199 meters
+            ObjectClass objclass;
+            float classProb = 0.f;
+            classifyObjectWithDistanceRatio(currentFrameBlob, distance / 100, objclass, classProb);
+            // update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
+            if(classProb>0.5f)
+              addNewBlob(currentFrameBlob, existingBlobs, id);
+          }
             
         }
 
@@ -1017,10 +1020,8 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 
 		//existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize; 
 		//existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
-
 	}
-	else {
-		
+	else {		
 		// if the given current frame blob's size is not propriate, we just move the center point of the existing blob
 		existingBlobs[intIndex].currentContour = currentFrameBlob.currentContour;
 		existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
@@ -1036,6 +1037,25 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
    // else
    //   int kkk = 0;
     existingBlobs[intIndex].blnCurrentMatchFoundOrNewBlob = true;
+    // update the object class
+    if (existingBlobs[intIndex].oc_prob < 0.5 || existingBlobs[intIndex].oc == ObjectClass::OC_OTHER) {
+      // srcBlob-based classfication 2018. 12. 10
+      vector<Point2f> blobCenterPxs;
+      blobCenterPxs.push_back(currentFrameBlob.centerPositions.back());
+      float distance = getDistanceInMeterFromPixels(blobCenterPxs, transmtxH, lane_length, false);
+      if (debugGeneral)
+        cout << " distance: " << distance / 100 << " meters from the starting point.\n";
+      
+      ObjectClass objclass;
+      float classProb = 0.f;
+      classifyObjectWithDistanceRatio(currentFrameBlob, distance / 100, objclass, classProb);
+      // update the blob info 
+      if (existingBlobs[intIndex].oc_prob < currentFrameBlob.oc_prob) {
+        existingBlobs[intIndex].oc_prob = currentFrameBlob.oc_prob;
+        existingBlobs[intIndex].oc = currentFrameBlob.oc;
+      }
+
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1261,7 +1281,7 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
             else
               status = " ND"; // not determined
 
-            infostr = std::to_string(blobs[i].id) + status + std::to_string(blobs[i].os_pro);
+            infostr = std::to_string(blobs[i].id) + status + blobs[i].getBlobClass();// std::to_string(blobs[i].oc);
             cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
             if (debugTrace) {
               // draw the trace of object
@@ -1727,7 +1747,7 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
   // 3. sort with probabilty in descending order
   // 4. determine the class for the given object
   // ------------------------------------------------------------------------------------
-
+  float fmininum_class_prob = 0.5;  // minimum probability for declaring the class type
 	std::vector<std::pair<std::string, float>> objClassProbs; // object class with probabilities
 	float fdistance = distFromZero, prob=0.f, perc_Thres = 0.25; // 25% error range
 	float fWidthHeightWeightRatio_Width = 0.7; // width 0.7 height 0.3
@@ -1802,5 +1822,21 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 
 	sort(objClassProbs.begin(), objClassProbs.end(), cmp); // sort the prob in decending order
 	string strClass = objClassProbs.at(0).first; // class
-	fprobability = objClassProbs.at(0).second;   // prob  
+	fprobability = objClassProbs.at(0).second;   // prob 
+  if (fprobability >= fmininum_class_prob) {   // the if and its below can be replaced with (?) a:b; for speed
+    if (strClass == "human")
+      objClass = ObjectClass::OC_HUMAN;
+    else
+    {
+      objClass = ObjectClass::OC_VEHICLE;
+    }
+
+  }
+  else {
+    objClass = ObjectClass::OC_OTHER; // not determined
+  }
+  // update currentBlob
+  srcBlob.oc_prob = fprobability;
+  srcBlob.oc = objClass;
 }
+
