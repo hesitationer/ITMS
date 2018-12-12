@@ -637,6 +637,7 @@ int main(void) {
               imshow("blob image_roi", imgFrame2Copy(roi_rect));
               waitKey(0);*/
               blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask);
+              double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
               if (blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
                 regions_t tempRegion;
                 vector<Mat> outMat;                
@@ -905,28 +906,30 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
         int intIndexOfLeastDistance = 0;
 		int intIndexOfHighestScore = 0;
         double dblLeastDistance = 100000.0;
-		double totalScore = 100.0, cutTotalScore = 60.0, maxTotalScore = 0.0;
+		double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
 		float allowedPercentage = 0.25; // 20%
-		float minArea = currentFrameBlob.currentBoundingRect.area() *(1.0f - allowedPercentage);
-		float MaxArea = currentFrameBlob.currentBoundingRect.area() *(1.0f + allowedPercentage);
-		float minDiagonal = currentFrameBlob.dblCurrentDiagonalSize * (1.0f - allowedPercentage);
-		float maxDiagonal = currentFrameBlob.dblCurrentDiagonalSize * (1.0f + allowedPercentage);
+		float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로 
+		float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
+		float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
+		float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
         for (unsigned int i = 0; i < existingBlobs.size(); i++) {
 
             if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
                 // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
                 double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
 				totalScore -= dblDistance;
-				totalScore -= (existingBlobs[i].dblCurrentDiagonalSize<minDiagonal || existingBlobs[i].dblCurrentDiagonalSize>maxDiagonal) ? 10 : 0;
-				totalScore -= (existingBlobs[i].currentBoundingRect.area() < minArea || existingBlobs[i].currentBoundingRect.area() > MaxArea) ? 10 : 0;
+				totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
+				totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
+        totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area())/max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
 
-				if (dblDistance < dblLeastDistance) {
+				/*if (dblDistance < dblLeastDistance) {
 					dblLeastDistance = dblDistance;
 					intIndexOfLeastDistance = i;
-				}
+				}*/
 				if (maxTotalScore < totalScore) {
 					maxTotalScore = totalScore;
 					intIndexOfHighestScore = i;
+          dblLeastDistance = dblDistance;
 				}
             }
             else { // existingBlobs[i].bInStillBeingTracked == false;
@@ -935,10 +938,10 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
             }
         }
 
-        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
-			    addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
-		      //if(maxTotalScore>=cutTotalScore){
-		      //	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
+        //if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
+			  //  addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
+		      if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
+		      	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
         }
         else { // this routine contains new and unassigned track(blob)s
           // add new blob
