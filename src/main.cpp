@@ -902,45 +902,42 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
   // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
   // with data, kalman or other tracking will be more accurate
     for (auto &currentFrameBlob : currentFrameBlobs) {
-
         int intIndexOfLeastDistance = 0;
-		int intIndexOfHighestScore = 0;
+		    int intIndexOfHighestScore = 0;
         double dblLeastDistance = 100000.0;
-		double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
-		float allowedPercentage = 0.25; // 20%
-		float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로 
-		float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
-		float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
-		float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
+		    double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
+		    float allowedPercentage = 0.25; // 20%
+		    float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로 
+		    float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
+		    float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
+		    float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
         for (unsigned int i = 0; i < existingBlobs.size(); i++) {
-
             if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
                 // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
                 double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
-				totalScore -= dblDistance;
-				totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
-				totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
-        totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area())/max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
+				    totalScore -= dblDistance;
+				    totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
+				    totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
+                totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area())/max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
 
-				/*if (dblDistance < dblLeastDistance) {
+				if (dblDistance < dblLeastDistance) {
 					dblLeastDistance = dblDistance;
 					intIndexOfLeastDistance = i;
-				}*/
-				if (maxTotalScore < totalScore) {
+				}
+				/*if (maxTotalScore < totalScore) {
 					maxTotalScore = totalScore;
 					intIndexOfHighestScore = i;
-          dblLeastDistance = dblDistance;
-				}
+                    dblLeastDistance = dblDistance;
+				}*/
             }
             else { // existingBlobs[i].bInStillBeingTracked == false;
               /* do something for unassinged tracks */
               int temp = 0; // no meaning 
             }
         }
-
-        //if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
+        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
 			  //  addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
-		      if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
+		    //  if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
 		      	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
         }
         else { // this routine contains new and unassigned track(blob)s
@@ -1756,8 +1753,10 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	float fWidthHeightWeightRatio_Width = 0.7; // width 0.7 height 0.3
 	
 	int tgtWidth, tgtHeight, refWidth, refHeight; // target, reference infors
+    float tgtWidthHeightRatio;
 	tgtWidth = srcBlob.currentBoundingRect.width;
 	tgtHeight = srcBlob.currentBoundingRect.height;
+    tgtWidthHeightRatio = (float)tgtHeight / (float)tgtWidth;
   vector<float> objWidth;     // for panelty against distance
   vector<float> objHeight; 
 	// configuration 
@@ -1793,6 +1792,7 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
   float minRefHeight = objWidth.at(objWidth.size() - 1), maxRefHeight = objWidth.at(0);
 
   // size constraints
+  
   if (tgtWidth > maxRefWidth*(1 + perc_Thres) || tgtWidth < minRefWidth*(1 - perc_Thres))
     tgtWidth = 0;
   if (tgtHeight > maxRefHeight*(1 + perc_Thres) || tgtHeight < minRefHeight*(1 - perc_Thres))
@@ -1803,24 +1803,29 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	refWidth = polyvalue_sedan_w.getPolyValue(fdistance);
 	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(1.f-fWidthHeightWeightRatio_Width)*(refHeight-fabs(refHeight-tgtHeight))/refHeight;
+    prob = prob*tgtWidthHeightRatio>= 1.0? 1.0: prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("sedan", prob));
 	// suv
 	refHeight = polyvalue_suv_h.getPolyValue(fdistance);
 	refWidth = polyvalue_suv_w.getPolyValue(fdistance);
 	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
+    prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("suv", prob));
 	// truck
 	refHeight = polyvalue_truck_h.getPolyValue(fdistance);
 	refWidth = polyvalue_truck_w.getPolyValue(fdistance);
 	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
+    prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("truck", prob));
+    
 	// human
 	refHeight = polyvalue_human_h.getPolyValue(fdistance);
 	refWidth = polyvalue_human_w.getPolyValue(fdistance);
 	prob = (1.f-fWidthHeightWeightRatio_Width)*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight; // height is more important for human 
+    prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("human", prob));
 
 	sort(objClassProbs.begin(), objClassProbs.end(), cmp); // sort the prob in decending order
