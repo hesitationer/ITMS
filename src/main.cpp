@@ -34,6 +34,9 @@ using namespace dnn;
 using namespace itms;
 using namespace dnn;
 
+cv::CascadeClassifier cascade;
+cv::HOGDescriptor hog;
+
 #define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
 #define _CRTDBG_MAP_ALLOC
@@ -189,7 +192,9 @@ void getPredicInfo(const vector<Mat>& outs, vector<int>& classIds, vector<float>
 regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& outs);
 cv::Size adjustNetworkInputSize(Size inSize);
 // dnn-based approach ends
-
+// cascade detector related
+void detectCascadeRoi(cv::Mat img, cv::Rect& rect);
+// cascade detector related ends
 // raod configuration related
 float camera_height = 11.0 * 100; // camera height 11 meter
 float lane_length = 200.0 * 100;  // lane length
@@ -373,8 +378,17 @@ int main(void) {
   testPx.push_back(Point2f(1000, 125)*scaleFactor);
   distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
   cout << " distance: " << distance / 100 << " meters from the starting point.\n";
-
+  // define the case cade detector
+  std::string runtime_data_dir1 = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/";
+  std::string xmlFile = runtime_data_dir1 + "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
+  if (!cascade.load(xmlFile)) {
+	  std::cout << "Plase check the xml file in the given location !!(!)\n";
+	  std::cout << xmlFile << std::endl;
+	  return 0;
+  }  
+  hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());
   
+
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
 		std::cout << "error reading video file" << std::endl << std::endl;      // show error message
 		_getch();                   // it may be necessary to change or remove this line if not using Windows
@@ -1848,3 +1862,36 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
   srcBlob.oc = objClass;
 }
 
+void detectCascadeRoi(cv::Mat img, cv::Rect& rect)
+{ /* please see more details in Object_Detector_Cascade Project */
+	Size img_size = img.size();
+	vector<Rect> object;
+	vector<Rect> people;	
+	cascade.detectMultiScale(img(rect), object, 1.1, 5/*1  cascadG */, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(0, 0), img_size); // detectio objects (car)
+																														//cascade.detectMultiScale(img, object, 1.04, 5, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(3, 8), img_size); // detectio objects (people)
+	hog.detectMultiScale(img(rect), people, 0, Size(4, 4), Size(8, 8), 1.05, 2, false);							// detect people
+
+	std::cout << "Total: " << object.size() << " cars detected." << std::endl;
+
+	for (int i = 0; i < (object.size() ? object.size()/*object->total*/ : 0); i++)
+	{		
+		Rect r = object.at(i);
+		cv::rectangle(img,
+			cv::Point(r.x, r.y),
+			cv::Point(r.x + r.width, r.y + r.height),
+			CV_RGB(255, 0, 0), 2, 8, 0);
+	}
+	std::cout << "=>=> " << people.size() << " people detected." << std::endl;
+	for (int i = 0; i < (people.size() ? people.size()/*object->total*/ : 0); i++)
+	{
+		//CvRect *r = (CvRect*)cvGetSeqElem(object, i);
+		Rect r1 = people.at(i);
+		cv::rectangle(img,
+			cv::Point(r1.x, r1.y),
+			cv::Point(r1.x + r1.width, r1.y + r1.height),
+			CV_RGB(0, 255, 0), 2, 8, 0);
+	}
+
+	imshow("video", img);
+	waitKey(1);
+}
