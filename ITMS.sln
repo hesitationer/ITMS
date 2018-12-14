@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MJPGPlayer", "utils\MJPGPla
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Object_Detector_YOLO", "utils\ObjectYoloDetector\Object_Detector_YOLO.vcxproj", "{124ED325-5E61-45FC-A8F7-5B7AF73B6597}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Object_Detector_Cascade", "utils\CascadeDetector\Object_Detector_Cascade.vcxproj", "{1F7597B2-F031-4122-B57A-399B5CCDCB8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x64.Build.0 = Release|x64
 		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x86.ActiveCfg = Release|Win32
 		{124ED325-5E61-45FC-A8F7-5B7AF73B6597}.Release|x86.Build.0 = Release|Win32
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Debug|x64.ActiveCfg = Debug|x64
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Debug|x64.Build.0 = Debug|x64
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Debug|x86.ActiveCfg = Debug|Win32
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Debug|x86.Build.0 = Debug|Win32
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Release|x64.ActiveCfg = Release|x64
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Release|x64.Build.0 = Release|x64
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Release|x86.ActiveCfg = Release|Win32
+		{1F7597B2-F031-4122-B57A-399B5CCDCB8C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
