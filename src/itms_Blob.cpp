@@ -149,7 +149,8 @@ namespace itms {
 	  currentBoundingRect = rhBlob.currentBoundingRect;
 
 	  centerPositions.clear();
-	  centerPositions.push_back(rhBlob.centerPositions.back());
+	  for(int i = 0; i<rhBlob.centerPositions.size();i++)
+		centerPositions.push_back(rhBlob.centerPositions.at(i)); // bug fix on 2018. 12. 17
 
 
 	  dblCurrentDiagonalSize = rhBlob.dblCurrentDiagonalSize;

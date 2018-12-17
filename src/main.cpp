@@ -155,7 +155,7 @@ enum BgSubType { // background substractor type
 };
 // parameters
 bool debugShowImages = true;
-bool debugShowImagesDetail = true;
+bool debugShowImagesDetail = false;
 bool debugGeneral = true;
 bool debugGeneralDetail = false;
 bool debugTrace = true;
@@ -376,12 +376,12 @@ int main(void) {
 	  cout << " to : \n" << tgtPts << endl;
 	  // ----------------------------- confirmation test completed --------------------------------------
   }
-  // 
-  float distance = 0;
+  // sangkny test : distance
+  /*float distance = 0;
   std::vector<cv::Point2f> testPx;
   testPx.push_back(Point2f(1000, 125)*scaleFactor);
   distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
-  cout << " distance: " << distance / 100 << " meters from the starting point.\n";
+  cout << " distance: " << distance / 100 << " meters from the starting point.\n";*/
   // define the case cade detector
   std::string runtime_data_dir1 = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/";
   std::string xmlFile = runtime_data_dir1 + "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
@@ -543,9 +543,12 @@ int main(void) {
                                                                       //String modelConfiguration = runtime_data_dir + "tiny-yolo.cfg"; // was 
                                                                       //String modelWeights = runtime_data_dir + "tiny-yolo.weights";   // was 
                                                                       // Load the network
-    Net net = readNetFromDarknet(modelConfiguration, modelWeights);
+	// sangkny YOLO test
+    /*
+	Net net = readNetFromDarknet(modelConfiguration, modelWeights);
     net.setPreferableBackend(DNN_BACKEND_OPENCV);
     net.setPreferableTarget(DNN_TARGET_CPU);
+	*/
 	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
@@ -621,16 +624,7 @@ int main(void) {
 
         for (auto &convexHull : convexHulls) {
             Blob possibleBlob(convexHull);
-
-            /*if (possibleBlob.currentBoundingRect.area() > 400 &&
-                possibleBlob.dblCurrentAspectRatio > 0.2 &&
-                possibleBlob.dblCurrentAspectRatio < 4.0 &&
-                possibleBlob.currentBoundingRect.width > 30 &&
-                possibleBlob.currentBoundingRect.height > 30 &&
-                possibleBlob.dblCurrentDiagonalSize > 60.0 &&
-                (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
-                currentFrameBlobs.push_back(possibleBlob);
-            }*/
+            
             if (possibleBlob.currentBoundingRect.area() > 10 &&
               possibleBlob.dblCurrentAspectRatio > 0.2 &&
               possibleBlob.dblCurrentAspectRatio < 6.0 &&
@@ -695,6 +689,8 @@ int main(void) {
 							detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
 							if (cars.size())
 								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+							//else
+							//	continue;
 						}
 						else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
 							// verify it
@@ -702,6 +698,8 @@ int main(void) {
 							detectCascadeRoiHuman(imgFrame2Copy, expRect, people);
 							if (people.size())
 								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+							else
+								continue;
 						}
 						else {// should not com in this loop (OC_OTHER)
 							int kkk = 0;
@@ -734,8 +732,9 @@ int main(void) {
             matchCurrentFrameBlobsToExistingBlobs(imgFrame2Copy, blobs, currentFrameBlobs, trackId);
         }
 		imgFrame2Copy = imgFrame2.clone();          // get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
-		if (debugShowImages && debugShowImagesDetail) {
-			drawAndShowContours(imgThresh.size(), blobs, "All imgBlobs");
+		if (debugShowImages ) {
+			if(debugShowImagesDetail)
+				drawAndShowContours(imgThresh.size(), blobs, "All imgBlobs");
 		
 			drawBlobInfoOnImage(blobs, imgFrame2Copy);  // blob(tracked) information
 		}    
@@ -803,7 +802,8 @@ void copyBlob2Blob(Blob &srcBlob, Blob &tgtBlob) {
   tgtBlob.currentBoundingRect = srcBlob.currentBoundingRect;
   
   tgtBlob.centerPositions.clear();
-  tgtBlob.centerPositions.push_back(srcBlob.centerPositions.back());
+  for(int i=0; i<srcBlob.centerPositions.size(); i++)
+	tgtBlob.centerPositions.push_back(srcBlob.centerPositions.at(i));
 
   
   tgtBlob.dblCurrentDiagonalSize = srcBlob.dblCurrentDiagonalSize;
@@ -861,7 +861,7 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
       // merge and erase index blob
       if (flagMerge) {
         if(debugGeneral)
-        cout << "mergeing with " << to_string(intIndexOfLeastDistance)<<" in blob" <<currentBlob->centerPositions.back() << endl;
+          cout << "mergeing with " << to_string(intIndexOfLeastDistance)<<" in blob" <<currentBlob->centerPositions.back() << endl;
 
         // countour merging
         std::vector<cv::Point> points, contour;
@@ -872,9 +872,9 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
         *currentBlob = blob;      // class Blob = operator overloading
         //copyBlob2Blob(blob, *currentBlob);
         std::vector<Blob>::iterator tempBlob = currentFrameBlobs.begin();
-       currentBlob = currentFrameBlobs.erase(tempBlob+intIndexOfLeastDistance);       
-       // do something after real merge
-       continue;
+		currentBlob = currentFrameBlobs.erase(tempBlob+intIndexOfLeastDistance);       
+		// do something after real merge
+		continue;
       }    
       
     }    
@@ -923,16 +923,20 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 				// this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
 				// 아직은 center 값을 늘렸음....
 				if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
-				  cout << "\n\n\n\n ----------------------> stopped object eliminated \n\n\n\n";
+				  cout << "\n\n\n\n -------It--was moving--and --> stopped : object eliminated \n\n\n\n";
 				  existingBlob = existingBlobs.erase(existingBlob);
+				  continue;
 				  //waitKey(0);
 				} 
-				existingBlob->blnCurrentMatchFoundOrNewBlob = false;
-				existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
-				existingBlob->predictNextPosition();
-				//existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
-				++existingBlob;
-				continue;
+				// -------------------------------------------------------------
+				// check this out : sangkny on 2018/12/17
+				//existingBlob->blnCurrentMatchFoundOrNewBlob = false;
+				//existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
+				//existingBlob->predictNextPosition();
+				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
+				//++existingBlob;
+				//continue;
+				// ---------------------------------------------------------------
 			
 			  }else {
 				existingBlob = existingBlobs.erase(existingBlob);
@@ -957,7 +961,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
   // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
   // with data, kalman or other tracking will be more accurate
 	for (auto &currentFrameBlob : currentFrameBlobs) {
-		int intIndexOfLeastDistance = 0,intIndexOfHighestScore = 0;
+		int intIndexOfLeastDistance = 0;
+		//int intIndexOfHighestScore = 0;
         double dblLeastDistance = 100000.0;
 		double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
 		float allowedPercentage = 0.25; // 20%
@@ -975,7 +980,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 				totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
                 totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area())/max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
 
-				if (dblDistance < dblLeastDistance) {
+				if (dblDistance < dblLeastDistance /* && (existingBlobs[i].oc == currentFrameBlob.oc)*/) {
 					dblLeastDistance = dblDistance;
 					intIndexOfLeastDistance = i;
 				}
@@ -990,10 +995,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
               int temp = 0; // no meaning 
             }
         }
-        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5) { // 충분히 클수록 좋다.
-			  //  addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
+        if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize ) { // 충분히 클수록 좋다.
+			    addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
 		    //  if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
-		      	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
+		      //	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
         }
         else { // this routine contains new and unassigned track(blob)s
           // add new blob
@@ -1021,6 +1026,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 					detectCascadeRoiVehicle(srcImg, expRect, cars);
 					if(cars.size())
 						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+					else
+						continue;
 				}
 				else if (currentFrameBlob.oc == itms::ObjectClass::OC_HUMAN) {
 					// verify it
@@ -1028,6 +1035,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 					detectCascadeRoiHuman(srcImg, expRect, people);
 					if (people.size())
 						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+					else
+						continue;
 				}
 				else {// should not com in this loop (OC_OTHER)
 				;
@@ -1221,13 +1230,13 @@ ObjectStatus getObjectStatusFromBlobCenters( Blob &blob, const LaneDirection &la
   
   itms::Blob orgBlob = blob; // backup 
   updateBlobProperties(blob, objectstatus); // update the blob properties including the os_prob
-  itms::ObjectStatus tmpOS = computeObjectStatusProbability(blob); // get the moving status according to the probability
-  if (tmpOS != objectstatus) {    
-    objectstatus = tmpOS;
-    // go back to original blob and update again correctly
-    blob = orgBlob;
-    updateBlobProperties(blob, objectstatus);
-  }
+  //itms::ObjectStatus tmpOS = computeObjectStatusProbability(blob); // get the moving status according to the probability
+  //if (tmpOS != objectstatus) {    
+  //  objectstatus = tmpOS;
+  //  // go back to original blob and update again correctly
+  //  blob = orgBlob;
+  //  updateBlobProperties(blob, objectstatus);
+  //}
   
 
   return objectstatus;
