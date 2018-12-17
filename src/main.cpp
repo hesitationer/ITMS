@@ -50,6 +50,8 @@ cv::HOGDescriptor hog;
 #endif
 #endif
 
+// #define _CASCADE_HUMAN 
+
 // global variables ///////////////////////////////////////////////////////////////////////////////
 const cv::Scalar SCALAR_BLACK = cv::Scalar(0.0, 0.0, 0.0);
 const cv::Scalar SCALAR_WHITE = cv::Scalar(255.0, 255.0, 255.0);
@@ -85,7 +87,7 @@ int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2);
 
 // general : blob image processing (blob_imp)
 void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs);
-void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
+void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
 double distanceBetweenPoints(cv::Point point1, cv::Point point2);
@@ -194,6 +196,8 @@ cv::Size adjustNetworkInputSize(Size inSize);
 // dnn-based approach ends
 // cascade detector related
 void detectCascadeRoi(cv::Mat img, cv::Rect& rect);
+void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars);
+void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
 // cascade detector related ends
 // raod configuration related
 float camera_height = 11.0 * 100; // camera height 11 meter
@@ -636,58 +640,98 @@ int main(void) {
               (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
               //  new approach according to 
               // 1. distance, 2. correlation within certain range
-              std::vector<cv::Point2f> blob_ntPts;
-              blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));
-              float realDistance = getDistanceInMeterFromPixels(blob_ntPts, transmtxH, lane_length, false);
-              cv::Rect roi_rect = possibleBlob.currentBoundingRect;
-              float blobncc = 0;
-              if (debugGeneral) {
-                cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
-              }
-              // bg image
-              // currnt image
+				  std::vector<cv::Point2f> blob_ntPts;
+				  blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));
+				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, transmtxH, lane_length, false);
+				  cv::Rect roi_rect = possibleBlob.currentBoundingRect;
+				  float blobncc = 0;
+				  if (debugGeneral) {
+					cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+				  }
+				  // bg image
+				  // currnt image
 
-              /*imshow("bgimage", BGImage(roi_rect));
-              imshow("blob image_roi", imgFrame2Copy(roi_rect));
-              waitKey(0);*/
-              blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask);
-              double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
-              if (blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
-                regions_t tempRegion;
-                vector<Mat> outMat;                
-                float scaleRect = 1.5;
-                Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2.cols, imgFrame2.rows);
-                //Rect expRect = maxSqExpandRect(roi_rect, scaleRect, imgFrame2Copy.cols, imgFrame2Copy.rows);
-                /*tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
-                if (tempRegion.size() > 0) {
-                  for (int tr = 0; tr < tempRegion.size(); tr++)
-                    cout << "=========> (!)(!) class:" << tempRegion[tr].m_type << ", prob:" << tempRegion[tr].m_confidence << endl;
-                }*/
-                currentFrameBlobs.push_back(possibleBlob);
-              }
+				  /*imshow("bgimage", BGImage(roi_rect));
+				  imshow("blob image_roi", imgFrame2Copy(roi_rect));
+				  waitKey(0);*/
+				  blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask);
+				  double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
+				  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
+		//            regions_t tempRegion;
+		//            vector<Mat> outMat;                
+					/*float scaleRect = 1.5;
+					Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2.cols, imgFrame2.rows);*/
+					//Rect expRect = maxSqExpandRect(roi_rect, scaleRect, imgFrame2Copy.cols, imgFrame2Copy.rows);
+		//            /*tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
+		//            if (tempRegion.size() > 0) {
+		//              for (int tr = 0; tr < tempRegion.size(); tr++)
+		//                cout << "=========> (!)(!) class:" << tempRegion[tr].m_type << ", prob:" << tempRegion[tr].m_confidence << endl;
+		//            }*/
+					////detectCascadeRoi(imgFrame2Copy, expRect); // detect both cars and humans
+					//vector<Rect> Cars, Humans;
+					//detectCascadeRoiVehicle(imgFrame2Copy, expRect, Cars); // detect cars only
+					//detectCascadeRoiHuman(imgFrame2Copy, expRect, Humans); // detect people only
+					//if(debugGeneralDetail && Cars.size())
+					//	cout<< " ==>>>> Car is detected !!"<<endl;
+					//if(debugGeneralDetail && Humans.size())
+					//	cout << " ==>>>> Human is detected !!" << endl;
+					// classify and put it to the blobls
+					ObjectClass objclass;
+					float classProb = 0.f;
+					classifyObjectWithDistanceRatio(possibleBlob, realDistance / 100, objclass, classProb);
+					// update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
+					// verify the object with cascade object detection
+					if(classProb > 0.99 /* 1.0 */){
+						currentFrameBlobs.push_back(possibleBlob);
+					}
+					else if (classProb>0.5f) {
+						// check with a ML-based approach
+						float scaleRect = 1.5;
+						Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
+					
+						if (possibleBlob.oc == itms::ObjectClass::OC_VEHICLE) {
+							// verify it
+							std::vector<cv::Rect> cars;
+							detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
+							if (cars.size())
+								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+						}
+						else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
+							// verify it
+							std::vector<cv::Rect> people;
+							detectCascadeRoiHuman(imgFrame2Copy, expRect, people);
+							if (people.size())
+								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+						}
+						else {// should not com in this loop (OC_OTHER)
+							int kkk = 0;
+						}
+						currentFrameBlobs.push_back(possibleBlob);
+					}
             
-            }
+				}
+			}
         }
+
 		if (debugShowImages && debugShowImagesDetail) {
 			// all of the currentFrameBlobs at this stage have 1 visible count yet. 
 			drawAndShowContours(imgThresh.size(), currentFrameBlobs, "imgCurrentFrameBlobs");
 		}
-    // merge assuming
-    // blobs are in the ROI because of ROI map
-    // 남북 이동시는 가로가 세로보다 커야 한다.
-    // 
-    
-    mergeBlobsInCurrentFrameBlobs(currentFrameBlobs); // need to consider the distance
-    if (debugShowImages && debugShowImagesDetail) {
-      drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
-      waitKey(1);
-    }
+		// merge assuming
+		// blobs are in the ROI because of ROI map
+		// 남북 이동시는 가로가 세로보다 커야 한다.
+		//     
+		mergeBlobsInCurrentFrameBlobs(currentFrameBlobs); // need to consider the distance
+		if (debugShowImages && debugShowImagesDetail) {
+		  drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
+		  waitKey(1);
+		}
         if (blnFirstFrame == true) {
             for (auto &currentFrameBlob : currentFrameBlobs) {
                 blobs.push_back(currentFrameBlob);
             }
         } else {
-            matchCurrentFrameBlobsToExistingBlobs(blobs, currentFrameBlobs, trackId);
+            matchCurrentFrameBlobsToExistingBlobs(imgFrame2Copy, blobs, currentFrameBlobs, trackId);
         }
 		imgFrame2Copy = imgFrame2.clone();          // get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 		if (debugShowImages && debugShowImagesDetail) {
@@ -840,71 +884,68 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
  
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
+void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id){
 	std::vector<Blob>::iterator existingBlob = existingBlobs.begin();
 	while ( existingBlob != existingBlobs.end()) {
-		// check if a block is too old after disappeared in the screen
+			// check if a block is too old after disappeared in the screen
 		if (existingBlob->blnStillBeingTracked == false 
-			&& existingBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) { 
-			// removing a blob from the list of existingBlobs						
-      // overlapping test if overlapped or background, we will erase.
-      std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
-      int intIndexOfOverlapped = -1;
-      double dblLeastDistance = 100000.0;
-      for (unsigned int i = 0; i < existingBlobs.size(); i++) {
-        int intSect = InterSectionRect(existingBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
+				&& existingBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) { 
+				// removing a blob from the list of existingBlobs						
+			  // overlapping test if overlapped or background, we will erase.
+			  std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
+			  int intIndexOfOverlapped = -1;
+			  double dblLeastDistance = 100000.0;
+			  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
+				int intSect = InterSectionRect(existingBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
 
-        if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated
-          overlappedBobPair.push_back(std::pair<int, int>(i, intSect));
-        }
-      }
-
-      // erase the blob
-      if (overlappedBobPair.size() > 0) { // how about itself ? 
-        if (debugTrace /*&& debugGeneralDetail*/) {
-          cout << " (!)==> Old and deserted blob id: " << existingBlob->id << " is eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height)<<"\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
-          cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
-          cout << "age: " << existingBlob->age << endl;
-          cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
-        }
-        existingBlob = existingBlobs.erase(existingBlob);
-      }
-      else{ // partial or no overlapped
-        // conditional elimination
-        if (debugTrace /* && debugGeneralDetail*/) {
-          cout << " (!)! Old blob id: " << existingBlob->id << " is conditionally eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
-          cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
-          cout << "age: " << existingBlob->age << endl;
-          cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
-        }
-        if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
-          // this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
-          // 아직은 center 값을 늘렸음....
-          if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
-            cout << "\n\n\n\n ----------------------> stopped object eliminated \n\n\n\n";
-            existingBlob = existingBlobs.erase(existingBlob);
-            //waitKey(0);
-          } {
-            existingBlob->blnCurrentMatchFoundOrNewBlob = false;
-            existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
-            existingBlob->predictNextPosition();
-            //existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
-            ++existingBlob;
-            continue;
-          }
-        }
-        else {
-          existingBlob = existingBlobs.erase(existingBlob);
-        }
-      }
+				if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated
+				  overlappedBobPair.push_back(std::pair<int, int>(i, intSect));
+				}
+			  }
+			// erase the blob
+			if (overlappedBobPair.size() > 0) { // how about itself ? 
+			  if (debugTrace /*&& debugGeneralDetail*/) {
+				cout << " (!)==> Old and deserted blob id: " << existingBlob->id << " is eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height)<<"\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
+				cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
+				cout << "age: " << existingBlob->age << endl;
+				cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
+			  }
+			  existingBlob = existingBlobs.erase(existingBlob);
+			}else{ // partial or no overlapped
+			  // conditional elimination
+			  if (debugTrace /* && debugGeneralDetail*/) {
+				cout << " (!)! Old blob id: " << existingBlob->id << " is conditionally eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
+				cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
+				cout << "age: " << existingBlob->age << endl;
+				cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
+			  }
+			  if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
+				// this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
+				// 아직은 center 값을 늘렸음....
+				if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
+				  cout << "\n\n\n\n ----------------------> stopped object eliminated \n\n\n\n";
+				  existingBlob = existingBlobs.erase(existingBlob);
+				  //waitKey(0);
+				} 
+				existingBlob->blnCurrentMatchFoundOrNewBlob = false;
+				existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
+				existingBlob->predictNextPosition();
+				//existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
+				++existingBlob;
+				continue;
+			
+			  }else {
+				existingBlob = existingBlobs.erase(existingBlob);
+			  }
+			}
+		}else {
+		  existingBlob->blnCurrentMatchFoundOrNewBlob = false;
+		  existingBlob->predictNextPosition();
+		  //existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); 
+		  // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
+		  ++existingBlob;
 		}
-		else {
-			existingBlob->blnCurrentMatchFoundOrNewBlob = false;
-			existingBlob->predictNextPosition();
-      //existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
-			++existingBlob;
-		}
-  } // end while ( existingBlob != existingBlobs.end())
+	} // end while ( existingBlob != existingBlobs.end())
 	/*for (auto &existingBlob : existingBlobs) {	
 		existingBlob.blnCurrentMatchFoundOrNewBlob = false;
 		existingBlob.predictNextPosition();
@@ -915,23 +956,23 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
   // serch around the nearest neighbor blob for tracking 
   // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
   // with data, kalman or other tracking will be more accurate
-    for (auto &currentFrameBlob : currentFrameBlobs) {
-        int intIndexOfLeastDistance = 0;
-		    int intIndexOfHighestScore = 0;
+	for (auto &currentFrameBlob : currentFrameBlobs) {
+		int intIndexOfLeastDistance = 0,intIndexOfHighestScore = 0;
         double dblLeastDistance = 100000.0;
-		    double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
-		    float allowedPercentage = 0.25; // 20%
-		    float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로 
-		    float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
-		    float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
-		    float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
+		double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
+		float allowedPercentage = 0.25; // 20%
+		float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로 
+		float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
+		float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
+		float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
+
         for (unsigned int i = 0; i < existingBlobs.size(); i++) {
             if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
                 // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
                 double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
-				    totalScore -= dblDistance;
-				    totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
-				    totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
+				totalScore -= dblDistance;
+				totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
+				totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
                 totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area())/max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
 
 				if (dblDistance < dblLeastDistance) {
@@ -967,8 +1008,32 @@ void matchCurrentFrameBlobsToExistingBlobs(std::vector<Blob> &existingBlobs, std
             float classProb = 0.f;
             classifyObjectWithDistanceRatio(currentFrameBlob, distance / 100, objclass, classProb);
             // update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
-            if(classProb>0.5f)
-              addNewBlob(currentFrameBlob, existingBlobs, id);
+			// verify the object with cascade object detection
+
+            if(classProb>0.5f){
+			  // check with a ML-based approach
+				float scaleRect = 1.5;										// put it to the config parameters
+				cv::Rect roi_rect(currentFrameBlob.currentBoundingRect);	// copy the current Rect and expand it
+				cv::Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, srcImg.cols, srcImg.rows);
+				if (currentFrameBlob.oc == itms::ObjectClass::OC_VEHICLE) {
+					// verify it
+					std::vector<cv::Rect> cars;					
+					detectCascadeRoiVehicle(srcImg, expRect, cars);
+					if(cars.size())
+						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+				}
+				else if (currentFrameBlob.oc == itms::ObjectClass::OC_HUMAN) {
+					// verify it
+					std::vector<cv::Rect> people;
+					detectCascadeRoiHuman(srcImg, expRect, people);
+					if (people.size())
+						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+				}
+				else {// should not com in this loop (OC_OTHER)
+				;
+				}			  
+				addNewBlob(currentFrameBlob, existingBlobs, id);
+			  }
           }
             
         }
@@ -1864,34 +1929,174 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 
 void detectCascadeRoi(cv::Mat img, cv::Rect& rect)
 { /* please see more details in Object_Detector_Cascade Project */
-	Size img_size = img.size();
+	Mat roiImg = img(rect).clone();
+	Mat hogImg;
+	// debug details
+	hogImg = roiImg.clone();
+	int casWidth = 128; // ratio is 1: 1 for width to height
+	int svmWidth = 64 * 1.5, svmHeight = 128 * 1.5;
+
+	// adjust cascade window image
+	float casRatio = (float)casWidth/roiImg.cols;
+	//bool debugGeneralDetails = true;
+	//bool debugShowImage = true;
+
+	resize(roiImg, roiImg, Size(), casRatio, casRatio);
+
+	Size img_size = roiImg.size();
 	vector<Rect> object;
 	vector<Rect> people;	
-	cascade.detectMultiScale(img(rect), object, 1.1, 5/*1  cascadG */, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(0, 0), img_size); // detectio objects (car)
-																														//cascade.detectMultiScale(img, object, 1.04, 5, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(3, 8), img_size); // detectio objects (people)
-	hog.detectMultiScale(img(rect), people, 0, Size(4, 4), Size(8, 8), 1.05, 2, false);							// detect people
+	cascade.detectMultiScale(roiImg, object, 1.1, 5/*1  cascadG */, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(0, 0), img_size); // detectio objects (car)
+	//cascade.detectMultiScale(img, object, 1.04, 5, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(3, 8), img_size); // detectio objects (people)
 
-	std::cout << "Total: " << object.size() << " cars detected." << std::endl;
+	// adjust the size : hog is not working if the size of an image is not fitted to the definition	
+	if (hogImg.cols < svmWidth) {
+		float widthRatio = (float)svmWidth/hogImg.cols;
+		resize(hogImg,hogImg, Size(), widthRatio,widthRatio); // same ratio is applied to both direction
+	}
+	if (hogImg.rows < svmHeight) {
+		float heightRatio = (float)svmHeight/hogImg.rows;
+		resize(hogImg, hogImg, Size(), heightRatio, heightRatio);
+	}
+	hog.detectMultiScale(hogImg, people, 0, Size(4, 4), Size(8, 8), 1.05, 2, false);							// detect people
+	if(debugGeneralDetail){
+			std::cout << "Total: " << object.size() << " cars detected." << std::endl;
+			std::cout << "=>=> " << people.size() << " people detected." << std::endl;
+	}
 
 	for (int i = 0; i < (object.size() ? object.size()/*object->total*/ : 0); i++)
 	{		
 		Rect r = object.at(i);
-		cv::rectangle(img,
-			cv::Point(r.x, r.y),
-			cv::Point(r.x + r.width, r.y + r.height),
-			CV_RGB(255, 0, 0), 2, 8, 0);
-	}
-	std::cout << "=>=> " << people.size() << " people detected." << std::endl;
+		if(debugShowImagesDetail)
+			cv::rectangle(roiImg,
+				cv::Point(r.x, r.y),
+				cv::Point(r.x + r.width, r.y + r.height),
+				CV_RGB(255, 0, 0), 2, 8, 0);
+	}	
 	for (int i = 0; i < (people.size() ? people.size()/*object->total*/ : 0); i++)
 	{
 		//CvRect *r = (CvRect*)cvGetSeqElem(object, i);
 		Rect r1 = people.at(i);
-		cv::rectangle(img,
-			cv::Point(r1.x, r1.y),
-			cv::Point(r1.x + r1.width, r1.y + r1.height),
-			CV_RGB(0, 255, 0), 2, 8, 0);
+		if(debugShowImagesDetail)
+				cv::rectangle(hogImg,
+				cv::Point(r1.x, r1.y),
+				cv::Point(r1.x + r1.width, r1.y + r1.height),
+				CV_RGB(0, 255, 0), 2, 8, 0);
+	}
+	if (debugShowImagesDetail) {
+		imshow("cascade image", roiImg);
+		imshow("hog", hogImg);
+		waitKey(1);		
+	}
+	
+}
+void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars)
+{ /* please see more details in Object_Detector_Cascade Project */
+	Mat roiImg = img(rect).clone();	
+		
+	int casWidth = 128; // ratio is 1: 1 for width to height
+	
+	// adjust cascade window image
+	float casRatio = (float)casWidth / roiImg.cols;
+	
+	resize(roiImg, roiImg, Size(), casRatio, casRatio);
+
+	Size img_size = roiImg.size();
+	vector<Rect> object;	
+	cascade.detectMultiScale(roiImg, object, 1.1, 5/*1  cascadG */, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(0, 0), img_size); // detectio objects (car)
+	//cascade.detectMultiScale(img, object, 1.04, 5, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(3, 8), img_size); // detectio objects (people)
+	if (debugGeneralDetail) {
+		std::cout << "Total: " << object.size() << " cars are detected in detectCascadeRoiVehicle function." << std::endl;		
 	}
 
-	imshow("video", img);
-	waitKey(1);
+	for (int i = 0; i < (object.size() ? object.size()/*object->total*/ : 0); i++)
+	{
+		Rect r = object.at(i);
+		// check the center point of the given ROI is in the rect of the output
+		Rect tgtRect(roiImg.cols/2-1, roiImg.rows/2-1,3,3); // 3x3 at center point of the ROI 
+		Rect inter = (tgtRect & r);
+		if(inter.area())
+			_cars.push_back(r);
+
+		if (debugShowImagesDetail){
+			if(roiImg.channels() < 3)
+				cvtColor(roiImg, roiImg, CV_GRAY2BGR);
+			cv::rectangle(roiImg,
+				r,
+				CV_RGB(255, 0, 0), 2, 8, 0);
+			if(inter.area())
+				cv::rectangle(roiImg, inter, CV_RGB(255,0,0), 2,8, 0);
+		}
+	}	
+	if (debugShowImagesDetail) {
+		imshow("vehicle in detection", roiImg);		
+		waitKey(1);
+	}
+}
+// find people in the given ROI
+void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people)
+{ 
+/* this function return the location of human according to the detection method
+1. svm based algorithm which needs more computation time
+2. cascade haar-like approach, which is fast but not much robust compared to SVM-based approach 
+*/
+
+	// debugging 
+	//bool debugGeneralDetails = true;
+	//bool debugShowImage = true;
+
+	Mat hogImg = img(rect).clone();
+	// debug details
+#ifdef _CASCADE_HUMAN
+	int casWidth = 128; // ratio is 1: 1 for width to height
+	float casRatio = (float)casWidth / hogImg.cols;
+
+	resize(hogImg, hogImg, Size(), casRatio, casRatio);
+
+	Size img_size = hogImg.size();
+	vector<Rect> people;	
+	cascade.detectMultiScale(hogImg, people, 1.1, 5/*1  cascadG */, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(0, 0), img_size); // detectio objects (car)
+	//cascade.detectMultiScale(hogImg, people, 1.04, 5, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(3, 8), img_size); // detectio objects (people) 
+	// need to change the xml file for human instead of using cars.xml
+#else
+	int svmWidth = 64 * 1.5, svmHeight = 128 * 1.5;
+	vector<Rect> people;
+	if (hogImg.cols < svmWidth) {
+		float widthRatio = (float)svmWidth / hogImg.cols;
+		resize(hogImg, hogImg, Size(), widthRatio, widthRatio); // same ratio is applied to both direction
+	}
+	if (hogImg.rows < svmHeight) {
+		float heightRatio = (float)svmHeight / hogImg.rows;
+		resize(hogImg, hogImg, Size(), heightRatio, heightRatio);
+	}
+	hog.detectMultiScale(hogImg, people, 0, Size(4, 4), Size(8, 8), 1.05, 2, false);							// detect people
+
+#endif
+	if (debugGeneralDetail) {	
+		std::cout << "=>=> " << people.size() << " people detected in detect cascadeRoiHuamn function." << std::endl;
+	}
+	
+	for (int i = 0; i < (people.size() ? people.size()/*object->total*/ : 0); i++)
+	{		
+		Rect r1 = people.at(i);
+		// check the center point of the given ROI is in the rect of the output
+		Rect tgtRect(hogImg.cols / 2-1, hogImg.rows / 2-1, 3, 3); // 3x3 at center point of the ROI 
+		Rect inter = (tgtRect & r1);
+		if(inter.area())
+			_people.push_back(r1);
+		if (debugShowImagesDetail){
+			if(hogImg.channels()<3)
+				cvtColor(hogImg, hogImg, CV_GRAY2BGR);
+
+			cv::rectangle(hogImg,
+				r1,
+				CV_RGB(0, 255, 0), 2, 8, 0);
+			if(inter.area())
+				cv::rectangle(hogImg, inter, CV_RGB(255,0,0), 2, 8, 0);
+		}
+	}
+	if (debugShowImagesDetail) {		
+		imshow("human in HOG SVM", hogImg);
+		waitKey(1);
+	}
 }
