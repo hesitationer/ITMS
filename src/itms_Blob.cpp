@@ -195,71 +195,78 @@ namespace itms {
 
   }
 
-  cv::Point Blob::weightedPositionAverage(bool bWeighted) {
+  cv::Point Blob::weightedPositionAverage(int bWeighted) { // -1: past , 0: false (uniform average), 1: true (weighted average)
     cv::Point wpa(cv::Point(0, 0));
     //int maxTap = numMaxTap;
     int numPositions = (int)centerPositions.size();
 
-    if (numPositions == 1) {
+	if (bWeighted < 0/* -1 */) { // updated on 2018. 12. 18
+		int intPastMax = 5;
+		//int deltaX, deltaY;
+		wpa = (numPositions < intPastMax) ? centerPositions[0] : centerPositions[intPastMax - 1];		
+	}
+	else {
+		if (numPositions == 1) {
 
-      wpa.x = centerPositions.back().x;
-      wpa.y = centerPositions.back().y;
+			wpa.x = centerPositions.back().x;
+			wpa.y = centerPositions.back().y;
 
-    }
-    else if (numPositions == 2) {
+		}
+		else if (numPositions == 2) {
 
-      int deltaX = (bWeighted)? 2*centerPositions[1].x + centerPositions[0].x : centerPositions[1].x + centerPositions[0].x; // 
-      deltaX = (bWeighted) ? std::round((float)deltaX / 3.0) : std::round((float)deltaX / 2.0);
+			int deltaX = (bWeighted) ? 2 * centerPositions[1].x + centerPositions[0].x : centerPositions[1].x + centerPositions[0].x; // 
+			deltaX = (bWeighted) ? std::round((float)deltaX / 3.0) : std::round((float)deltaX / 2.0);
 
-      int deltaY = (bWeighted)? 2*centerPositions[1].y + centerPositions[0].y : centerPositions[1].y + centerPositions[0].y;
-      deltaY = (bWeighted) ? std::round((float)deltaY / 3.0) : std::round((float)deltaY / 2.0);
-      wpa = cv::Point(deltaX,deltaY);
-    }
-    else if (numPositions == 3) {
+			int deltaY = (bWeighted) ? 2 * centerPositions[1].y + centerPositions[0].y : centerPositions[1].y + centerPositions[0].y;
+			deltaY = (bWeighted) ? std::round((float)deltaY / 3.0) : std::round((float)deltaY / 2.0);
+			wpa = cv::Point(deltaX, deltaY);
+		}
+		else if (numPositions == 3) {
 
-      int sumOfXChanges = (bWeighted)? (3*centerPositions[2].x +2* centerPositions[1].x + centerPositions[0].x): (centerPositions[2].x + centerPositions[1].x + centerPositions[0].x);
+			int sumOfXChanges = (bWeighted) ? (3 * centerPositions[2].x + 2 * centerPositions[1].x + centerPositions[0].x) : (centerPositions[2].x + centerPositions[1].x + centerPositions[0].x);
 
-      int deltaX = (bWeighted)? (int)std::round((float)sumOfXChanges / 6.0) : (int)std::round((float)sumOfXChanges / 3.0);
+			int deltaX = (bWeighted) ? (int)std::round((float)sumOfXChanges / 6.0) : (int)std::round((float)sumOfXChanges / 3.0);
 
-      int sumOfYChanges = (bWeighted) ? (3 * centerPositions[2].y + 2 * centerPositions[1].y + centerPositions[0].y) : (centerPositions[2].y + centerPositions[1].y + centerPositions[0].y);
-      int deltaY = (bWeighted) ? (int)std::round((float)sumOfYChanges / 6.0) : (int)std::round((float)sumOfYChanges / 3.0);
+			int sumOfYChanges = (bWeighted) ? (3 * centerPositions[2].y + 2 * centerPositions[1].y + centerPositions[0].y) : (centerPositions[2].y + centerPositions[1].y + centerPositions[0].y);
+			int deltaY = (bWeighted) ? (int)std::round((float)sumOfYChanges / 6.0) : (int)std::round((float)sumOfYChanges / 3.0);
 
-      wpa = cv::Point(deltaX, deltaY);
+			wpa = cv::Point(deltaX, deltaY);
 
-    }
-    else if (numPositions == 4) {
+		}
+		else if (numPositions == 4) {
 
-      int sumOfXChanges = (bWeighted) ? (4*centerPositions[3].x + 3 * centerPositions[2].x + 2 * centerPositions[1].x + centerPositions[0].x) : (centerPositions[3].x + centerPositions[2].x + centerPositions[1].x + centerPositions[0].x);
+			int sumOfXChanges = (bWeighted) ? (4 * centerPositions[3].x + 3 * centerPositions[2].x + 2 * centerPositions[1].x + centerPositions[0].x) : (centerPositions[3].x + centerPositions[2].x + centerPositions[1].x + centerPositions[0].x);
 
-      int deltaX = (bWeighted) ? (int)std::round((float)sumOfXChanges / 10.0) : (int)std::round((float)sumOfXChanges / 4.0);
+			int deltaX = (bWeighted) ? (int)std::round((float)sumOfXChanges / 10.0) : (int)std::round((float)sumOfXChanges / 4.0);
 
-      int sumOfYChanges = (bWeighted) ? (4*centerPositions[3].y + 3 * centerPositions[2].y + 2 * centerPositions[1].y + centerPositions[0].y) : (centerPositions[3].y + centerPositions[2].y + centerPositions[1].y + centerPositions[0].y);
-      int deltaY = (bWeighted) ? (int)std::round((float)sumOfYChanges / 10.0) : (int)std::round((float)sumOfYChanges / 4.0);
+			int sumOfYChanges = (bWeighted) ? (4 * centerPositions[3].y + 3 * centerPositions[2].y + 2 * centerPositions[1].y + centerPositions[0].y) : (centerPositions[3].y + centerPositions[2].y + centerPositions[1].y + centerPositions[0].y);
+			int deltaY = (bWeighted) ? (int)std::round((float)sumOfYChanges / 10.0) : (int)std::round((float)sumOfYChanges / 4.0);
 
-      wpa = cv::Point(deltaX, deltaY);
+			wpa = cv::Point(deltaX, deltaY);
 
-    }
-    else if (numPositions >= 5) {
+		}
+		else if (numPositions >= 5) {
 
-      int sumOfXChanges = (bWeighted)? (5*centerPositions[numPositions - 1].x + 4*centerPositions[numPositions - 2].x + 3*centerPositions[numPositions - 3].x + 2*centerPositions[numPositions - 4].x+ centerPositions[numPositions - 5].x)
-        : (centerPositions[numPositions - 1].x + centerPositions[numPositions - 2].x + centerPositions[numPositions - 3].x + centerPositions[numPositions - 4].x + centerPositions[numPositions - 5].x);
+			int sumOfXChanges = (bWeighted) ? (5 * centerPositions[numPositions - 1].x + 4 * centerPositions[numPositions - 2].x + 3 * centerPositions[numPositions - 3].x + 2 * centerPositions[numPositions - 4].x + centerPositions[numPositions - 5].x)
+				: (centerPositions[numPositions - 1].x + centerPositions[numPositions - 2].x + centerPositions[numPositions - 3].x + centerPositions[numPositions - 4].x + centerPositions[numPositions - 5].x);
 
-      int deltaX = (bWeighted) ? (int)std::round((float)sumOfXChanges / 15.0) : (int)std::round((float)sumOfXChanges / 5.0);
+			int deltaX = (bWeighted) ? (int)std::round((float)sumOfXChanges / 15.0) : (int)std::round((float)sumOfXChanges / 5.0);
 
-      int sumOfYChanges = (bWeighted) ? (5 * centerPositions[numPositions - 1].y + 4 * centerPositions[numPositions - 2].y + 3 * centerPositions[numPositions - 3].y + 2 * centerPositions[numPositions - 4].y + centerPositions[numPositions - 5].y)
-        : (centerPositions[numPositions - 1].y + centerPositions[numPositions - 2].y + centerPositions[numPositions - 3].y + centerPositions[numPositions - 4].y + centerPositions[numPositions - 5].y);
+			int sumOfYChanges = (bWeighted) ? (5 * centerPositions[numPositions - 1].y + 4 * centerPositions[numPositions - 2].y + 3 * centerPositions[numPositions - 3].y + 2 * centerPositions[numPositions - 4].y + centerPositions[numPositions - 5].y)
+				: (centerPositions[numPositions - 1].y + centerPositions[numPositions - 2].y + centerPositions[numPositions - 3].y + centerPositions[numPositions - 4].y + centerPositions[numPositions - 5].y);
 
-      int deltaY = (bWeighted) ? (int)std::round((float)sumOfYChanges / 15.0) : (int)std::round((float)sumOfYChanges / 5.0);
+			int deltaY = (bWeighted) ? (int)std::round((float)sumOfYChanges / 15.0) : (int)std::round((float)sumOfYChanges / 5.0);
 
-      wpa = cv::Point(deltaX, deltaY);
+			wpa = cv::Point(deltaX, deltaY);
 
-    }
-    else {
-      // should never get here
-    }
-
+		}
+		else {
+			// should never get here
+		}
+	}
     return wpa;
   }
+
   std::string Blob::getBlobStatus(void) {
     std::string status;
     if (os == OS_STOPPED) {

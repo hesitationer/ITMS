@@ -155,10 +155,10 @@ enum BgSubType { // background substractor type
 };
 // parameters
 bool debugShowImages = true;
-bool debugShowImagesDetail = false;
+bool debugShowImagesDetail = true;
 bool debugGeneral = true;
 bool debugGeneralDetail = false;
-bool debugTrace = true;
+bool debugTrace = false;
 bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
 int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
@@ -172,7 +172,7 @@ float BlobNCC_Th = 0.5;                       // blob NCC threshold <0.5 means n
 bool isWriteToFile = false;
 
 LaneDirection ldirection = LD_NORTH; // vertical lane
-BgSubType bgsubtype = BGS_DIF;
+BgSubType bgsubtype = BgSubType::BGS_CNT;
 
 // template matching algorithm implementation, demo
 
@@ -420,8 +420,8 @@ int main(void) {
 	/* Fast BSA */ // by sangkny
 	//if(bgsubtype == BGS_CNT){ // type selection
 		Ptr<BackgroundSubtractor> pBgSub;
-		pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
-		//pBgSub = createBackgroundSubtractorMOG2();
+		//pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
+		pBgSub = createBackgroundSubtractorMOG2();
 	//}
 
     capVideo.read(imgFrame1);    
@@ -689,8 +689,8 @@ int main(void) {
 							detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
 							if (cars.size())
 								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-							//else
-							//	continue;
+							else
+								continue;
 						}
 						else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
 							// verify it
@@ -834,7 +834,6 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
       double dblDistance = distanceBetweenPoints(currentBlob->centerPositions.back(), currentFrameBlobs[i].centerPositions.back());      
       
       if (dblDistance > 1/* same object */ &&  dblDistance < dblLeastDistance) { // center locations should be in the range
-
         dblLeastDistance = dblDistance;
         intIndexOfLeastDistance = i;
       }
@@ -898,7 +897,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 			  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
 				int intSect = InterSectionRect(existingBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
 
-				if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated
+				if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated, 1, 2, 3 indicate the inclusion of one block in another
 				  overlappedBobPair.push_back(std::pair<int, int>(i, intSect));
 				}
 			  }
@@ -911,7 +910,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 				cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
 			  }
 			  existingBlob = existingBlobs.erase(existingBlob);
-			}else{ // partial or no overlapped
+			}else{ // partial(0) or no overlapped (-1)
 			  // conditional elimination
 			  if (debugTrace /* && debugGeneralDetail*/) {
 				cout << " (!)! Old blob id: " << existingBlob->id << " is conditionally eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
@@ -930,12 +929,12 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 				} 
 				// -------------------------------------------------------------
 				// check this out : sangkny on 2018/12/17
-				//existingBlob->blnCurrentMatchFoundOrNewBlob = false;
+				existingBlob->blnCurrentMatchFoundOrNewBlob = false;
 				//existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
-				//existingBlob->predictNextPosition();
+				existingBlob->predictNextPosition(); // can be removed if the above line is commented
 				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
-				//++existingBlob;
-				//continue;
+				++existingBlob;
+				continue; // can be removed this
 				// ---------------------------------------------------------------
 			
 			  }else {
@@ -1171,7 +1170,7 @@ ObjectStatus getObjectStatusFromBlobCenters( Blob &blob, const LaneDirection &la
   
   int numPositions = (int)blob.centerPositions.size();
   //int maxNumPosition = 5;
-  bool bweightedAvg = false; // true: weighted average, false: uniform average
+  int bweightedAvg = -1; // -1: info from the past far away, 0: false (uniform average), 1: true (weighted average)
   Blob tmpBlob = blob;  
   // it will affect the speed because of const Blob declaration in parameters !!!!
   int deltaX;// = blob.predictedNextPosition.x - blob.centerPositions.back().x;
@@ -1531,11 +1530,12 @@ string type2str(int type) {
 }
 int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2) {
   // -------------------------------------
-  // returns intersection status
+  // returns intersection status when one is included to the other one
   // no intersection -1,
-  // exist intersect 0
+  // exist intersect 0 with a sub_region
   // rect1 includes rect2 1
-  // rect2 includes rect2 2
+  // rect2 includes rect1 2
+  // rect1 == rect 2  3
   // -------------------------------------
   int retvalue = -1;
   
@@ -1543,11 +1543,13 @@ int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2) {
   bool intersects = (intRect.area() > 0); // intersection 
   if (intersects) {
     retvalue = 0;
-    if (rect1.area() > rect2.area()) {
+	if (rect1.area() == rect2.area())
+		retvalue = 3;
+    else if (rect1.area() > rect2.area()) {
       if (rect2.area() == intRect.area())
         retvalue = 1;
     }
-    else {
+    else { // rect1 < rect2
       if (rect1.area() == intRect.area())
         retvalue = 2;
     }
@@ -1841,10 +1843,10 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	float fWidthHeightWeightRatio_Width = 0.7; // width 0.7 height 0.3
 	
 	int tgtWidth, tgtHeight, refWidth, refHeight; // target, reference infors
-    float tgtWidthHeightRatio;
+    float tgtWidthHeightRatio, tgtCredit = 1.1;   // credit 10 %
 	tgtWidth = srcBlob.currentBoundingRect.width;
 	tgtHeight = srcBlob.currentBoundingRect.height;
-    tgtWidthHeightRatio = (float)tgtHeight / (float)tgtWidth;
+    tgtWidthHeightRatio = (float)tgtHeight / (float)tgtWidth; // give the more credit according to the shape for vehicle or human 10 %
   vector<float> objWidth;     // for panelty against distance
   vector<float> objHeight; 
 	// configuration 
@@ -1891,21 +1893,21 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
 	refWidth = polyvalue_sedan_w.getPolyValue(fdistance);
 	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(1.f-fWidthHeightWeightRatio_Width)*(refHeight-fabs(refHeight-tgtHeight))/refHeight;
-    prob = prob*tgtWidthHeightRatio>= 1.0? 1.0: prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
+    //prob = prob*tgtWidthHeightRatio>= 1.0? 1.0: prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("sedan", prob));
 	// suv
 	refHeight = polyvalue_suv_h.getPolyValue(fdistance);
 	refWidth = polyvalue_suv_w.getPolyValue(fdistance);
 	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
-    prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
+    //prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("suv", prob));
 	// truck
 	refHeight = polyvalue_truck_h.getPolyValue(fdistance);
 	refWidth = polyvalue_truck_w.getPolyValue(fdistance);
 	prob = fWidthHeightWeightRatio_Width*(refWidth - fabs(refWidth - tgtWidth)) / refWidth +
 		(1.f - fWidthHeightWeightRatio_Width)*(refHeight - fabs(refHeight - tgtHeight)) / refHeight;
-    prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
+    //prob = prob*tgtWidthHeightRatio >= 1.0 ? 1.0 : prob*tgtWidthHeightRatio; // size constraint min(1.0, prob*tgtWidthHeightRatio)
 	objClassProbs.push_back(pair<string, float>("truck", prob));
     
 	// human
@@ -2004,6 +2006,8 @@ void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, s
 	Mat roiImg = img(rect).clone();	
 		
 	int casWidth = 128; // ratio is 1: 1 for width to height
+	if (bgsubtype = BgSubType::BGS_CNT)
+		casWidth = (int) ((float)casWidth *1.5);
 	
 	// adjust cascade window image
 	float casRatio = (float)casWidth / roiImg.cols;
@@ -2056,8 +2060,11 @@ void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std
 
 	Mat hogImg = img(rect).clone();
 	// debug details
+
 #ifdef _CASCADE_HUMAN
 	int casWidth = 128; // ratio is 1: 1 for width to height
+	if (bgsubtype = BgSubType::BGS_CNT)
+		casWidth = (int)((float)casWidth *1.5);
 	float casRatio = (float)casWidth / hogImg.cols;
 
 	resize(hogImg, hogImg, Size(), casRatio, casRatio);
@@ -2069,6 +2076,10 @@ void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std
 	// need to change the xml file for human instead of using cars.xml
 #else
 	int svmWidth = 64 * 1.5, svmHeight = 128 * 1.5;
+	if (bgsubtype = BgSubType::BGS_CNT) {
+		svmWidth = (int)((float)svmWidth *2);
+		svmHeight = (int)((float)svmHeight *2);
+	}
 	vector<Rect> people;
 	if (hogImg.cols < svmWidth) {
 		float widthRatio = (float)svmWidth / hogImg.cols;
