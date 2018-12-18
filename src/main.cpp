@@ -172,7 +172,7 @@ float BlobNCC_Th = 0.5;                       // blob NCC threshold <0.5 means n
 bool isWriteToFile = false;
 
 LaneDirection ldirection = LD_NORTH; // vertical lane
-BgSubType bgsubtype = BgSubType::BGS_CNT;
+BgSubType bgsubtype = BGS_DIF;
 
 // template matching algorithm implementation, demo
 
@@ -568,17 +568,17 @@ int main(void) {
         cv::GaussianBlur(imgFrame2Copy, imgFrame2Copy, cv::Size(5, 5), 0);
 		if (bgsubtype == BGS_CNT) {
 			pBgSub->apply(imgFrame2Copy, imgDifference);
-      if(debugShowImages && debugShowImagesDetail){
-        Mat bgImage = Mat::zeros(imgFrame2Copy.size(), imgFrame2Copy.type());
-        pBgSub->getBackgroundImage(bgImage);
-        cv::imshow("backgroundImage", bgImage);
-        if (isWriteToFile && frameCount == 200) {
-          string filename = FAV1::VideoPath;
-          filename.append("_"+to_string(scaleFactor)+"x.jpg");
-          cv::imwrite(filename, bgImage);
-          std::cout << " background image has been generated (!!)\n";
-        }
-      }
+		  if(debugShowImages && debugShowImagesDetail){
+			Mat bgImage = Mat::zeros(imgFrame2Copy.size(), imgFrame2Copy.type());
+			pBgSub->getBackgroundImage(bgImage);
+			cv::imshow("backgroundImage", bgImage);
+			if (isWriteToFile && frameCount == 200) {
+			  string filename = FAV1::VideoPath;
+			  filename.append("_"+to_string(scaleFactor)+"x.jpg");
+			  cv::imwrite(filename, bgImage);
+			  std::cout << " background image has been generated (!!)\n";
+			}
+		  }
 			// only shadow part
 			//cv::threshold(imgDifference, imgDifference, 125, 255, cv::THRESH_BINARY);
 		}
@@ -596,9 +596,12 @@ int main(void) {
 		}        
 
         for (unsigned int i = 0; i < 1; i++) {
+			if(bgsubtype == BgSubType::BGS_CNT)
+				cv::erode(imgThresh, imgThresh, structuringElement3x3);
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-            cv::erode(imgThresh, imgThresh, structuringElement5x5);      
+			if (bgsubtype == BgSubType::BGS_DIF)
+				cv::erode(imgThresh, imgThresh, structuringElement5x5);      
           //cv::morphologyEx(imgThresh, imgThresh, CV_MOP_CLOSE, structuringElement7x7);
         }
 
@@ -1117,6 +1120,9 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 
 		existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize;
 		existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
+		// sangkny 2018. 12. 19
+		// check this out one more time 
+		existingBlobs[intIndex].oc = currentFrameBlob.oc;
 	}
 
     //if (existingBlobs[intIndex].totalVisibleCount >= 8 /* it should be a predefined threshold */)
@@ -1264,15 +1270,19 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
 
     cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
 
-    std::vector<std::vector<cv::Point> > contours;
+    std::vector<std::vector<cv::Point> > contours, contours_bg;
 
     for (auto &blob : blobs) {
-        if (1 || blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/) {
+        if (blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/) {
             contours.push_back(blob.currentContour);
         }
+		else{
+			contours_bg.push_back(blob.currentContour);
+		}
     }
 
     cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
+	cv::drawContours(image, contours_bg, -1, SCALAR_RED, 2,8);
 
     cv::imshow(strImageName, image);
     cv::waitKey(1);
@@ -2006,7 +2016,7 @@ void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, s
 	Mat roiImg = img(rect).clone();	
 		
 	int casWidth = 128; // ratio is 1: 1 for width to height
-	if (bgsubtype = BgSubType::BGS_CNT)
+	if (bgsubtype == BgSubType::BGS_CNT)
 		casWidth = (int) ((float)casWidth *1.5);
 	
 	// adjust cascade window image
@@ -2063,7 +2073,7 @@ void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std
 
 #ifdef _CASCADE_HUMAN
 	int casWidth = 128; // ratio is 1: 1 for width to height
-	if (bgsubtype = BgSubType::BGS_CNT)
+	if (bgsubtype == BgSubType::BGS_CNT)
 		casWidth = (int)((float)casWidth *1.5);
 	float casRatio = (float)casWidth / hogImg.cols;
 
@@ -2076,7 +2086,7 @@ void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std
 	// need to change the xml file for human instead of using cars.xml
 #else
 	int svmWidth = 64 * 1.5, svmHeight = 128 * 1.5;
-	if (bgsubtype = BgSubType::BGS_CNT) {
+	if (bgsubtype == BgSubType::BGS_CNT) {
 		svmWidth = (int)((float)svmWidth *2);
 		svmHeight = (int)((float)svmHeight *2);
 	}
