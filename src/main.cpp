@@ -158,7 +158,7 @@ bool debugShowImages = true;
 bool debugShowImagesDetail = true;
 bool debugGeneral = true;
 bool debugGeneralDetail = false;
-bool debugTrace = false;
+bool debugTrace = true;
 bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
 int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
@@ -512,7 +512,7 @@ int main(void) {
     
     if (road_mask.channels() > 1)
       cvtColor(road_mask, road_mask, CV_BGR2GRAY);
-    if (0&& debugShowImages && debugShowImagesDetail) {
+    if (1&& debugShowImages && debugShowImagesDetail) {
       imshow("road mask", road_mask);
       waitKey(1);
     }
@@ -678,35 +678,35 @@ int main(void) {
 					classifyObjectWithDistanceRatio(possibleBlob, realDistance / 100, objclass, classProb);
 					// update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
 					// verify the object with cascade object detection
-					if(classProb > 0.99 /* 1.0 */){
+					if(classProb > 0.79 /* 1.0 */){
 						currentFrameBlobs.push_back(possibleBlob);
 					}
 					else if (classProb>0.5f) {
 						// check with a ML-based approach
-						float scaleRect = 1.5;
-						Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
+						//float scaleRect = 1.5;
+						//Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
 					
-						if (possibleBlob.oc == itms::ObjectClass::OC_VEHICLE) {
-							// verify it
-							std::vector<cv::Rect> cars;
-							detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
-							if (cars.size())
-								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-							else
-								continue;
-						}
-						else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
-							// verify it
-							std::vector<cv::Rect> people;
-							detectCascadeRoiHuman(imgFrame2Copy, expRect, people);
-							if (people.size())
-								possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-							else
-								continue;
-						}
-						else {// should not com in this loop (OC_OTHER)
-							int kkk = 0;
-						}
+						//if (possibleBlob.oc == itms::ObjectClass::OC_VEHICLE) {
+						//	// verify it
+						//	std::vector<cv::Rect> cars;
+						//	detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
+						//	if (cars.size())
+						//		possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+						//	//else													// commented  :  put the all candidates commented out : it does not put the object in the candidates
+						//	//	continue;
+						//}
+						//else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
+						//	// verify it
+						//	std::vector<cv::Rect> people;
+						//	detectCascadeRoiHuman(imgFrame2Copy, expRect, people);
+						//	if (people.size())
+						//		possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+						//	//else
+						//	//	continue;
+						//}
+						//else {// should not com in this loop (OC_OTHER)
+						//	int kkk = 0;
+						//}
 						currentFrameBlobs.push_back(possibleBlob);
 					}
             
@@ -923,9 +923,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 			  }
 			  if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
 				// this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
-				// 아직은 center 값을 늘렸음....
+				// kind of trick !! which will remove the objects nodetected for long time
 				if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
-				  cout << "\n\n\n\n -------It--was moving--and --> stopped : object eliminated \n\n\n\n";
+					if(debugTrace && debugGeneralDetail)
+						cout << "\n\n\n\n -------It--was moving--and --> stopped : object eliminated \n\n\n\n";
 				  existingBlob = existingBlobs.erase(existingBlob);
 				  continue;
 				  //waitKey(0);
@@ -933,7 +934,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 				// -------------------------------------------------------------
 				// check this out : sangkny on 2018/12/17
 				existingBlob->blnCurrentMatchFoundOrNewBlob = false;
-				//existingBlob->centerPositions.push_back(existingBlob->centerPositions.back());
+				existingBlob->centerPositions.push_back(existingBlob->centerPositions.back()); // this line required for isolated but Stopped
 				existingBlob->predictNextPosition(); // can be removed if the above line is commented
 				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
 				++existingBlob;
@@ -1849,14 +1850,19 @@ void classifyObjectWithDistanceRatio(Blob &srcBlob, float distFromZero/* distanc
   // ------------------------------------------------------------------------------------
   float fmininum_class_prob = 0.5;  // minimum probability for declaring the class type
 	std::vector<std::pair<std::string, float>> objClassProbs; // object class with probabilities
-	float fdistance = distFromZero, prob=0.f, perc_Thres = 0.25; // 25% error range
+	float fdistance = distFromZero, prob=0.f, perc_Thres = 0.5; // 25% error range	
 	float fWidthHeightWeightRatio_Width = 0.7; // width 0.7 height 0.3
+
+	if (bgsubtype == BgSubType::BGS_CNT)
+		perc_Thres = 1.0; // should be bigger
 	
 	int tgtWidth, tgtHeight, refWidth, refHeight; // target, reference infors
     float tgtWidthHeightRatio, tgtCredit = 1.1;   // credit 10 %
 	tgtWidth = srcBlob.currentBoundingRect.width;
 	tgtHeight = srcBlob.currentBoundingRect.height;
     tgtWidthHeightRatio = (float)tgtHeight / (float)tgtWidth; // give the more credit according to the shape for vehicle or human 10 %
+
+
   vector<float> objWidth;     // for panelty against distance
   vector<float> objHeight; 
 	// configuration 
