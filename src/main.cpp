@@ -620,7 +620,7 @@ int main(void) {
         for (unsigned int i = 0; i < contours.size(); i++) {
             cv::convexHull(contours[i], convexHulls[i]);
         }
-
+		
 		if (debugShowImages && debugShowImagesDetail) {
 			drawAndShowContours(imgThresh.size(), convexHulls, "imgConvexHulls");
 		}
