@@ -679,9 +679,21 @@ int main(void) {
 					// update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
 					// verify the object with cascade object detection
 					if(classProb > 0.79 /* 1.0 */){
+						// 2018. 12. 29 sangkny
+						// local search 
+						// if(m_collectPoints){
+						// do collecting points in the blob
+						// }
 						currentFrameBlobs.push_back(possibleBlob);
 					}
 					else if (classProb>0.5f) {
+						// 2018. 12. 29 sangkny
+						// local search 
+						// if(m_collectPoints){
+						// do collecting points in the blob
+						// }
+
+
 						// check with a ML-based approach
 						//float scaleRect = 1.5;
 						//Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
