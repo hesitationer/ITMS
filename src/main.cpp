@@ -194,17 +194,26 @@ void getPredicInfo(const vector<Mat>& outs, vector<int>& classIds, vector<float>
 regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& outs);
 cv::Size adjustNetworkInputSize(Size inSize);
 // dnn-based approach ends
+
 // cascade detector related
 void detectCascadeRoi(cv::Mat img, cv::Rect& rect);
 void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars);
 void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
 // cascade detector related ends
+
 // raod configuration related
 float camera_height = 11.0 * 100; // camera height 11 meter
 float lane_length = 200.0 * 100;  // lane length
 float lane2lane_width = 3.5 * 3 * 100; // lane width
 cv::Mat transmtxH;
 
+// tracking related blob
+bool m_useLocalTracking = true; // local tracking  capture and detect level
+bool m_collectPoints = m_useLocalTracking; // detector level => blob 의 m_points 에 채우기
+void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints); // collectPoints with a number of blobs
+void collectPointsInBlob(Blob &_blob);
+void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get points inside blob, if exists in a blob, otherwise, compute it.
+// end tracking
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
 #if _DEBUG
@@ -683,7 +692,7 @@ int main(void) {
 						// local search 
 						// if(m_collectPoints){
 						// do collecting points in the blob
-						// }
+						// }						
 						currentFrameBlobs.push_back(possibleBlob);
 					}
 					else if (classProb>0.5f) {
@@ -718,7 +727,7 @@ int main(void) {
 						//}
 						//else {// should not com in this loop (OC_OTHER)
 						//	int kkk = 0;
-						//}
+						//}						
 						currentFrameBlobs.push_back(possibleBlob);
 					}
             
@@ -734,7 +743,8 @@ int main(void) {
 		// blobs are in the ROI because of ROI map
 		// 남북 이동시는 가로가 세로보다 커야 한다.
 		//     
-		mergeBlobsInCurrentFrameBlobs(currentFrameBlobs); // need to consider the distance
+		mergeBlobsInCurrentFrameBlobs(currentFrameBlobs);			// need to consider the distance
+		collectPointsInBlobs(currentFrameBlobs, m_collectPoints);	// for local tracking 
 		if (debugShowImages && debugShowImagesDetail) {
 		  drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
 		  waitKey(1);
@@ -744,6 +754,10 @@ int main(void) {
                 blobs.push_back(currentFrameBlob);
             }
         } else {
+			// if local tracking, then check the local movements of the existing blobs and merge with the current 
+			// merging blobs with frame difference-based blobs.
+			
+
             matchCurrentFrameBlobsToExistingBlobs(imgFrame2Copy, blobs, currentFrameBlobs, trackId);
         }
 		imgFrame2Copy = imgFrame2.clone();          // get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
@@ -1296,6 +1310,17 @@ void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::strin
 
     cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
 	cv::drawContours(image, contours_bg, -1, SCALAR_RED, 2,8);
+	if (m_useLocalTracking)
+	{
+		cv::Scalar cl = Scalar(0, 255, 0);// m_colors[track.m_trackID % m_colors.size()];
+		for (auto &blob : blobs) {			
+			if(blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/)
+				for (auto pt : blob.m_points)
+				{
+					cv::circle(image, cv::Point(cvRound(pt.x), cvRound(pt.y)), 1, cl, -1, CV_AA);
+				}
+		}
+	}
 
     cv::imshow(strImageName, image);
     cv::waitKey(1);
@@ -2147,4 +2172,65 @@ void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std
 		imshow("human in HOG SVM", hogImg);
 		waitKey(1);
 	}
+}
+
+void collectPointsInBlob(Blob &_blob) {	
+		
+	cv::Rect r = _blob.currentBoundingRect;
+	cv::Point2f center(r.x + 0.5f * r.width, r.y + 0.5f * r.height);
+	const int yStep = 5;
+	const int xStep = 5;
+
+	for (int y = r.y; y < r.y + r.height; y += yStep)
+	{
+		cv::Point2f pt(0, static_cast<float>(y));
+		for (int x = r.x; x < r.x + r.width; x += xStep)
+		{
+			pt.x = static_cast<float>(x);
+			if (cv::pointPolygonTest(_blob.currentContour, pt, false) > 0)
+			{
+				_blob.m_points.push_back(pt);
+			}
+		}
+	}
+
+	if (_blob.m_points.empty())
+	{
+		_blob.m_points.push_back(center);
+	}
+		
+}
+void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints) {
+	if(_collectPoints)
+	for (auto& blob : _blobs)
+		collectPointsInBlob(blob);
+	
+}
+void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts)
+{
+	if (_blob.m_points.size()<1) { // no exist and then collect it	
+		const int yStep = 5;
+		const int xStep = 5;
+		cv::Rect region = _blob.currentBoundingRect;
+
+		for (int y = region.y, yStop = region.y + region.height; y < yStop; y += yStep)
+		{
+			for (int x = region.x, xStop = region.x + region.width; x < xStop; x += xStep)
+			{
+				if (region.contains(cv::Point(x, y)))
+				{
+					_blob.m_points.push_back(cv::Point2f(static_cast<float>(x), static_cast<float>(y)));
+				}
+			}
+		}
+
+		if (_collectedPts.empty())
+		{
+			_blob.m_points.push_back(cv::Point2f(region.x + 0.5f * region.width, region.y + 0.5f * region.height));
+		}
+	}
+
+	for (unsigned int i = 0; i < _blob.m_points.size(); i++)
+		_collectedPts.push_back(_blob.m_points.at(i));
+
 }

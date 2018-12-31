@@ -146,6 +146,10 @@ namespace itms {
 	  for (int i = 0; i < rhBlob.currentContour.size(); i++)
 		  currentContour.push_back(rhBlob.currentContour.at(i));
 
+	  m_points.clear();
+	  for (int i = 0; i < rhBlob.m_points.size(); i++)
+		  m_points.push_back(rhBlob.m_points.at(i));
+	  
 	  currentBoundingRect = rhBlob.currentBoundingRect;
 
 	  centerPositions.clear();

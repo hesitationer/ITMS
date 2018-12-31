@@ -51,7 +51,7 @@ namespace itms {
     std::vector<cv::Point> currentContour;
 	// 2018. 12. 29 sangkny
 	// mpoints for local search with m_collectPoints
-	// std::vector<cv::Point2f> m_points;
+	 std::vector<cv::Point2f> m_points;
 
     cv::Rect currentBoundingRect;
 
