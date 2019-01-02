@@ -6,8 +6,7 @@
 <LightVehicleArea>100</LightVehicleArea>
 <BikeArea>50</BikeArea>
 <HumanArea>20</HumanArea>
-
-<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath> 
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>

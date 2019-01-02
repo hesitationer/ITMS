@@ -87,6 +87,7 @@ int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2);
 
 // general : blob image processing (blob_imp)
 void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs);
+void mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(std::vector<Blob>& currentFrameBlobs, std::vector<Blob> &predBlobs);
 void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
@@ -166,7 +167,7 @@ int maxCenterPts = 300;			  // maximum number of center points (frames), about 1
 int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
-int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30) at day, 
+int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30) at day through night, 
 float BlobNCC_Th = 0.5;                       // blob NCC threshold <0.5 means no BG
 
 bool isWriteToFile = false;
@@ -208,7 +209,7 @@ float lane2lane_width = 3.5 * 3 * 100; // lane width
 cv::Mat transmtxH;
 
 // tracking related blob
-bool m_useLocalTracking = true; // local tracking  capture and detect level
+bool m_useLocalTracking = false; // local tracking  capture and detect level
 void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints); // collectPoints with a number of blobs
 void collectPointsInBlob(Blob &_blob);
 void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get points inside blob, if exists in a blob, otherwise, compute it.
@@ -479,7 +480,7 @@ int main(void) {
     char chCheckForEscKey = 0;
 
     bool blnFirstFrame = true;
-	int m_startFrame = 880;	
+	int m_startFrame = 0;	
     int frameCount = m_startFrame + 1;
 
     // Video save start
@@ -757,10 +758,10 @@ int main(void) {
 				absdiff(imgFrame1Copy, imgFrame2Copy, temp);
 				threshold(temp, temp, 10, 255,THRESH_BINARY);
 				imshow("diffFrame", temp);*/
-				for(auto prdBlob:predictedBlobs)
-					currentFrameBlobs.push_back(prdBlob);
+				/*for(auto prdBlob:predictedBlobs)
+					currentFrameBlobs.push_back(prdBlob);*/
 
-				//mergeBlobsInCurrentFrameBlobs(currentFrameBlobs);
+				mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(currentFrameBlobs, predictedBlobs);
 			}
 		}
 		
@@ -926,6 +927,53 @@ void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs) {
  
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(std::vector<Blob> &currentFrameBlobs, std::vector<Blob> &predBlobs) {
+	// 0. assuming blobs in currentFrameBlobs are separated each other in contours
+	// 1. find the closest blob
+	// 2. check the intersection which has more than overlapRatio in area, 오버랩이 70%이상이면 넣지마라. 새로운 것에 있으니 하지만 그 이하면 넣어라=> 버그였음.
+	// 3. otherwise add new one if there is no matched blob
+	float overlapRatio = 0.5;
+	bool addNewBlob = false;
+
+	std::vector<int> predBlobInx;
+	for (int prblob = 0; prblob < predBlobs.size();prblob++) {
+		addNewBlob = false;
+		cv::Rect r1 = predBlobs.at(prblob).currentBoundingRect;
+		int maxIdx = -1, maxArea = -1;
+		for (int i = 0; i < currentFrameBlobs.size();i++) {
+			cv::Rect r2 = currentFrameBlobs.at(i).currentBoundingRect;
+			int Area = (r1& r2).area(); // intersection test and its area
+			if (Area > 0 && Area > maxArea) {
+				maxArea = Area;
+				maxIdx = i;
+			}			
+		}
+		if (maxIdx != -1 && (float(maxArea) / (float)min(r1.area(), currentFrameBlobs.at(maxIdx).currentBoundingRect.area()) >= overlapRatio)) { // merge
+			/*std::vector<cv::Point> _contour = currentFrameBlobs.at(maxIdx).currentContour, hull;
+			for (int i = 0; i < prblob.currentContour.size(); i++)
+				_contour.push_back(prblob.currentContour.at(i));	/// insert a point 
+			convexHull(_contour, hull);
+			itms::Blob _blob(hull);
+			currentFrameBlobs.at(maxIdx).currentContour.clear();
+			currentFrameBlobs.at(maxIdx).currentContour = _blob.currentContour;
+			currentFrameBlobs.at(maxIdx).currentBoundingRect = _blob.currentBoundingRect;
+			currentFrameBlobs.at(maxIdx).centerPositions.at(currentFrameBlobs.at(maxIdx).centerPositions.size() - 1) = _blob.centerPositions.back();*/
+			// car categorization is not yet included 
+			continue;
+		}
+		else { // add new
+			predBlobInx.push_back(prblob); // sangkny needs to check if the existing blob (prblob) is still tracked or not
+			//currentFrameBlobs.push_back(prblob);
+		}		
+	
+	}
+	
+	for(int i=0;i<predBlobInx.size();i++) // need to check if the existing blob has been tracked or not and its categori
+		currentFrameBlobs.push_back(predBlobs.at(predBlobInx.at(i)));
+	
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id){
 	std::vector<Blob>::iterator existingBlob = existingBlobs.begin();
 	while ( existingBlob != existingBlobs.end()) {
@@ -1023,7 +1071,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 				totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
                 totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area())/max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
 
-				if (dblDistance < dblLeastDistance /* && (existingBlobs[i].oc == currentFrameBlob.oc)*/) {
+				if (existingBlobs[i].oc != currentFrameBlob.oc)
+					int kkk = 0;
+
+				if (dblDistance < dblLeastDistance  && (existingBlobs[i].oc == currentFrameBlob.oc || existingBlobs[i].oc == OC_OTHER || currentFrameBlob.oc==OC_OTHER)) {
 					dblLeastDistance = dblDistance;
 					intIndexOfLeastDistance = i;
 				}
@@ -1048,7 +1099,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
           vector<Point2f> blobCenterPxs;
           blobCenterPxs.push_back(currentFrameBlob.centerPositions.back());
           float distance = getDistanceInMeterFromPixels(blobCenterPxs, transmtxH, lane_length, false);
-          if (debugGeneral)
+          if (debugGeneralDetail)
             cout << " distance: " << distance / 100 << " meters from the starting point.\n";
           // do the inside
           if (distance >= 100.00/* 1m */ && distance < 19900/*199m*/) {// between 1 meter and 199 meters
@@ -1161,9 +1212,26 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 
 		existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize;
 		existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
-		// sangkny 2018. 12. 19
+		// sangkny 2018. 12. 19, updated 2019. 01. 02
 		// check this out one more time 
-		existingBlobs[intIndex].oc = currentFrameBlob.oc;
+		if (existingBlobs[intIndex].oc != currentFrameBlob.oc) { // object classification determination
+			if (currentFrameBlob.oc == ObjectClass::OC_OTHER) {
+				if (existingBlobs[intIndex].oc_prob < 1.f)					
+					existingBlobs[intIndex].oc = currentFrameBlob.oc; // need to do classification
+			}
+			else if (existingBlobs[intIndex].oc == ObjectClass::OC_OTHER) {
+				existingBlobs[intIndex].oc = currentFrameBlob.oc;	// need to do classification according to the class of currentFrameBlob
+				existingBlobs[intIndex].oc_prob = currentFrameBlob.oc_prob;
+			}
+			else { // they have different its own classes
+				std::cout << " algorithm can not be here !!!\n";
+				 // they can not be here because this case should have been refined in the above step MatchCurrentBlobsToExistingBlbos
+			}
+		}
+		else { // they have the same class
+			existingBlobs[intIndex].oc = currentFrameBlob.oc; // do nothing because they are same
+			existingBlobs[intIndex].oc_prob = (existingBlobs[intIndex].oc_prob > currentFrameBlob.oc_prob) ? existingBlobs[intIndex].oc_prob : currentFrameBlob.oc_prob;
+		}
 		// sangkny 2018. 12. 31
 		existingBlobs[intIndex].m_points = currentFrameBlob.m_points;
 		
@@ -2193,6 +2261,8 @@ void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std
 
 void collectPointsInBlob(Blob &_blob) {	
 		
+	//cv::Rect r = itms::expandRect(_blob.currentBoundingRect, 10, 10, _blob.currentBoundingRect.x+_blob.currentBoundingRect.width*2, _blob.currentBoundingRect.y+_blob.currentBoundingRect.height*2);
+	// it is not working (keep increasing the ROI)
 	cv::Rect r = _blob.currentBoundingRect;
 	cv::Point2f center(r.x + 0.5f * r.width, r.y + 0.5f * r.height);
 	const int yStep = 5;
@@ -2204,7 +2274,7 @@ void collectPointsInBlob(Blob &_blob) {
 		for (int x = r.x; x < r.x + r.width; x += xStep)
 		{
 			pt.x = static_cast<float>(x);
-			if (cv::pointPolygonTest(_blob.currentContour, pt, false) > 0)
+			if (1/*cv::pointPolygonTest(_blob.currentContour, pt, false) > 0*/)
 			{
 				_blob.m_points.push_back(pt);
 			}
@@ -2278,7 +2348,7 @@ void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFr
 	cv::Size winSize(25, 25);  // if this size is smaller than 25, the estimated points will be out of expectation
 	if(bdebugshowImage){
 		for(int i=0; i<points[0].size();i++)
-			circle(debugImg, points[0].at(i), 2, Scalar(255,0,0));
+			circle(debugImg, points[0].at(i), 2, Scalar(255,255,255));
 	}
 	cv::cornerSubPix(prevFrame, points[0], subPixWinSize, cv::Size(-1, -1), termcrit);
 	if (0&&bdebugshowImage) {
@@ -2297,10 +2367,10 @@ void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFr
 		waitKey(1);
 	}
 	size_t i = 0;
-	for (auto& track : tracks)
+	for (auto track : tracks)
 	{
 		itms::Blob blob;
-		blob = track;
+		blob = track;				// inherit information from track
 		cv::Point_<float> m_averagePoint = cv::Point_<float>(0, 0);
 		blob.currentBoundingRect = cv::Rect(0, 0, 0, 0);
 		if (bdebugshowImage) {
@@ -2357,14 +2427,15 @@ void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFr
 			}
 #endif
 			blob.currentBoundingRect = br;
-			std::vector<cv::Point> contour, preContour;
-			//approxPolyDP(blob.m_points, contour, arcLength(Mat(blob.m_points), true)*0.02, true);
+			std::vector<cv::Point> contour, preContour;			
 			for(int j=0; j<blob.m_points.size();j++)
 				preContour.push_back(static_cast<Point>(blob.m_points.at(j)+cv::Point2f(0.5, 0.5))); // rounding 
 			cv::convexHull(preContour, contour, false);
-			//fillConvexPoly();
-			blob.currentContour = contour;			
-			predBlobs.push_back(contour);
+			
+			blob.currentContour = contour; 
+			
+			if(track.blnStillBeingTracked)
+				predBlobs.push_back(blob); // can put predBlobs.push_back(contour) if a basic constructor only with contour
 			// get a real contour or Blob tmp(contour) and push_back;
 
 			if (bdebugshowImage) {
