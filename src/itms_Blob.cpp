@@ -144,11 +144,13 @@ namespace itms {
   void Blob::operator=(const Blob &rhBlob) { 
 	  currentContour.clear();
 	  for (int i = 0; i < rhBlob.currentContour.size(); i++)
-		  currentContour.push_back(rhBlob.currentContour.at(i));
+	  	  currentContour.push_back(rhBlob.currentContour.at(i));
+	  //currentContour = rhBlob.currentContour;
 
 	  m_points.clear();
 	  for (int i = 0; i < rhBlob.m_points.size(); i++)
-		  m_points.push_back(rhBlob.m_points.at(i));
+	  	  m_points.push_back(rhBlob.m_points.at(i));
+	  //m_points = rhBlob.m_points;
 	  
 	  currentBoundingRect = rhBlob.currentBoundingRect;
 
@@ -168,7 +170,8 @@ namespace itms {
 
 	  age = rhBlob.age;
 	  totalVisibleCount = rhBlob.totalVisibleCount;
-	  showId = rhBlob.showId;
+	  showId	= rhBlob.showId;
+	  id		= rhBlob.id;
     // starting point
     startPoint = rhBlob.startPoint; // start in Y direction, it will initiated at adding new blob
     

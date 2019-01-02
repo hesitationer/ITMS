@@ -156,7 +156,7 @@ enum BgSubType { // background substractor type
 // parameters
 bool debugShowImages = true;
 bool debugShowImagesDetail = true;
-bool debugGeneral = true;
+bool debugGeneral = false;
 bool debugGeneralDetail = false;
 bool debugTrace = true;
 bool debugTime = true;
@@ -209,10 +209,11 @@ cv::Mat transmtxH;
 
 // tracking related blob
 bool m_useLocalTracking = true; // local tracking  capture and detect level
-bool m_collectPoints = m_useLocalTracking; // detector level => blob 의 m_points 에 채우기
 void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints); // collectPoints with a number of blobs
 void collectPointsInBlob(Blob &_blob);
 void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get points inside blob, if exists in a blob, otherwise, compute it.
+// get predicted blobs from the existing blobs
+void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
 // end tracking
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
@@ -232,6 +233,7 @@ int main(void) {
 	cv::Mat imgFrame2;
 
   float scaleFactor = .5;
+  bool m_collectPoints = m_useLocalTracking; // detector level => blob 의 m_points 에 채우기
 
 
 	std::vector<Blob> blobs;
@@ -477,10 +479,11 @@ int main(void) {
     char chCheckForEscKey = 0;
 
     bool blnFirstFrame = true;
-
-    int frameCount = 2;
+	int m_startFrame = 880;	
+    int frameCount = m_startFrame + 1;
 
     // Video save start
+	capVideo.set(cv::CAP_PROP_POS_FRAMES, m_startFrame);
     int frame_width = capVideo.get(CV_CAP_PROP_FRAME_WIDTH);
     int frame_height = capVideo.get(CV_CAP_PROP_FRAME_HEIGHT);
 
@@ -687,22 +690,11 @@ int main(void) {
 					classifyObjectWithDistanceRatio(possibleBlob, realDistance / 100, objclass, classProb);
 					// update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
 					// verify the object with cascade object detection
-					if(classProb > 0.79 /* 1.0 */){
-						// 2018. 12. 29 sangkny
-						// local search 
-						// if(m_collectPoints){
-						// do collecting points in the blob
-						// }						
+					if(classProb > 0.79 /* 1.0 */){						
 						currentFrameBlobs.push_back(possibleBlob);
 					}
 					else if (classProb>0.5f) {
-						// 2018. 12. 29 sangkny
-						// local search 
-						// if(m_collectPoints){
-						// do collecting points in the blob
-						// }
-
-
+						
 						// check with a ML-based approach
 						//float scaleRect = 1.5;
 						//Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
@@ -744,7 +736,34 @@ int main(void) {
 		// 남북 이동시는 가로가 세로보다 커야 한다.
 		//     
 		mergeBlobsInCurrentFrameBlobs(currentFrameBlobs);			// need to consider the distance
-		collectPointsInBlobs(currentFrameBlobs, m_collectPoints);	// for local tracking 
+		if(m_collectPoints){
+			if (debugShowImages && debugShowImagesDetail) {
+				drawAndShowContours(imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");
+				waitKey(1);
+			}
+			//collectPointsInBlobs(currentFrameBlobs, m_collectPoints);	// collecting points in all blobs for local tracking , please check this out
+			//collectPointsInBlobs(blobs, m_collectPoints);	// collecting points in all blobs for local tracking 
+			// if local tracking, then check the local movements of the existing blobs and merge with the current 
+			// merging blobs with frame difference-based blobs.
+			// 0. get the blob prediction
+			// 1. draw for verification
+			// 2. merge them into currentFrameBlbos
+			std::vector<itms::Blob> predictedBlobs;
+			predictBlobs(blobs/* existing blbos */, imgFrame1Copy.getUMat(cv::ACCESS_READ)/* prevFrame */, imgFrame2Copy.getUMat(cv::ACCESS_READ)/* curFrame */, predictedBlobs);
+			if(predictedBlobs.size()){
+			/*	imshow("imgFrame1CopyGray", imgFrame1Copy);
+				imshow("imgFrame2CopyGray", imgFrame2Copy);
+				Mat temp= Mat::zeros(imgFrame1Copy.size(), imgFrame1Copy.type());
+				absdiff(imgFrame1Copy, imgFrame2Copy, temp);
+				threshold(temp, temp, 10, 255,THRESH_BINARY);
+				imshow("diffFrame", temp);*/
+				for(auto prdBlob:predictedBlobs)
+					currentFrameBlobs.push_back(prdBlob);
+
+				//mergeBlobsInCurrentFrameBlobs(currentFrameBlobs);
+			}
+		}
+		
 		if (debugShowImages && debugShowImagesDetail) {
 		  drawAndShowContours(imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
 		  waitKey(1);
@@ -754,13 +773,9 @@ int main(void) {
                 blobs.push_back(currentFrameBlob);
             }
         } else {
-			// if local tracking, then check the local movements of the existing blobs and merge with the current 
-			// merging blobs with frame difference-based blobs.
-			
-
             matchCurrentFrameBlobsToExistingBlobs(imgFrame2Copy, blobs, currentFrameBlobs, trackId);
         }
-		imgFrame2Copy = imgFrame2.clone();          // get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
+		imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 		if (debugShowImages ) {
 			if(debugShowImagesDetail)
 				drawAndShowContours(imgThresh.size(), blobs, "All imgBlobs");
@@ -782,7 +797,6 @@ int main(void) {
 		}        
 
         // now we prepare for the next iteration
-
         currentFrameBlobs.clear();
 
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is
@@ -811,7 +825,7 @@ int main(void) {
     }
 
     if (chCheckForEscKey != 27) {               // if the user did not press esc (i.e. we reached the end of the video)
-        cv::waitKey(10000);                         // hold the windows open to allow the "end of video" message to show
+        cv::waitKey(5000);                         // hold the windows open to allow the "end of video" message to show
     }
     // note that if the user did press esc, we don't need to hold the windows open, we can simply let the program end which will close the windows
 #ifdef _sk_Memory_Leakag_Detector
@@ -1150,6 +1164,9 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 		// sangkny 2018. 12. 19
 		// check this out one more time 
 		existingBlobs[intIndex].oc = currentFrameBlob.oc;
+		// sangkny 2018. 12. 31
+		existingBlobs[intIndex].m_points = currentFrameBlob.m_points;
+		
 	}
 
     //if (existingBlobs[intIndex].totalVisibleCount >= 8 /* it should be a predefined threshold */)
@@ -1417,13 +1434,13 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
               status = " ND"; // not determined
 
             infostr = std::to_string(blobs[i].id) + status + blobs[i].getBlobClass();// std::to_string(blobs[i].oc);
-            cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].centerPositions.back(), intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
+            cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].currentBoundingRect.tl()/*centerPositions.back()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
             if (debugTrace) {
               // draw the trace of object
               std::vector<cv::Point> centroids2= blobs[i].centerPositions;
               for (std::vector<cv::Point>::iterator it3 = centroids2.end()-1; it3 != centroids2.begin(); --it3)
               {
-                cv::circle(imgFrame2Copy, cv::Point((*it3).x, (*it3).y), 3, SCALAR_YELLOW, -1); // draw the trace of the object with Yellow                                
+                cv::circle(imgFrame2Copy, cv::Point((*it3).x, (*it3).y), 1, SCALAR_YELLOW, -1); // draw the trace of the object with Yellow                                
                 if (centroids2.end()-it3 > numberOfTracePoints)
                   break;
               }
@@ -2202,9 +2219,10 @@ void collectPointsInBlob(Blob &_blob) {
 }
 void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints) {
 	if(_collectPoints)
-	for (auto& blob : _blobs)
-		collectPointsInBlob(blob);
-	
+	for (auto& blob : _blobs){
+		if(blob.m_points.size()<1)
+			collectPointsInBlob(blob);
+	}	
 }
 void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts)
 {
@@ -2233,4 +2251,129 @@ void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts)
 	for (unsigned int i = 0; i < _blob.m_points.size(); i++)
 		_collectedPts.push_back(_blob.m_points.at(i));
 
+}
+void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs){
+	// copy first
+	bool bdebugshowImage = debugShowImagesDetail;
+	Mat debugImg = Mat::zeros(prevFrame.size(), CV_8UC3);
+	std::vector<cv::Point2f> points[2];
+
+	points[0].reserve(8 * tracks.size());	// reserve the memory
+	for (auto& track : tracks) // all existing blobs including untracked blob for a while
+	{
+		if(track.currentContour.size() > 0 && track.m_points.size()<=1)			
+				collectPointsInBlob(track);
+		for (const auto& pt : track.m_points)
+		{
+			points[0].push_back(pt);
+		}
+	}
+	if (points[0].empty())
+	{
+		return;
+	}
+
+	cv::TermCriteria termcrit(cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 30, 0.01);
+	cv::Size subPixWinSize(3, 3);
+	cv::Size winSize(25, 25);  // if this size is smaller than 25, the estimated points will be out of expectation
+	if(bdebugshowImage){
+		for(int i=0; i<points[0].size();i++)
+			circle(debugImg, points[0].at(i), 2, Scalar(255,0,0));
+	}
+	cv::cornerSubPix(prevFrame, points[0], subPixWinSize, cv::Size(-1, -1), termcrit);
+	if (0&&bdebugshowImage) {
+		for (int i = 0; i<points[0].size(); i++)
+			circle(debugImg, points[0].at(i), 2, Scalar(0, 0, 255));
+	}
+	std::vector<uchar> status;
+	std::vector<float> err;
+
+	cv::calcOpticalFlowPyrLK(prevFrame, curFrame, points[0], points[1], status, err, winSize, 1, termcrit, 0, 0.001);
+	//cv::cornerSubPix(curFrame, points[1], subPixWinSize, cv::Size(-1, -1), termcrit);
+	if (bdebugshowImage) {
+		for (int i = 0; i<points[1].size(); i++)
+			circle(debugImg, points[1].at(i), 2, Scalar(0, 255, 0));
+		imshow("calcOpticalFlowPyr", debugImg);
+		waitKey(1);
+	}
+	size_t i = 0;
+	for (auto& track : tracks)
+	{
+		itms::Blob blob;
+		blob = track;
+		cv::Point_<float> m_averagePoint = cv::Point_<float>(0, 0);
+		blob.currentBoundingRect = cv::Rect(0, 0, 0, 0);
+		if (bdebugshowImage) {
+			std::vector<vector<Point>> contours;
+			contours.push_back(blob.currentContour);
+			debugImg=0;
+			drawContours(debugImg, contours, -1, Scalar(0, 255, 255));
+		}
+		for (auto it = blob.m_points.begin(); it != blob.m_points.end();)
+		{
+			if (status[i] && distanceBetweenPoints(track.centerPositions.at(track.centerPositions.size()-1), static_cast<Point>(points[1][i] +Point2f(0.5,0.5)))<= 0.7*track.dblCurrentDiagonalSize) // be whin the range of diagonal distance in the previous blob
+			{
+				*it = points[1][i];
+				m_averagePoint += *it;
+
+				++it;
+			}
+			else
+			{
+				it = blob.m_points.erase(it);
+			}
+
+			++i;
+		}
+
+		if (!blob.m_points.empty())
+		{
+			m_averagePoint /= static_cast<float>(blob.m_points.size());
+
+			cv::Rect br = cv::boundingRect(blob.m_points);
+#if 0
+			br.x -= subPixWinSize.width;
+			br.width += 2 * subPixWinSize.width;
+			if (br.x < 0)
+			{
+				br.width += br.x;
+				br.x = 0;
+			}
+			if (br.x + br.width >= curFrame.cols)
+			{
+				br.x = curFrame.cols - br.width - 1;
+			}
+
+			br.y -= subPixWinSize.height;
+			br.height += 2 * subPixWinSize.height;
+			if (br.y < 0)
+			{
+				br.height += br.y;
+				br.y = 0;
+			}
+			if (br.y + br.height >= curFrame.rows)
+			{
+				br.y = curFrame.rows - br.height - 1;
+			}
+#endif
+			blob.currentBoundingRect = br;
+			std::vector<cv::Point> contour, preContour;
+			//approxPolyDP(blob.m_points, contour, arcLength(Mat(blob.m_points), true)*0.02, true);
+			for(int j=0; j<blob.m_points.size();j++)
+				preContour.push_back(static_cast<Point>(blob.m_points.at(j)+cv::Point2f(0.5, 0.5))); // rounding 
+			cv::convexHull(preContour, contour, false);
+			//fillConvexPoly();
+			blob.currentContour = contour;			
+			predBlobs.push_back(contour);
+			// get a real contour or Blob tmp(contour) and push_back;
+
+			if (bdebugshowImage) {
+				std::vector<vector<Point>> contours;
+				contours.push_back(contour);
+				drawContours(debugImg, contours, -1, Scalar(0, 0, 255));
+				imshow("contours_", debugImg);
+				waitKey(1);
+			}
+		}
+	}
 }
