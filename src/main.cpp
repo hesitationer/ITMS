@@ -157,8 +157,8 @@ enum BgSubType { // background substractor type
 // parameters
 bool debugShowImages = true;
 bool debugShowImagesDetail = true;
-bool debugGeneral = false;
-bool debugGeneralDetail = false;
+bool debugGeneral = true;
+bool debugGeneralDetail = true;
 bool debugTrace = true;
 bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
