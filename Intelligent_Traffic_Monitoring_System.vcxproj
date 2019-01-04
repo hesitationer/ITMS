@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\bgsubcnt.cpp" />
+    <ClCompile Include="src\fastdsst\fdssttracker.cpp" />
+    <ClCompile Include="src\fastdsst\fhog.cpp" />
     <ClCompile Include="src\itms_Blob.cpp" />
     <ClCompile Include="src\itms_blob_utils.cpp" />
     <ClCompile Include="src\main.cpp" />

@@ -8,6 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <vector>
+//#include <memory>
 
 #include "fdssttracker.hpp"
 
@@ -109,9 +110,8 @@ int main(int argc, char* argv[]){
 			HOG = false;
 	}*/
 
-	// Create KCFTracker object
+	// Create KCFTracker object	
 	FDSSTTracker tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
-	// DSSTTracker tracker;
 
 	//New window
 	string window_name = "video | q or esc to quit";

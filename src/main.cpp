@@ -20,6 +20,9 @@
 #include "../src/bgsubcnt.h"
 
 #include "utils/itms_utils.h"
+// DSST
+//#include <memory> // for std::unique_ptr 
+#include "../src/fastdsst/fdssttracker.hpp"
 
 
 #define SHOW_STEPS            // un-comment or comment this line to show steps or not
@@ -404,7 +407,14 @@ int main(void) {
   }  
   hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());
   
-
+  // define FAST DSST
+  bool HOG = true;
+  bool FIXEDWINDOW = false;
+  bool MULTISCALE = true;
+  bool SILENT = false;
+  bool LAB = true;
+  FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
+  
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
 		std::cout << "error reading video file" << std::endl << std::endl;      // show error message
 		_getch();                   // it may be necessary to change or remove this line if not using Windows
