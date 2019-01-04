@@ -91,7 +91,7 @@ int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2);
 // general : blob image processing (blob_imp)
 void mergeBlobsInCurrentFrameBlobs(std::vector<Blob> &currentFrameBlobs);
 void mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(std::vector<Blob>& currentFrameBlobs, std::vector<Blob> &predBlobs);
-void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
+void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
 void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
 void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs,int &id);
 double distanceBetweenPoints(cv::Point point1, cv::Point point2);
@@ -218,7 +218,18 @@ void collectPointsInBlob(Blob &_blob);
 void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get points inside blob, if exists in a blob, otherwise, compute it.
 // get predicted blobs from the existing blobs
 void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
+bool m_externalTrackerForLost = true; // do fastDSST for lost object
+
+// define FAST DSST
+bool HOG = true;
+bool FIXEDWINDOW = true;
+bool MULTISCALE = true;
+bool SILENT = false;
+bool LAB = false;
+FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
+
 // end tracking
+
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
 #if _DEBUG
@@ -407,13 +418,7 @@ int main(void) {
   }  
   hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());
   
-  // define FAST DSST
-  bool HOG = true;
-  bool FIXEDWINDOW = false;
-  bool MULTISCALE = true;
-  bool SILENT = false;
-  bool LAB = true;
-  FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
+ 
   
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
 		std::cout << "error reading video file" << std::endl << std::endl;      // show error message
@@ -674,7 +679,7 @@ int main(void) {
 				  /*imshow("bgimage", BGImage(roi_rect));
 				  imshow("blob image_roi", imgFrame2Copy(roi_rect));
 				  waitKey(0);*/
-				  blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask);
+				  blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask); // backgrdoun image need to be updated periodically 
 				  double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
 				  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
 		//            regions_t tempRegion;
@@ -784,7 +789,7 @@ int main(void) {
                 blobs.push_back(currentFrameBlob);
             }
         } else {
-            matchCurrentFrameBlobsToExistingBlobs(imgFrame2Copy, blobs, currentFrameBlobs, trackId);
+            matchCurrentFrameBlobsToExistingBlobs(imgFrame1Copy, imgFrame2Copy, blobs, currentFrameBlobs, trackId);
         }
 		imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 		if (debugShowImages ) {
@@ -984,7 +989,13 @@ void mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(std::vector<Blob> &currentF
 	
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id){
+// 2019. 01. 04 -> Apply fastDSST when the existing blob was not matched by current blob
+void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id){
+	// lost object tracker
+	size_t N = existingBlobs.size();
+	std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
+
+	// blob iterator
 	std::vector<Blob>::iterator existingBlob = existingBlobs.begin();
 	while ( existingBlob != existingBlobs.end()) {
 			// check if a block is too old after disappeared in the screen
@@ -1101,8 +1112,12 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
         }
         if (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize ) { // 충분히 클수록 좋다.
 			    addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
+				
 		    //  if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
 		      //	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
+
+				// lost object detection 
+				assignment.at(intIndexOfLeastDistance) = 1;
         }
         else { // this routine contains new and unassigned track(blob)s
           // add new blob
@@ -1155,12 +1170,39 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
 
     // update tracks 
     // 2018. 10. 25 getObjectStatusFromBlobCenters 을 전반부에서 이동.. 그리고, 각종 object status object classification을 여기서 함..
-
+	// 2019. 01. 04 for unassigned tracks, perform the fast DSST to find out the lost object if any and check if therer exists missing objects.
+	size_t blobIdx = 0;
     for (auto &existingBlob : existingBlobs) { // update track routine
 
-        if (existingBlob.blnCurrentMatchFoundOrNewBlob == false) { // unassigned tracks
-            existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;
+        if (existingBlob.blnCurrentMatchFoundOrNewBlob == false) { // unassigned tracks            
             existingBlob.age++;
+			
+			if (m_externalTrackerForLost /* && (assignment[blobIdx] == -1)*/) { // 상관이 없네...
+				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
+				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
+				cv::Rect newRoi;
+				m_tracker.init(existingBlob.currentBoundingRect, preImg);
+				newRoi = m_tracker.update(srcImg);
+
+				if (debugShowImagesDetail) {
+					cv::Mat debugImage = srcImg.clone(), difImg ;
+					absdiff(preImg, srcImg, difImg);
+					threshold(difImg, difImg, 10, 255, CV_THRESH_BINARY);
+					if (debugImage.channels() < 3)
+						cvtColor(debugImage, debugImage, CV_GRAY2BGR);
+					cv::rectangle(debugImage, existingBlob.currentBoundingRect, SCALAR_CYAN, 1);
+					cv::rectangle(debugImage, newRoi, SCALAR_MAGENTA, 2);
+					cv::imshow("Lost object tracking", debugImage);
+					cv::imshow("|pre - cur| frame", difImg);
+					cv::waitKey(1);
+				}
+
+			}
+			else {
+				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;
+			}
+				
+			// initialize fastDSST with previous 
         }
         else { // update the assigned (matched) tracks
           existingBlob.intNumOfConsecutiveFramesWithoutAMatch = 0; // reset because of appearance
@@ -1178,6 +1220,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& srcImg, std::vector<Blob> &e
         // object classfication according to distance and width/height ratio, area 
 
         // object status, class update routine ends
+		blobIdx++;
     }
 
 }
