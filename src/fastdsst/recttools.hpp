@@ -152,7 +152,7 @@ inline cv::Mat extractImage(const cv::Mat &in, float cx, float cy, float patch_w
     RectTools::cutOutsize(ys_e, in.rows);
 
 
-    return in(cv::Rect(xs_s, ys_s, xs_e - xs_s, ys_e - ys_s));
+    return in(cv::Rect(xs_s, ys_s, fmax(1, xs_e - xs_s), fmax(1, ys_e - ys_s))); // bug fix sangkny 2019. 01. 10
 }
 
 inline cv::Mat getGrayImage(cv::Mat img)

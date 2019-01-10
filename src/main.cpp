@@ -40,7 +40,7 @@ using namespace dnn;
 cv::CascadeClassifier cascade;
 cv::HOGDescriptor hog;
 
-#define _sk_Memory_Leakag_Detector
+//#define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -170,7 +170,7 @@ int maxCenterPts = 300;			  // maximum number of center points (frames), about 1
 int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
-int img_dif_th = 10;                          // BGS_DIF biranry threshold (10~30) at day through night, 
+int img_dif_th = 20;                          // BGS_DIF biranry threshold (10~30) at day through night, 
 float BlobNCC_Th = 0.5;                       // blob NCC threshold <0.5 means no BG
 
 bool isWriteToFile = false;
@@ -996,18 +996,18 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 	std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
 
 	// blob iterator
-	std::vector<Blob>::iterator existingBlob = existingBlobs.begin();
-	while ( existingBlob != existingBlobs.end()) {
+	std::vector<Blob>::iterator existBlob = existingBlobs.begin();
+	while (existBlob != existingBlobs.end()) {
 			// check if a block is too old after disappeared in the screen
-		if (existingBlob->blnStillBeingTracked == false 
-				&& existingBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) { 
+		if (existBlob->blnStillBeingTracked == false
+				&& existBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) {
 				// removing a blob from the list of existingBlobs						
 			  // overlapping test if overlapped or background, we will erase.
 			  std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
 			  int intIndexOfOverlapped = -1;
 			  double dblLeastDistance = 100000.0;
 			  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
-				int intSect = InterSectionRect(existingBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
+				int intSect = InterSectionRect(existBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
 
 				if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated, 1, 2, 3 indicate the inclusion of one block in another
 				  overlappedBobPair.push_back(std::pair<int, int>(i, intSect));
@@ -1016,50 +1016,50 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 			// erase the blob
 			if (overlappedBobPair.size() > 0) { // how about itself ? 
 			  if (debugTrace /*&& debugGeneralDetail*/) {
-				cout << " (!)==> Old and deserted blob id: " << existingBlob->id << " is eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height)<<"\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
-				cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
-				cout << "age: " << existingBlob->age << endl;
-				cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
+				cout << " (!)==> Old and deserted blob id: " << existBlob->id << " is eliminated at " << existBlob->centerPositions.back() << Size(existBlob->currentBoundingRect.width, existBlob->currentBoundingRect.height)<<"\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
+				cout << "cpt size: " << existBlob->centerPositions.size() << endl;
+				cout << "age: " << existBlob->age << endl;
+				cout << "totalVisible #: " << existBlob->totalVisibleCount << endl;
 			  }
-			  existingBlob = existingBlobs.erase(existingBlob);
+			  existBlob = existingBlobs.erase(existBlob);
 			}else{ // partial(0) or no overlapped (-1)
 			  // conditional elimination
 			  if (debugTrace /* && debugGeneralDetail*/) {
-				cout << " (!)! Old blob id: " << existingBlob->id << " is conditionally eliminated at " << existingBlob->centerPositions.back() << Size(existingBlob->currentBoundingRect.width, existingBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
-				cout << "cpt size: " << existingBlob->centerPositions.size() << endl;
-				cout << "age: " << existingBlob->age << endl;
-				cout << "totalVisible #: " << existingBlob->totalVisibleCount << endl;
+				cout << " (!)! Old blob id: " << existBlob->id << " is conditionally eliminated at " << existBlob->centerPositions.back() << Size(existBlob->currentBoundingRect.width, existBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
+				cout << "cpt size: " << existBlob->centerPositions.size() << endl;
+				cout << "age: " << existBlob->age << endl;
+				cout << "totalVisible #: " << existBlob->totalVisibleCount << endl;
 			  }
-			  if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
+			  if (existBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
 				// this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
 				// kind of trick !! which will remove the objects nodetected for long time
-				if (existingBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
+				if (existBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
 					if(debugTrace && debugGeneralDetail)
 						cout << "\n\n\n\n -------It--was moving--and --> stopped : object eliminated \n\n\n\n";
-				  existingBlob = existingBlobs.erase(existingBlob);
+					existBlob = existingBlobs.erase(existBlob);
 				  continue;
 				  //waitKey(0);
 				} 
 				// -------------------------------------------------------------
 				// check this out : sangkny on 2018/12/17
-				existingBlob->blnCurrentMatchFoundOrNewBlob = false;
-				existingBlob->centerPositions.push_back(existingBlob->centerPositions.back()); // this line required for isolated but Stopped
-				existingBlob->predictNextPosition(); // can be removed if the above line is commented
+				existBlob->blnCurrentMatchFoundOrNewBlob = false;
+				existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // this line required for isolated but Stopped
+				existBlob->predictNextPosition(); // can be removed if the above line is commented
 				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
-				++existingBlob;
+				++existBlob;
 				continue; // can be removed this
 				// ---------------------------------------------------------------
 			
 			  }else {
-				existingBlob = existingBlobs.erase(existingBlob);
+				  existBlob = existingBlobs.erase(existBlob);
 			  }
 			}
 		}else {
-		  existingBlob->blnCurrentMatchFoundOrNewBlob = false;
-		  existingBlob->predictNextPosition();
+			existBlob->blnCurrentMatchFoundOrNewBlob = false;
+			existBlob->predictNextPosition();
 		  //existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); 
 		  // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
-		  ++existingBlob;
+		  ++existBlob;
 		}
 	} // end while ( existingBlob != existingBlobs.end())
 	/*for (auto &existingBlob : existingBlobs) {	
@@ -1180,8 +1180,14 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 			if (m_externalTrackerForLost /* && (assignment[blobIdx] == -1)*/) { // 상관이 없네...
 				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
 				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
-				cv::Rect newRoi;
-				m_tracker.init(itms::expandRect(existingBlob.currentBoundingRect,10, 10, preImg.cols, preImg.rows), preImg);
+				cv::Rect newRoi;				
+				cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, 10, 10, preImg.cols, preImg.rows);
+				if (existingBlob.currentBoundingRect == Rect(483, 86, 21, 20))
+					int triger = 1;
+				
+				cout << "From boundingRect: "<< existingBlob.currentBoundingRect<<" => To expectedRect: " << expRect << endl;
+
+				m_tracker.init(expRect, preImg);
 				newRoi = m_tracker.update(srcImg);
 
 				if (debugShowImagesDetail) {
