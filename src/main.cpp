@@ -1181,7 +1181,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
 				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
 				cv::Rect newRoi;
-				m_tracker.init(existingBlob.currentBoundingRect, preImg);
+				m_tracker.init(itms::expandRect(existingBlob.currentBoundingRect,10, 10, preImg.cols, preImg.rows), preImg);
 				newRoi = m_tracker.update(srcImg);
 
 				if (debugShowImagesDetail) {

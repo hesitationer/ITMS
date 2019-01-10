@@ -8,7 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <vector>
-//#include <memory>
+#include <memory> // unique_prt
 
 #include "fdssttracker.hpp"
 
@@ -110,8 +110,11 @@ int main(int argc, char* argv[]){
 			HOG = false;
 	}*/
 
-	// Create KCFTracker object	
-	FDSSTTracker tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
+	// Create KCFTracker object
+	// std::unique_ptr<FDSSTTracker> m_tracker(new FDSSTTracker(HOG, FIXEDWINDOW, MULTISCALE, LAB)); // unique_ptr option 1
+	std::unique_ptr<FDSSTTracker> m_tracker;
+	m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+	//FDSSTTracker tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
 
 	//New window
 	string window_name = "video | q or esc to quit";
@@ -224,7 +227,7 @@ int main(int argc, char* argv[]){
 			{
 				cv::Mat img;
 				cv::cvtColor(show_img, img, cv::COLOR_RGB2GRAY);
-				tracker.init(initRect, img);
+				m_tracker->init(initRect, img);
 				showRect = initRect;
 				_bROI_Selected = false;
 			}
@@ -237,7 +240,7 @@ int main(int argc, char* argv[]){
 				cv::Mat img;
 				cv::cvtColor(show_img, img, cv::COLOR_RGB2GRAY);
 				double tt1 = (double)cv::getTickCount();
-				showRect = tracker.update(img);
+				showRect = m_tracker->update(img);
 				double tt2 = (double)cv::getTickCount();
 				double tt3 = (tt2 - tt1) / (double)getTickFrequency();
 				ostringstream os;

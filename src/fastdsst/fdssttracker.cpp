@@ -336,6 +336,7 @@ cv::Rect FDSSTTracker::update(cv::Mat image)
 	t_end = clock();
 	std::cout << "scale detction duration: " << (t_end - t_start) / CLOCKS_PER_SEC << "\n";
 #endif  
+	//currentScaleFactor = fmin(1.1, currentScaleFactor * interp_scaleFactors[scale_pi.x]);
 	currentScaleFactor = currentScaleFactor * interp_scaleFactors[scale_pi.x];
 //	std::cout << currentScaleFactor<<"\n";
     if(currentScaleFactor < min_scale_factor)
