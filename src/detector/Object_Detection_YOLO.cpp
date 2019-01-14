@@ -84,7 +84,7 @@ int main(int argc, char** argv)
   config_t config;
         //config["modelConfiguration"] = "../data/tiny-yolo.cfg";
         //config["modelBinary"] = "../data/tiny-yolo.weights";
-        std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";
+        std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/Multitarget-tracker-master/data/";
         config["modelConfiguration"] = runtime_data_dir + "yolov3-tiny.cfg";
         config["modelBinary"] = runtime_data_dir + "yolov3-tiny.weights";
         config["classNames"] = runtime_data_dir + "coco.names";
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
         config["confidenceThreshold"] = "0.5";
         config["maxCropRatio"] = "3.0";
   */
-  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";  
+  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/Multitarget-tracker-master/data/";  
   string classesFile = runtime_data_dir + "coco.names";
   ifstream ifs(classesFile.c_str());
   // Load names of classes

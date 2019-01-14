@@ -90,7 +90,7 @@ int main(int argc, char* argv[]){
 	bool SILENT = false;
 	bool LAB = true;
 
-	string filename = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/20180912_112338_cam_0.avi"/* 20180911_113611_cam_0 20180912_192157_cam_0.avi*//*_paras.device*/;
+	string filename = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/20180912_112338_cam_0.avi"/* 20180911_113611_cam_0 20180912_192157_cam_0.avi*//*_paras.device*/;
 	VideoCapture cam(/*0*/filename); //webcam : 0
 
 	/*for (int i = 0; i < argc; i++) {

@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 
 	//Initialize the VideoCapture object
 	
-	// std::string filename = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/20180912_134130_cam_0.avi";
-	std::string filename = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/Relaxinghighwaytraffic.mp4";
+	// std::string filename = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/20180912_134130_cam_0.avi";
+	std::string filename = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/Relaxinghighwaytraffic.mp4";
 	//VideoCapture cap(0);
 	VideoCapture cap(filename);
 	if (!cap.isOpened()) {

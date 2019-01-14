@@ -83,7 +83,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\fDSST_cpp-master\src;C:\sangkny\desktop\opencv\build342\install\include;C:\sangkny\desktop\opencv\build342\install\include\opencv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\LectureSSD_rescue\project-related\road-weather-topes\code\fDSST_cpp-master\src;C:\sangkny\desktop\opencv\build342\install\include;C:\sangkny\desktop\opencv\build342\install\include\opencv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -126,7 +126,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\LectureSSD_rescue\project-related\도로-기상-유고-토페스\code\fDSST_cpp-master\src;C:\sangkny\desktop\opencv\build342\install\include;C:\sangkny\desktop\opencv\build342\install\include\opencv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\LectureSSD_rescue\project-related\road-weather-topes\code\fDSST_cpp-master\src;C:\sangkny\desktop\opencv\build342\install\include;C:\sangkny\desktop\opencv\build342\install\include\opencv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>

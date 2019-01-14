@@ -53,7 +53,7 @@ int main(int argc, char** argv)
   Mat frame, dstImg; // opencv 3.x
   Mat curImg, prevImg; // gray image
   int input_resize_percent = 100;
-  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/";  
+  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/";  
   std::string videoFile = runtime_data_dir + "TrafficVideo/20180911_113611_cam_0.avi"; //20180912_112338_cam_0  // 20180911_113611_cam_0 // 20180911_113611_cam_0
    
   bool bfile = false;
@@ -236,7 +236,7 @@ inline bool existFileTest(const std::string& name) {
 //	help();
 //	cv::CommandLineParser parser(argc, argv, "{@input|0|}");
 //	string input = parser.get<string>("@input");
-//	  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/";  
+//	  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/";  
 //	  std::string videoFile = runtime_data_dir + "TrafficVideo/20180911_113611_cam_0.avi"; //20180912_112338_cam_0  // 20180911_113611_cam_0 // 20180911_113611_cam_0
 //	  input = videoFile;
 //	if (input.size() == 1 && isdigit(input[0]))

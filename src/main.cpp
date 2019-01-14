@@ -409,7 +409,7 @@ int main(void) {
   distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
   cout << " distance: " << distance / 100 << " meters from the starting point.\n";*/
   // define the case cade detector
-  std::string runtime_data_dir1 = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/";
+  std::string runtime_data_dir1 = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/";
   std::string xmlFile = runtime_data_dir1 + "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
   if (!cascade.load(xmlFile)) {
 	  std::cout << "Plase check the xml file in the given location !!(!)\n";
@@ -558,7 +558,7 @@ int main(void) {
 	//// end template matching algorithm
 
   // Deep learning based Detection and Classification //
-    std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";
+    std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/Multitarget-tracker-master/data/";
     string classesFile = runtime_data_dir + "coco.names";
     ifstream ifs(classesFile.c_str());
     string line;
