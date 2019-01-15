@@ -540,7 +540,7 @@ int main(void) {
     
     if (road_mask.channels() > 1)
       cvtColor(road_mask, road_mask, CV_BGR2GRAY);
-    if (1&& debugShowImages && debugShowImagesDetail) {
+    if (debugShowImages && debugShowImagesDetail) {
       imshow("road mask", road_mask);
       waitKey(1);
     }
