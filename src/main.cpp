@@ -229,7 +229,45 @@ bool LAB = false;
 FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
 
 // end tracking
+// auto brightness and apply to threshold
+bool isAutoBrightness = true;
+int  numOfPastFrame = 5;
+/* 
+if (m_trace.size() > max_trace_length)
+{
+m_trace.pop_front(m_trace.size() - max_trace_length);
+}
 
+///
+/// \brief pop_front
+/// \param count
+///
+void pop_front(size_t count)
+{
+if (count < size())
+{
+m_trace.erase(m_trace.begin(), m_trace.begin() + count);
+}
+else
+{
+m_trace.clear();
+}
+}
+
+///
+/// \brief GetRawCount
+/// \param lastPeriod
+/// \return
+///
+template<typename T>
+void pop_front(std::vector<T>& vec)
+{
+assert(!vec.empty());
+vec.erase(vec.begin());
+}
+
+
+*/
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
 #if _DEBUG
