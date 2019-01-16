@@ -159,7 +159,7 @@ enum BgSubType { // background substractor type
 };
 // parameters
 bool debugShowImages = true;
-bool debugShowImagesDetail = false;
+bool debugShowImagesDetail = true;
 bool debugGeneral = false;
 bool debugGeneralDetail = true;
 bool debugTrace = true;
@@ -226,7 +226,7 @@ bool FIXEDWINDOW = true;
 bool MULTISCALE = true;
 bool SILENT = false;
 bool LAB = false;
-FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
+// sangkny FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
 
 // end tracking
 // auto brightness and apply to threshold
@@ -1156,10 +1156,11 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				if (existingBlob.currentBoundingRect == Rect(483, 86, 21, 20))
 					int triger = 1;
 				
-				cout << "From boundingRect: "<< existingBlob.currentBoundingRect<<" => To expectedRect: " << expRect << endl;
+				if(debugGeneralDetail)
+					cout << "From boundingRect: "<< existingBlob.currentBoundingRect<<" => To expectedRect: " << expRect << endl;
 
-				m_tracker.init(expRect, preImg);
-				newRoi = m_tracker.update(srcImg);
+				/*m_tracker.init(expRect, preImg);
+				newRoi = m_tracker.update(srcImg);*/
 
 				if (debugShowImagesDetail) {
 					cv::Mat debugImage = srcImg.clone(), difImg ;

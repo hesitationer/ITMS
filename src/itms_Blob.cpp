@@ -61,7 +61,12 @@ namespace itms {
 	oc_notified = OC_OTHER; // final notified object class
 	os_notified = OS_NOTDETERMINED; // final notified object status
   }
-
+  Blob::~Blob() {	  
+	if (m_tracker) {
+		m_tracker.release();		
+	}	  
+	;
+ }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   void Blob::predictNextPosition(void) {
 
@@ -306,15 +311,15 @@ namespace itms {
     return status;
   }
   
-  //void Blob::CreateExternalTracker(void)
-  //{
-	 // if (!m_tracker) {
-		//  bool HOG = true;
-		//  bool FIXEDWINDOW = false;
-		//  bool MULTISCALE = true;
-		//  bool SILENT = false;
-		//  bool LAB = true;
-		//  m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
-	 // }
-  //}
+  void Blob::CreateExternalTracker(void)
+  {
+	  if (!m_tracker) {
+		  bool HOG = true;
+		  bool FIXEDWINDOW = false;
+		  bool MULTISCALE = true;
+		  bool SILENT = false;
+		  bool LAB = true;
+		  m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+	  }
+  }
 } // end of namespace itms

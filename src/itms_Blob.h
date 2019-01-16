@@ -50,6 +50,11 @@ namespace itms {
 
   class Blob {      // it will be used as a track
   public:
+	  Blob(std::vector<cv::Point> _contour);
+
+	  Blob(void) {};
+	  ~Blob(void);
+
     // member variables ///////////////////////////////////////////////////////////////////////////
     std::vector<cv::Point> currentContour;
 	// 2018. 12. 29 sangkny
@@ -99,19 +104,20 @@ namespace itms {
     cv::Point predictedNextPosition; // corresponding to particles in Surveillance Camera
 
 	/// visual tracking 
-	//std::unique_ptr<FDSSTTracker> m_tracker;
+	std::unique_ptr<FDSSTTracker> m_tracker;
+	//cv::Ptr<FDSSTTracker> m_tracker;
 
     // function prototypes ////////////////////////////////////////////////////////////////////////
-    Blob(std::vector<cv::Point> _contour);
+   
 
-	Blob(void){};
     void predictNextPosition(void); // 
     cv::Point weightedPositionAverage(int bWeighted=0); // weighted centerposition average
     // numTap: # of coefficients, bWeighted: weighted or uniform (true/false)
     std::string getBlobStatus(void);
     std::string getBlobClass(void);
 
-	//void CreateExternalTracker(void);		// create Tracker for lost object using fast DSST
+	void CreateExternalTracker(void);		// create Tracker for lost object using fast DSST
+
 	void operator = (const Blob &rhBlob);	// operator overloading
   };
 }
