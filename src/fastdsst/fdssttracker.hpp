@@ -81,14 +81,10 @@ the use of this software, even if advised of the possibility of such damage.
  */
 
 #pragma once
+#ifndef FDSSTTRACKER_H
+#define FDSSTTRACKER_H
 
 #include "tracker.h"
-
-
-
-
-
-
 
 class FDSSTTracker : public Tracker
 {
@@ -216,3 +212,5 @@ private:
     cv::Mat ysf;
 
 };
+
+#endif

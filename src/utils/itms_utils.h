@@ -43,11 +43,72 @@ public:
 typedef std::vector<CRegion> regions_t;
 
 namespace itms {
+	////// simple functions 
+
   void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages);
   Rect expandRect(Rect original, int expandXPixels, int expandYPixels, int maxX, int maxY); // 
   Rect maxSqRect(Rect& original, int maxX, int maxY); // make squre with max length
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
-	
+
+  //// system related  
+
+  /// vector related
+  /*  example to use the pop_front
+  if (vec.size() > max_past_frames)
+  {
+  vec.pop_front(vec.size() - max_past_frames);
+  }
+  */
+  ///
+  /// \brief pop_front
+  /// \param vec : input vector
+  /// \param count
+  ///
+  template<typename T>
+  void pop_front(std::vector<T>& vec, size_t count)
+  {
+	  assert(count >= 0);
+	  if (count < vec.size())
+	  {
+		  vec.erase(vec.begin(), vec.begin() + count);
+	  }
+	  else
+	  {
+		  vec.clear(); // delete all elemnts
+	  }
+  }
+
+  ///
+  /// \brief pop_front: delete the first element
+  /// \param vec  
+  ///
+  template<typename T>
+  void pop_front(std::vector<T>& vec)
+  {
+	  assert(!vec.empty());
+	  vec.erase(vec.begin());
+  }
+  ///// get weight values   
+
+  template<typename T>
+  T weightFnc(std::vector<T>& _vec, T _tlevel1 = 30/* transition level 1*/, T _tlevel2 = 128, T _maxTh = 30, T _minTh = 10)
+  {
+	  assert(_tlevel2 > _tlevel1 && _maxTh > _minTh);
+
+	  T m = mean(_vec)[0];	  T res = 0;
+	  res = (m <= _tlevel1) ? _maxTh : (m >= _tlevel2 ? _minTh : ((_minTh - _maxTh)*(m - _tlevel1) / (_tlevel2 - _tlevel1) + _maxTh));	  
+	  return T(res);
+  }  
+  template<typename T>
+  T weightFnc_x(T _x = 130, T _tlevel1 = 30/* transition level 1*/, T _tlevel2 = 128, T _maxTh = 30, T _minTh = 10)
+  {
+	  assert(_tlevel2 > _tlevel1 && _maxTh > _minTh);
+	  T m = _x;	  T res = 0;
+	  return (res = (m <= _tlevel1) ? _maxTh : (m >= _tlevel2 ? _minTh : ((_minTh - _maxTh)*(m - _tlevel1) / (_tlevel2 - _tlevel1) + _maxTh)));
+  }
+    
+  ///// classes
+						
   // Wrapper over OpenCV cv::VideoWriter class, with option write or not to write to file.
   // ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize)
   class ITMSVideoWriter {

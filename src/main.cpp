@@ -40,7 +40,7 @@ using namespace dnn;
 cv::CascadeClassifier cascade;
 cv::HOGDescriptor hog;
 
-//#define _sk_Memory_Leakag_Detector
+#define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -159,8 +159,8 @@ enum BgSubType { // background substractor type
 };
 // parameters
 bool debugShowImages = true;
-bool debugShowImagesDetail = true;
-bool debugGeneral = true;
+bool debugShowImagesDetail = false;
+bool debugGeneral = false;
 bool debugGeneralDetail = true;
 bool debugTrace = true;
 bool debugTime = true;
@@ -231,43 +231,8 @@ FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and upda
 // end tracking
 // auto brightness and apply to threshold
 bool isAutoBrightness = true;
-int  numOfPastFrame = 5;
-/* 
-if (m_trace.size() > max_trace_length)
-{
-m_trace.pop_front(m_trace.size() - max_trace_length);
-}
+int  max_past_frames = 15;
 
-///
-/// \brief pop_front
-/// \param count
-///
-void pop_front(size_t count)
-{
-if (count < size())
-{
-m_trace.erase(m_trace.begin(), m_trace.begin() + count);
-}
-else
-{
-m_trace.clear();
-}
-}
-
-///
-/// \brief GetRawCount
-/// \param lastPeriod
-/// \return
-///
-template<typename T>
-void pop_front(std::vector<T>& vec)
-{
-assert(!vec.empty());
-vec.erase(vec.begin());
-}
-
-
-*/
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
 #if _DEBUG
@@ -282,14 +247,17 @@ int main(void) {
 
 	cv::VideoCapture capVideo;
 
-	cv::Mat imgFrame1;
-	cv::Mat imgFrame2;
+	cv::Mat imgFrame1; // previous frame
+	cv::Mat imgFrame2; // current frame
 
   float scaleFactor = .5;
   bool m_collectPoints = m_useLocalTracking; // detector level => blob 의 m_points 에 채우기
 
 
 	std::vector<Blob> blobs;
+	std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold
+	cv::Rect brightnessRoi(cv::Rect(1162 * scaleFactor, 808 * scaleFactor, 110 * scaleFactor, 142 * scaleFactor)); // for a little darker asphalt
+	// cv::Rect brightnessRor(cv::Rect(938 * scaleFactor, 760 * scaleFactor, 124 * scaleFactor, 94 * scaleFactor)); // for a little brighter asphalt
 
 	cv::Point crossingLine[2];
 
@@ -304,60 +272,10 @@ int main(void) {
   // load background image	
   cv::Mat BGImage = imread(FAV1::BGImagePath);
   
-	//std::vector<Point> Road_ROI_Pts;
-	//// relaxinghighwaytraffic.mp4
-	//Road_ROI_Pts.push_back(Point(380, 194)*scaleFactor);
-	//Road_ROI_Pts.push_back(Point(433, 194)*scaleFactor);
-	//Road_ROI_Pts.push_back(Point(344, 423)*scaleFactor);
-	//Road_ROI_Pts.push_back(Point(89, 423)*scaleFactor);
 
   std::vector<Point> road_roi_pts;
   std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
-  // relaxinghighwaytraffic.mp4 for new one
-  //// side walk1
-  //road_roi_pts.push_back(Point(387.00,  189.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(392.00,  189.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(14.00,   479.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(4.00,    378.00)*scaleFactor);
-  //Road_ROI_Pts.push_back(road_roi_pts);
-  //road_roi_pts.clear();
-  //// car lane
-  //road_roi_pts.push_back(Point(391.00, 189.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(483.00, 187.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(797.00, 478.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(13.00, 478.00)*scaleFactor);
-  //Road_ROI_Pts.push_back(road_roi_pts);
-  //road_roi_pts.clear();
-  //// side walk2
-  //road_roi_pts.push_back(Point(480.00, 187.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(496.00, 187.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(853.00, 419.00)*scaleFactor);
-  //road_roi_pts.push_back(Point(791.00, 478.00)*scaleFactor);
-  //Road_ROI_Pts.push_back(road_roi_pts);
-  //road_roi_pts.clear();
-
-  ////20180911_172930_
-  //// side walk1
-  //road_roi_pts.push_back(Point(1057.25, 83.75)*scaleFactor);
-  //road_roi_pts.push_back(Point(1069.25, 92.75)*scaleFactor);
-  //road_roi_pts.push_back(Point(289.25, 1036.25)*scaleFactor);
-  //road_roi_pts.push_back(Point(103.25, 1009.25)*scaleFactor);
-  //Road_ROI_Pts.push_back(road_roi_pts);
-  //road_roi_pts.clear();
-  //// car lane
-  //road_roi_pts.push_back(Point(1063.25, 89.75)*scaleFactor);
-  //road_roi_pts.push_back(Point(1135.25, 92.75)*scaleFactor);
-  //road_roi_pts.push_back(Point(955.25, 1033.25)*scaleFactor);
-  //road_roi_pts.push_back(Point(253.25, 1039.25)*scaleFactor);
-  //Road_ROI_Pts.push_back(road_roi_pts);
-  //road_roi_pts.clear();
-  //// side walk2
-  //road_roi_pts.push_back(Point(1129.25, 91.25)*scaleFactor);
-  //road_roi_pts.push_back(Point(1157.75, 95.75)*scaleFactor);
-  //road_roi_pts.push_back(Point(1231.25, 1034.75)*scaleFactor);
-  //road_roi_pts.push_back(Point(941.75, 1031.75)*scaleFactor);
-  //Road_ROI_Pts.push_back(road_roi_pts);
-  //road_roi_pts.clear();
+ 
 
   //20180912_112338
   // side walk1
@@ -651,10 +569,29 @@ int main(void) {
 		else {
 			cv::absdiff(imgFrame1Copy, imgFrame2Copy, imgDifference);
 		}
-    // roi applied
-    if (!road_mask.empty()) {
-      bitwise_and(road_mask, imgDifference, imgDifference);
-    }
+		// roi applied
+		if (!road_mask.empty()) {
+		  bitwise_and(road_mask, imgDifference, imgDifference);
+		}
+		// if needs to adjust img_dif_th
+		if (isAutoBrightness) {
+			//compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
+			float roiMean = mean(imgFrame2Copy(brightnessRoi)/*currentGray roi*/)[0];
+			if (pastBrightnessLevels.size() >= max_past_frames) // the size of vector is max_past_frames
+				//pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - max_past_frames + 1); // keep the number of max_past_frames
+				pop_front(pastBrightnessLevels); // remove an elemnt from the front of 
+			pastBrightnessLevels.push_back(cvRound(roiMean));			
+			// adj function for adjusting image difference thresholding
+			int newTh = weightFnc(pastBrightnessLevels);
+			img_dif_th = newTh;
+			if (debugGeneral && debugGeneralDetail) {
+				std::cout << "Brightness mean for Roi: " << roiMean << "\n";
+				int m = mean(pastBrightnessLevels)[0];
+				std::cout << "Brightness mean for Past Frames: " << m << "\n";
+				std::cout << "New Dif Th : " << newTh << "\n";
+			}
+
+		}
         cv::threshold(imgDifference, imgThresh, img_dif_th, 255.0, CV_THRESH_BINARY);
 		if (debugShowImages && debugShowImagesDetail) {
 			cv::imshow("imgThresh", imgThresh);
@@ -667,8 +604,7 @@ int main(void) {
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
             cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 			if (bgsubtype == BgSubType::BGS_DIF)
-				cv::erode(imgThresh, imgThresh, structuringElement5x5);      
-          //cv::morphologyEx(imgThresh, imgThresh, CV_MOP_CLOSE, structuringElement7x7);
+				cv::erode(imgThresh, imgThresh, structuringElement5x5);                
         }
 
         cv::Mat imgThreshCopy = imgThresh.clone();
@@ -713,12 +649,9 @@ int main(void) {
 				  }
 				  // bg image
 				  // currnt image
-
-				  /*imshow("bgimage", BGImage(roi_rect));
-				  imshow("blob image_roi", imgFrame2Copy(roi_rect));
-				  waitKey(0);*/
+				  // blob correlation
 				  blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask); // backgrdoun image need to be updated periodically 
-				  double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
+				  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
 				  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
 		//            regions_t tempRegion;
 		//            vector<Mat> outMat;                
@@ -2545,3 +2478,4 @@ void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFr
 		}
 	}
 }
+

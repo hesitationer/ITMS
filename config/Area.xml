@@ -6,14 +6,14 @@
 <LightVehicleArea>100</LightVehicleArea>
 <BikeArea>50</BikeArea>
 <HumanArea>20</HumanArea>
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
 <VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  // 주간 단독 보행 후 , 자동차 주행 
 <VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath> // 보행 2명 차량정차 실험 
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
 <VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>  // 트럭 야간 가다 서다 
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>  // 차량 3대 역주행
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>  // 오후 차량 3대 역주행
 <VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath> // 단순 역주행으로 잘 안보임
 <VideoPath>"C:\\NEXPA\\rawdata.avi"</VideoPath>
 <VideoPath>"TrafficVideo\\20180912_134130_cam_0.avi"</VideoPath>

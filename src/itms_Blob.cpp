@@ -141,7 +141,8 @@ namespace itms {
     }
 
   }
-  void Blob::operator=(const Blob &rhBlob) { 
+  
+  void Blob::operator=(const Blob &rhBlob) {
 	  currentContour.clear();
 	  for (int i = 0; i < rhBlob.currentContour.size(); i++)
 	  	  currentContour.push_back(rhBlob.currentContour.at(i));
@@ -304,5 +305,16 @@ namespace itms {
 
     return status;
   }
-    
+  
+  //void Blob::CreateExternalTracker(void)
+  //{
+	 // if (!m_tracker) {
+		//  bool HOG = true;
+		//  bool FIXEDWINDOW = false;
+		//  bool MULTISCALE = true;
+		//  bool SILENT = false;
+		//  bool LAB = true;
+		//  m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+	 // }
+  //}
 } // end of namespace itms

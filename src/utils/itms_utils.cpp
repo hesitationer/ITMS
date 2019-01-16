@@ -60,9 +60,12 @@ namespace itms {
     Rect expandedRegion = (intDifLength > 0) ? expandRect(original, 0, intDifLength, maxX, maxY) : expandRect(original, -1 * intDifLength, 0, maxX, maxY);
     return expandedRegion;  
   }
+  
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY) {
     Rect maxSq = maxSqRect(original, maxX, maxY);
     maxSq = expandRect(maxSq, floatScalefactor*maxSq.width, floatScalefactor*maxSq.height, maxX, maxY);
     return maxSq;
   }
+ 
+
 } // itms namespace

@@ -17,6 +17,8 @@
 
 
 #pragma once
+#ifndef TRACKER_H
+#define TRACKER_H
 
 #include <opencv2/opencv.hpp>
 #include <string>
@@ -35,5 +37,6 @@ protected:
     cv::Rect_<float> _roi;
 };
 
+#endif
 
 

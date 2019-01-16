@@ -10,6 +10,9 @@
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 
+#include<memory>
+#include "../src/fastdsst/fdssttracker.hpp"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {  
   enum ObjectClass {
@@ -95,8 +98,12 @@ namespace itms {
 
     cv::Point predictedNextPosition; // corresponding to particles in Surveillance Camera
 
+	/// visual tracking 
+	//std::unique_ptr<FDSSTTracker> m_tracker;
+
     // function prototypes ////////////////////////////////////////////////////////////////////////
     Blob(std::vector<cv::Point> _contour);
+
 	Blob(void){};
     void predictNextPosition(void); // 
     cv::Point weightedPositionAverage(int bWeighted=0); // weighted centerposition average
@@ -104,6 +111,7 @@ namespace itms {
     std::string getBlobStatus(void);
     std::string getBlobClass(void);
 
+	//void CreateExternalTracker(void);		// create Tracker for lost object using fast DSST
 	void operator = (const Blob &rhBlob);	// operator overloading
   };
 }
