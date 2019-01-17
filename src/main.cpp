@@ -220,6 +220,7 @@ void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get 
 // get predicted blobs from the existing blobs
 void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
 bool m_externalTrackerForLost = true; // do fastDSST for lost object
+bool isSubImgTracking = true;			// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
 
 // define FAST DSST
 bool HOG = true;
@@ -1173,86 +1174,97 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
 				cv::Rect newRoi, m_predictionRect;				
 				cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, 10, 10, preImg.cols, preImg.rows);
-				m_predictionRect = expRect;			// I need to check this
-				if (existingBlob.currentBoundingRect == Rect(483, 86, 21, 20))
-					int triger = 1;
-				
-				if(0&& debugGeneral && debugGeneralDetail)
-					cout << "From boundingRect: "<< existingBlob.currentBoundingRect<<" => To expectedRect: " << expRect << endl;
 
-				/*m_tracker.init(expRect, preImg);
-				newRoi = m_tracker.update(srcImg);*/
-				// partial local tracking using FDSST 2019. 01. 17
-				cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // small subImage selection, I need to check if we can reduce more
-				if (roiSize.width > srcImg.cols)
-				{
-					roiSize.width = srcImg.cols;
-				}
-				if (roiSize.height > srcImg.rows)
-				{
-					roiSize.height = srcImg.rows;
-				}
-				cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
-				cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
-				Clamp(roiRect.x, roiRect.width, srcImg.cols);
-				Clamp(roiRect.y, roiRect.height, srcImg.rows);
+				if (0 && debugGeneral && debugGeneralDetail)
+					cout << "From boundingRect: " << existingBlob.currentBoundingRect << " => To expectedRect: " << expRect << endl;
 
-				cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height); // relative subImage coordinates
-				if (!existingBlob.m_tracker) {
-					existingBlob.CreateExternalTracker();
+				if (!isSubImgTracking) { // full image-based approach
+					if (!existingBlob.m_tracker || existingBlob.m_tracker.empty())
+						existingBlob.CreateExternalTracker();	// create ExternalTracker
+					if (!existingBlob.m_tracker_initialized) {		// do it only once
+						existingBlob.m_tracker->init(expRect, preImg);
+						existingBlob.m_tracker_initialized = true;
+					}
+					newRoi = existingBlob.m_tracker->update(srcImg); // do update for full image-based fast dsst
+					if (1 && debugShowImagesDetail) {
+						cv::Mat tmp2 = srcImg.clone();
+						if (tmp2.channels() < 3)
+							cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+						cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
+						cv::rectangle(tmp2, newRoi, SCALAR_MAGENTA, 2);
+						cv::imshow("full image tracking", tmp2);
+						cv::waitKey(1);
+					}
+					if (0 && debugShowImagesDetail) { // now only for full image coordinates
+						cv::Mat debugImage = srcImg.clone(), difImg;
+						absdiff(preImg, srcImg, difImg);
+						threshold(difImg, difImg, img_dif_th, 255, CV_THRESH_BINARY);
+						if (debugImage.channels() < 3)
+							cvtColor(debugImage, debugImage, CV_GRAY2BGR);
+						cv::rectangle(debugImage, existingBlob.currentBoundingRect, SCALAR_CYAN, 1);
+						cv::rectangle(debugImage, newRoi, SCALAR_MAGENTA, 2);
+						cv::imshow("Lost object tracking", debugImage);
+						cv::imshow("|pre - cur| frame", difImg);
+						cv::waitKey(1);
+					}
+				}
+				else { // sub image-based approach for lost object detection, in this case, init and update need to be carried out at ontime 
+					m_predictionRect = expRect;			
+					// partial local tracking using FDSST 2019. 01. 17
+					cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // small subImage selection, I need to check if we can reduce more
+					if (roiSize.width > srcImg.cols)
+					{
+						roiSize.width = srcImg.cols;
+					}
+					if (roiSize.height > srcImg.rows)
+					{
+						roiSize.height = srcImg.rows;
+					}
+					cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
+					cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
+					Clamp(roiRect.x, roiRect.width, srcImg.cols);
+					Clamp(roiRect.y, roiRect.height, srcImg.rows);
+
+					cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height); // relative subImage coordinates
+					if (!existingBlob.m_tracker || existingBlob.m_tracker.empty()) {
+						existingBlob.CreateExternalTracker();						
+					}					
+					
 					if (lastRect.x >= 0 &&
 						lastRect.y >= 0 &&
 						lastRect.x + lastRect.width < roiRect.width &&
 						lastRect.y + lastRect.height < roiRect.height &&
 						lastRect.area() > 0) {
 						existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
+						existingBlob.m_tracker_initialized = true; // ??????????????						
+						newRoi = existingBlob.m_tracker->update(cv::Mat(srcImg, roiRect));
+						cv::Rect prect(cvRound(newRoi.x) + roiRect.x, cvRound(newRoi.y) + roiRect.y, cvRound(newRoi.width), cvRound(newRoi.height)); // new global location 
+						if (1 && debugShowImagesDetail) {
+							cv::Mat tmp2 = cv::Mat(srcImg, roiRect).clone();
+							if (tmp2.channels() < 3)
+								cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+							cv::rectangle(tmp2, lastRect, SCALAR_CYAN, 1);
+							cv::rectangle(tmp2, newRoi, SCALAR_MAGENTA, 2);
+							cv::imshow("track", tmp2);
+							cv::waitKey(1);
+						}
+						if (1 && debugShowImagesDetail) {
+							cv::Mat tmp2 = srcImg.clone();
+							if (tmp2.channels() < 3)
+								cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+							cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
+							cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
+							cv::imshow("full image location", tmp2);
+							cv::waitKey(1);
+						}
 					}
-				}
-				//else {
-				/*	existingBlob.m_tracker->init(expRect, preImg);
-					newRoi = existingBlob.m_tracker->update(srcImg);*/
-				//}
-				if (lastRect.x >= 0 &&
-					lastRect.y >= 0 &&
-					lastRect.x + lastRect.width < roiRect.width &&
-					lastRect.y + lastRect.height < roiRect.height &&
-					lastRect.area() > 0) {
-					//existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
-					if (0 && debugShowImagesDetail) { // inital location
-						cv::Mat tmp = cv::Mat(srcImg, roiRect).clone();
-						if (tmp.channels() < 3)
-							cvtColor(tmp, tmp, CV_GRAY2BGR);
-
-						cv::rectangle(tmp, lastRect, SCALAR_CYAN, 2);
-						cv::imshow("init", tmp);
+					else {
+						if (existingBlob.m_tracker || !existingBlob.m_tracker.empty()) {
+							existingBlob.m_tracker.release();
+							existingBlob.m_tracker_initialized = false;
+						}
 					}
-					newRoi = existingBlob.m_tracker->update(cv::Mat(srcImg, roiRect));
-					if (1&& debugShowImagesDetail) {
-						cv::Mat tmp2 = cv::Mat(srcImg, roiRect).clone();
-						if (tmp2.channels() < 3)
-							cvtColor(tmp2, tmp2, CV_GRAY2BGR);
-						cv::rectangle(tmp2, lastRect, SCALAR_CYAN, 1);
-						cv::rectangle(tmp2, newRoi, SCALAR_MAGENTA, 2);
-						cv::imshow("track", tmp2);
-						cv::waitKey(1);
-					}
-				}
-				else {
-					if (existingBlob.m_tracker || !existingBlob.m_tracker.empty())
-						existingBlob.m_tracker.release();
-				}
-
-				if (0 && debugShowImagesDetail) { // now only for full image coordinates
-					cv::Mat debugImage = srcImg.clone(), difImg ;
-					absdiff(preImg, srcImg, difImg);
-					threshold(difImg, difImg, img_dif_th, 255, CV_THRESH_BINARY);
-					if (debugImage.channels() < 3)
-						cvtColor(debugImage, debugImage, CV_GRAY2BGR);
-					cv::rectangle(debugImage, existingBlob.currentBoundingRect, SCALAR_CYAN, 1);
-					cv::rectangle(debugImage, newRoi, SCALAR_MAGENTA, 2);
-					cv::imshow("Lost object tracking", debugImage);
-					cv::imshow("|pre - cur| frame", difImg);
-					cv::waitKey(1);
+					
 				}
 
 			}

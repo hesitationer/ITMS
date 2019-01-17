@@ -106,6 +106,7 @@ namespace itms {
 	/// visual tracking 
 	//std::unique_ptr<FDSSTTracker> m_tracker;
 	cv::Ptr<FDSSTTracker> m_tracker;
+	bool m_tracker_initialized = false;
 
     // function prototypes ////////////////////////////////////////////////////////////////////////
    
