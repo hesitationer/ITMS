@@ -49,7 +49,7 @@ namespace itms {
   Rect expandRect(Rect original, int expandXPixels, int expandYPixels, int maxX, int maxY); // 
   Rect maxSqRect(Rect& original, int maxX, int maxY); // make squre with max length
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
-
+   
   //// system related  
 
   /// vector related

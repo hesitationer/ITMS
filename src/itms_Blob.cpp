@@ -319,7 +319,8 @@ namespace itms {
 		  bool MULTISCALE = true;
 		  bool SILENT = false;
 		  bool LAB = true;
-		  m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+		  //m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+		  m_tracker = cv::makePtr<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
 	  }
   }
 } // end of namespace itms

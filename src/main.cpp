@@ -22,6 +22,7 @@
 #include "utils/itms_utils.h"
 // DSST
 //#include <memory> // for std::unique_ptr 
+//#include <algorithm>
 #include "../src/fastdsst/fdssttracker.hpp"
 
 
@@ -1143,6 +1144,25 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
     // 2018. 10. 25 getObjectStatusFromBlobCenters 을 전반부에서 이동.. 그리고, 각종 object status object classification을 여기서 함..
 	// 2019. 01. 04 for unassigned tracks, perform the fast DSST to find out the lost object if any and check if therer exists missing objects.
 	size_t blobIdx = 0;
+	auto Clamp = [](int& v, int& size, int hi) -> bool
+	{
+		if (size < 2)
+		{
+			size = 2;
+		}
+		if (v < 0)
+		{
+			v = 0;
+			return true;
+		}
+		else if (v + size > hi - 1)
+		{
+			v = hi - 1 - size;
+			return true;
+		}
+		return false;
+	};
+
     for (auto &existingBlob : existingBlobs) { // update track routine
 
         if (existingBlob.blnCurrentMatchFoundOrNewBlob == false) { // unassigned tracks            
@@ -1151,21 +1171,81 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 			if (m_externalTrackerForLost /* && (assignment[blobIdx] == -1)*/) { // 상관이 없네...
 				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
 				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
-				cv::Rect newRoi;				
+				cv::Rect newRoi, m_predictionRect;				
 				cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, 10, 10, preImg.cols, preImg.rows);
+				m_predictionRect = expRect;			// I need to check this
 				if (existingBlob.currentBoundingRect == Rect(483, 86, 21, 20))
 					int triger = 1;
 				
-				if(debugGeneralDetail)
+				if(0&& debugGeneral && debugGeneralDetail)
 					cout << "From boundingRect: "<< existingBlob.currentBoundingRect<<" => To expectedRect: " << expRect << endl;
 
 				/*m_tracker.init(expRect, preImg);
 				newRoi = m_tracker.update(srcImg);*/
+				// partial local tracking using FDSST 2019. 01. 17
+				cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // small subImage selection, I need to check if we can reduce more
+				if (roiSize.width > srcImg.cols)
+				{
+					roiSize.width = srcImg.cols;
+				}
+				if (roiSize.height > srcImg.rows)
+				{
+					roiSize.height = srcImg.rows;
+				}
+				cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
+				cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
+				Clamp(roiRect.x, roiRect.width, srcImg.cols);
+				Clamp(roiRect.y, roiRect.height, srcImg.rows);
 
-				if (debugShowImagesDetail) {
+				cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height); // relative subImage coordinates
+				if (!existingBlob.m_tracker) {
+					existingBlob.CreateExternalTracker();
+					if (lastRect.x >= 0 &&
+						lastRect.y >= 0 &&
+						lastRect.x + lastRect.width < roiRect.width &&
+						lastRect.y + lastRect.height < roiRect.height &&
+						lastRect.area() > 0) {
+						existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
+					}
+				}
+				//else {
+				/*	existingBlob.m_tracker->init(expRect, preImg);
+					newRoi = existingBlob.m_tracker->update(srcImg);*/
+				//}
+				if (lastRect.x >= 0 &&
+					lastRect.y >= 0 &&
+					lastRect.x + lastRect.width < roiRect.width &&
+					lastRect.y + lastRect.height < roiRect.height &&
+					lastRect.area() > 0) {
+					//existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
+					if (0 && debugShowImagesDetail) { // inital location
+						cv::Mat tmp = cv::Mat(srcImg, roiRect).clone();
+						if (tmp.channels() < 3)
+							cvtColor(tmp, tmp, CV_GRAY2BGR);
+
+						cv::rectangle(tmp, lastRect, SCALAR_CYAN, 2);
+						cv::imshow("init", tmp);
+					}
+					newRoi = existingBlob.m_tracker->update(cv::Mat(srcImg, roiRect));
+					if (1&& debugShowImagesDetail) {
+						cv::Mat tmp2 = cv::Mat(srcImg, roiRect).clone();
+						if (tmp2.channels() < 3)
+							cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+						cv::rectangle(tmp2, lastRect, SCALAR_CYAN, 1);
+						cv::rectangle(tmp2, newRoi, SCALAR_MAGENTA, 2);
+						cv::imshow("track", tmp2);
+						cv::waitKey(1);
+					}
+				}
+				else {
+					if (existingBlob.m_tracker || !existingBlob.m_tracker.empty())
+						existingBlob.m_tracker.release();
+				}
+
+				if (0 && debugShowImagesDetail) { // now only for full image coordinates
 					cv::Mat debugImage = srcImg.clone(), difImg ;
 					absdiff(preImg, srcImg, difImg);
-					threshold(difImg, difImg, 10, 255, CV_THRESH_BINARY);
+					threshold(difImg, difImg, img_dif_th, 255, CV_THRESH_BINARY);
 					if (debugImage.channels() < 3)
 						cvtColor(debugImage, debugImage, CV_GRAY2BGR);
 					cv::rectangle(debugImage, existingBlob.currentBoundingRect, SCALAR_CYAN, 1);
@@ -1583,7 +1663,7 @@ float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &tra
 
 float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
 	//// template matching algorithm implementation, demo	
-  if (debugGeneralDetail) {
+  if (0&& debugGeneralDetail) {
     string ty = type2str(bgimg.type());
     printf("Matrix: %s %dx%d \n", ty.c_str(), bgimg.cols, bgimg.rows);
     ty = type2str(fgtempl.type());
@@ -1618,7 +1698,7 @@ float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method
 	}
 	ncc = res.at<float>(0, 0); // should be float type [-1 1]
 
-	if (debugGeneral) {
+	if (debugGeneral && debugGeneralDetail) {
 		cout << " NCC value is : " << res << endl;
 		cout << " variable ncc: " << ncc << endl;
 	}

@@ -104,8 +104,8 @@ namespace itms {
     cv::Point predictedNextPosition; // corresponding to particles in Surveillance Camera
 
 	/// visual tracking 
-	std::unique_ptr<FDSSTTracker> m_tracker;
-	//cv::Ptr<FDSSTTracker> m_tracker;
+	//std::unique_ptr<FDSSTTracker> m_tracker;
+	cv::Ptr<FDSSTTracker> m_tracker;
 
     // function prototypes ////////////////////////////////////////////////////////////////////////
    
