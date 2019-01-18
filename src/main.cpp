@@ -160,14 +160,15 @@ enum BgSubType { // background substractor type
 };
 // parameters
 bool debugShowImages = true;
-bool debugShowImagesDetail = true;
+bool debugShowImagesDetail =true;
 bool debugGeneral = true;
 bool debugGeneralDetail = true;
 bool debugTrace = true;
 bool debugTime = true;
-int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
+
 int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
-int maxCenterPts = 5*30;			  // maximum number of center points (frames), about 5 sec.
+int max_Center_Pts = 5*30;			  // maximum number of center points (frames), about 5 sec.
+int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
 int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
@@ -219,7 +220,7 @@ void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get 
 // get predicted blobs from the existing blobs
 void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
 bool m_externalTrackerForLost = true; // do fastDSST for lost object
-bool isSubImgTracking = true;			// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
+bool isSubImgTracking = false;			// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
 
 // define FAST DSST
 bool HOG = true;
@@ -231,8 +232,8 @@ bool LAB = false;
 
 // end tracking
 // auto brightness and apply to threshold
-bool isAutoBrightness = false;
-int  max_past_frames = 15;
+bool isAutoBrightness = true;
+int  max_past_frames_autoBrightness = 15;
 
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
@@ -578,8 +579,8 @@ int main(void) {
 		if (isAutoBrightness) {
 			//compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
 			float roiMean = mean(imgFrame2Copy(brightnessRoi)/*currentGray roi*/)[0];
-			if (pastBrightnessLevels.size() >= max_past_frames) // the size of vector is max_past_frames
-				//pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - max_past_frames + 1); // keep the number of max_past_frames
+			if (pastBrightnessLevels.size() >= max_past_frames_autoBrightness) // the size of vector is max_past_frames
+				//pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
 				pop_front(pastBrightnessLevels); // remove an elemnt from the front of 
 			pastBrightnessLevels.push_back(cvRound(roiMean));			
 			// adj function for adjusting image difference thresholding
@@ -641,7 +642,7 @@ int main(void) {
               //  new approach according to 
               // 1. distance, 2. correlation within certain range
 				  std::vector<cv::Point2f> blob_ntPts;
-				  blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));
+				  blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));				  
 				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, transmtxH, lane_length, false);
 				  cv::Rect roi_rect = possibleBlob.currentBoundingRect;
 				  float blobncc = 0;
@@ -1016,6 +1017,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				// check this out : sangkny on 2018/12/17
 				existBlob->blnCurrentMatchFoundOrNewBlob = false;
 				existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // this line required for isolated but Stopped
+				if (existBlob->centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+					pop_front(existBlob->centerPositions, existBlob->centerPositions.size() - max_Center_Pts) ;
 				existBlob->predictNextPosition(); // can be removed if the above line is commented
 				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
 				++existBlob;
@@ -1180,11 +1183,23 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				if (!isSubImgTracking) { // full image-based approach
 					if (!existingBlob.m_tracker || existingBlob.m_tracker.empty())
 						existingBlob.CreateExternalTracker();	// create ExternalTracker
-					//if (!existingBlob.m_tracker_initialized) {		// do it only once
+					if (!existingBlob.m_tracker_initialized) {		// do it only once
 						existingBlob.m_tracker->init(expRect, preImg);
 						existingBlob.m_tracker_initialized = true;
-					//}
+					}
 					newRoi = existingBlob.m_tracker->update(srcImg); // do update for full image-based fast dsst
+					// as of 2019. 01. 18, just put the new center points except for countour information	
+					existingBlob.centerPositions.push_back(Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
+
+					//newRoi = expandRect(newRoi, -10, -10, srcImg.cols, srcImg.rows);
+					/*cv::Rect tmpRect = existingBlob.currentBoundingRect;
+					existingBlob.currentBoundingRect.x += (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));
+					existingBlob.currentBoundingRect.y += (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));*/
+					
+					
+					if (existingBlob.centerPositions.size() > max_Center_Pts)
+						pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - max_Center_Pts));
+
 					if (1 && debugShowImagesDetail) {
 						cv::Mat tmp2 = srcImg.clone();
 						if (tmp2.channels() < 3)
@@ -1234,10 +1249,19 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 						lastRect.x + lastRect.width < roiRect.width &&
 						lastRect.y + lastRect.height < roiRect.height &&
 						lastRect.area() > 0) {
+
 						existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
 						existingBlob.m_tracker_initialized = true; // ??????????????						
+
 						newRoi = existingBlob.m_tracker->update(cv::Mat(srcImg, roiRect));
+						
 						cv::Rect prect(cvRound(newRoi.x) + roiRect.x, cvRound(newRoi.y) + roiRect.y, cvRound(newRoi.width), cvRound(newRoi.height)); // new global location 
+						// sangkny update the center points of the existing blob which has been untracted
+						existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));
+						
+						if (existingBlob.centerPositions.size() > max_Center_Pts)
+							pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - max_Center_Pts));
+						
 						if (1 && debugShowImagesDetail) {
 							cv::Mat tmp2 = cv::Mat(srcImg, roiRect).clone();
 							if (tmp2.channels() < 3)
@@ -1267,25 +1291,30 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				}
 
 			}
-			else {
+			else {				
 				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;
-			}
-				
-			// initialize fastDSST with previous 
+				// sangkny 2019. 01. 18 put the last center points not the prediction(to reflect the object status)
+				// because the prediction will affect the next frame processing.
+				// however, the countour and its siblings stay as it is for next frame.
+				// 
+				existingBlob.centerPositions.push_back(existingBlob.centerPositions.back());
+				if (existingBlob.centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+					pop_front(existingBlob.centerPositions, existingBlob.centerPositions.size() - max_Center_Pts);
+			}			
+			
         }
         else { // update the assigned (matched) tracks
           existingBlob.intNumOfConsecutiveFramesWithoutAMatch = 0; // reset because of appearance
           existingBlob.age++;
-          existingBlob.totalVisibleCount++;
-          //existingBlob.blnStillBeingTracked = (existingBlob.totalVisibleCount >= 5 )?  true: false;
+          existingBlob.totalVisibleCount++;          
         }
 
         if (existingBlob.intNumOfConsecutiveFramesWithoutAMatch >= maxNumOfConsecutiveInFramesWithoutAMatch/* 1sec. it should be a predefined threshold */) {
             existingBlob.blnStillBeingTracked = false; /* still in the list of blobs */			
         }
-        // object status, class update routine starts
-        // object status
-        existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것
+        // object status, class update routine starts        
+        existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); 
+		// 벡터로 넣을지 생각해 볼 것, 그리고, regression from kalman 으로 부터 정지 등을 판단하는 것도 고려 중....
         // object classfication according to distance and width/height ratio, area 
 
         // object status, class update routine ends
@@ -1321,6 +1350,8 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 		//existingBlobs[intIndex].currentBoundingRect = cv::boundingRect(newContourPts); // actually it is same as existingBlobs[intIndex]
 
 		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
+		if (existingBlobs[intIndex].centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+			pop_front(existingBlobs[intIndex].centerPositions, existingBlobs[intIndex].centerPositions.size() - max_Center_Pts);
 
 		//existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize; 
 		//existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
@@ -1330,7 +1361,10 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 		existingBlobs[intIndex].currentContour = currentFrameBlob.currentContour;
 		existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
 
-		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
+		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());		
+		if (existingBlobs[intIndex].centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+			pop_front(existingBlobs[intIndex].centerPositions, existingBlobs[intIndex].centerPositions.size() - max_Center_Pts);
+
 
 		existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize;
 		existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;

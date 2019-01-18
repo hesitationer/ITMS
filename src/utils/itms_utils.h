@@ -67,7 +67,7 @@ namespace itms {
   template<typename T>
   void pop_front(std::vector<T>& vec, size_t count)
   {
-	  assert(count >= 0);
+	  assert(count >= 0 && !vec.empty());
 	  if (count < vec.size())
 	  {
 		  vec.erase(vec.begin(), vec.begin() + count);

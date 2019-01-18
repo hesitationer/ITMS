@@ -319,6 +319,8 @@ void fhog( float *M, float *O, float *H, int h, int w, int binSize,
 {
   const int hb=h/binSize, wb=w/binSize, nb=hb*wb, nbo=nb*nOrients;
   float *N, *R1, *R2; int o, x;
+  if (hb == 0 || wb == 0 || binSize == 0 || nOrients == 0)
+	  int kkk = 0;
   // compute unnormalized constrast sensitive histograms
   R1 = (float*) wrCalloc(wb*hb*nOrients*2,sizeof(float));
   gradHist( M, O, R1, h, w, binSize, nOrients*2, softBin, true );

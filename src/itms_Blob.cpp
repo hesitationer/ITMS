@@ -217,11 +217,10 @@ namespace itms {
 	if (bWeighted < 0/* -1 */) { // updated on 2018. 12. 18
 		int intPastMax = 5;
 		//int deltaX, deltaY;
-		wpa = (numPositions < intPastMax) ? centerPositions[0] : centerPositions[intPastMax - 1];		
+		wpa = (numPositions <= intPastMax) ? centerPositions[0] : centerPositions[numPositions - intPastMax];	// bug fix on 2019. 01. 18
 	}
 	else {
 		if (numPositions == 1) {
-
 			wpa.x = centerPositions.back().x;
 			wpa.y = centerPositions.back().y;
 
