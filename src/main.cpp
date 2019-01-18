@@ -161,13 +161,13 @@ enum BgSubType { // background substractor type
 // parameters
 bool debugShowImages = true;
 bool debugShowImagesDetail = true;
-bool debugGeneral = false;
+bool debugGeneral = true;
 bool debugGeneralDetail = true;
 bool debugTrace = true;
 bool debugTime = true;
 int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
 int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
-int maxCenterPts = 300;			  // maximum number of center points (frames), about 10 sec.
+int maxCenterPts = 5*30;			  // maximum number of center points (frames), about 5 sec.
 int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
 int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
@@ -180,7 +180,6 @@ LaneDirection ldirection = LD_NORTH; // vertical lane
 BgSubType bgsubtype = BGS_DIF;
 
 // template matching algorithm implementation, demo
-
 bool use_mask = false;
 int match_method = cv::TM_CCOEFF_NORMED;
 int max_Trackbar = 5;
@@ -232,7 +231,7 @@ bool LAB = false;
 
 // end tracking
 // auto brightness and apply to threshold
-bool isAutoBrightness = true;
+bool isAutoBrightness = false;
 int  max_past_frames = 15;
 
 int main(void) {
@@ -374,7 +373,7 @@ int main(void) {
 	  std::cout << xmlFile << std::endl;
 	  return 0;
   }  
-  hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());
+  hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector()); // use default descriptor, see reference for more detail
   
  
   
@@ -646,7 +645,7 @@ int main(void) {
 				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, transmtxH, lane_length, false);
 				  cv::Rect roi_rect = possibleBlob.currentBoundingRect;
 				  float blobncc = 0;
-				  if (debugGeneral) {
+				  if (debugGeneral && debugGeneralDetail) {
 					cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
 				  }
 				  // bg image
@@ -1181,10 +1180,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				if (!isSubImgTracking) { // full image-based approach
 					if (!existingBlob.m_tracker || existingBlob.m_tracker.empty())
 						existingBlob.CreateExternalTracker();	// create ExternalTracker
-					if (!existingBlob.m_tracker_initialized) {		// do it only once
+					//if (!existingBlob.m_tracker_initialized) {		// do it only once
 						existingBlob.m_tracker->init(expRect, preImg);
 						existingBlob.m_tracker_initialized = true;
-					}
+					//}
 					newRoi = existingBlob.m_tracker->update(srcImg); // do update for full image-based fast dsst
 					if (1 && debugShowImagesDetail) {
 						cv::Mat tmp2 = srcImg.clone();

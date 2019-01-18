@@ -63,7 +63,8 @@ namespace itms {
   }
   Blob::~Blob() {	  
 	if (m_tracker) {
-		m_tracker.release();		
+		m_tracker.release();	
+		m_tracker_initialized = false;	
 	}	  
 	;
  }
