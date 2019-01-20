@@ -220,7 +220,7 @@ void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get 
 // get predicted blobs from the existing blobs
 void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
 bool m_externalTrackerForLost = true; // do fastDSST for lost object
-bool isSubImgTracking = false;			// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
+bool isSubImgTracking = true;			// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
 
 // define FAST DSST
 bool HOG = true;
@@ -1175,7 +1175,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
 				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
 				cv::Rect newRoi, m_predictionRect;				
-				cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, 10, 10, preImg.cols, preImg.rows);
+				int expandY =10;
+				float heightRatio = (float)(existingBlob.currentBoundingRect.height+ expandY)/(existingBlob.currentBoundingRect.height);
+				int expandX = max(0, cvRound((float)(existingBlob.currentBoundingRect.width)*heightRatio- existingBlob.currentBoundingRect.width));
+				cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
 
 				if (0 && debugGeneral && debugGeneralDetail)
 					cout << "From boundingRect: " << existingBlob.currentBoundingRect << " => To expectedRect: " << expRect << endl;
@@ -1190,12 +1193,12 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					newRoi = existingBlob.m_tracker->update(srcImg); // do update for full image-based fast dsst
 					// as of 2019. 01. 18, just put the new center points except for countour information	
 					existingBlob.centerPositions.push_back(Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
-
-					//newRoi = expandRect(newRoi, -10, -10, srcImg.cols, srcImg.rows);
-					/*cv::Rect tmpRect = existingBlob.currentBoundingRect;
-					existingBlob.currentBoundingRect.x += (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));
-					existingBlob.currentBoundingRect.y += (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));*/
-					
+										
+					cv::Rect tmpRect = existingBlob.currentBoundingRect;
+					existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f)) ;  // move to the newRoi center with keep the size of Boundary
+					Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
+					existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));
+					Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
 					
 					if (existingBlob.centerPositions.size() > max_Center_Pts)
 						pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - max_Center_Pts));
@@ -1223,7 +1226,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					}
 				}
 				else { // sub image-based approach for lost object detection, in this case, init and update need to be carried out at ontime 
-					m_predictionRect = expRect;			
+					m_predictionRect = expRect;//existingBlob.currentBoundingRect;//expRect;			
 					// partial local tracking using FDSST 2019. 01. 17
 					cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // small subImage selection, I need to check if we can reduce more
 					if (roiSize.width > srcImg.cols)
@@ -1249,15 +1252,22 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 						lastRect.x + lastRect.width < roiRect.width &&
 						lastRect.y + lastRect.height < roiRect.height &&
 						lastRect.area() > 0) {
-
-						existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
-						existingBlob.m_tracker_initialized = true; // ??????????????						
+						if(!existingBlob.m_tracker_initialized){
+							existingBlob.m_tracker->init(lastRect, cv::Mat(preImg, roiRect));
+							existingBlob.m_tracker_initialized = true; // ??????????????						
+						}
 
 						newRoi = existingBlob.m_tracker->update(cv::Mat(srcImg, roiRect));
 						
 						cv::Rect prect(cvRound(newRoi.x) + roiRect.x, cvRound(newRoi.y) + roiRect.y, cvRound(newRoi.width), cvRound(newRoi.height)); // new global location 
 						// sangkny update the center points of the existing blob which has been untracted
 						existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));
+						
+						cv::Rect tmpRect = existingBlob.currentBoundingRect;
+						existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (prect.x + prect.width / 2.f));  // move to the newRoi center with keep the size of Boundary
+						Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
+						existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (prect.y + prect.height / 2.f));
+						Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
 						
 						if (existingBlob.centerPositions.size() > max_Center_Pts)
 							pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - max_Center_Pts));
@@ -1638,8 +1648,6 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
     for (unsigned int i = 0; i < blobs.size(); i++) {
 
         if (blobs[i].blnStillBeingTracked == true && blobs[i].totalVisibleCount >1) {
-            cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_GREEN, 2);
-
             int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
             double dblFontScale = blobs[i].dblCurrentDiagonalSize / 60.0;
             int intFontThickness = (int)std::round(dblFontScale * 1.0);
@@ -1648,14 +1656,18 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
               status = " STOP";
               cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_BLUE, 2);
             }
-            else if (blobs[i].os == OS_MOVING_FORWARD)
+            else if (blobs[i].os == OS_MOVING_FORWARD){
               status = " MV";
+			  cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_GREEN, 2);
+			  }
             else if (blobs[i].os == OS_MOVING_BACKWARD) {
               status = " WWR"; // wrong way on a road
               cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_RED, 2);
             }
-            else
+            else{
               status = " ND"; // not determined
+			  cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_YELLOW, 2);
+			  }
 
             infostr = std::to_string(blobs[i].id) + status + blobs[i].getBlobClass();// std::to_string(blobs[i].oc);
             cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].currentBoundingRect.tl()/*centerPositions.back()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);

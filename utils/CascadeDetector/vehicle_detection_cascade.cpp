@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	int input_resize_percent = 100;
 	std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/";
 	std::string xmlFile = runtime_data_dir + "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
-																   // http://funvision.blogspot.com/2016/12/lbp-cascade-for-car-detection-in-opencv.html
+// http://funvision.blogspot.com/2016/12/lbp-cascade-for-car-detection-in-opencv.html
 	std::string videoFile = runtime_data_dir + "TrafficVideo/20180911_113611_cam_0.avi"; //20180912_112338_cam_0  // 20180911_113611_cam_0 // 20180911_113611_cam_0
 
 
