@@ -137,6 +137,7 @@ namespace Config
 	// auto brightness and apply to threshold
 	bool isAutoBrightness = true;
 	int  max_past_frames_autoBrightness = 15;
+	cv::Rect brightness_rect;
 
 	char VideoPath[512];
 	char BGImagePath[512];
@@ -268,8 +269,7 @@ void loadConfig()
 		Config::FIXEDWINDOW = cvReadIntByName(fs, 0, "FIXEDWINDOW", 1);
 		Config::MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);
 		Config::SILENT = cvReadIntByName(fs, 0, "SILENT", 0);
-		Config::LAB = cvReadIntByName(fs, 0, "LAB", 0);
-		
+		Config::LAB = cvReadIntByName(fs, 0, "LAB", 0);		
 
 		cvReleaseFileStorage(&fs);
 		Config::isLoaded = true;
