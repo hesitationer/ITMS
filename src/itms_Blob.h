@@ -15,6 +15,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {  
+	enum BgSubType { // background substractor type
+		BGS_DIF = 0, // difference
+		BGS_CNT = 1, // COUNTER
+		BGS_ACC = 2  // ACCUMULATER
+	};
+
   enum ObjectClass {
     OC_VEHICLE  = 0,
     OC_HUMAN    = 1,

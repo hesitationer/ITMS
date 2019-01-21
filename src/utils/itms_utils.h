@@ -51,6 +51,10 @@ namespace itms {
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
    
   //// system related  
+  inline bool existFileTest(const std::string& name) {
+	  struct stat buffer;
+	  return (stat(name.c_str(), &buffer) == 0);
+  }
 
   /// vector related
   /*  example to use the pop_front

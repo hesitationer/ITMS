@@ -1,27 +1,77 @@
 <?xml version = "1.0"?>
 <opencv_storage>
+<!-- debuging parameters: -->
 
-<AllVehicleArea>1000</AllVehicleArea>
-<HeavyVehicleArea>2000</HeavyVehicleArea>
-<LightVehicleArea>100</LightVehicleArea>
-<BikeArea>50</BikeArea>
-<HumanArea>20</HumanArea>
+<debugShowImages>1</debugShowImages>
+<debugShowImagesDetail>1</debugShowImagesDetail>
+<debugGeneral>1</debugGeneral>
+<debugGeneralDetail>1</debugGeneralDetail>
+<debugTrace>1</debugTrace>
+<debugTime>1</debugTime>
+<scaleFactor>0.5</scaleFactor> 						<!-- processing image scale factor -->
+<isAutoBrightness>1</isAutoBrightness>				<!-- auto brightness and apply to threshold -->
+<max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
+
+
 <VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
-<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  // 주간 단독 보행 후 , 자동차 주행 
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath> // 보행 2명 차량정차 실험 
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  	//--  주간 단독 보행 후 , 자동차 주행 
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath> 	//-- 보행 2명 차량정차 실험 
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
-<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>  // 트럭 야간 가다 서다 
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>  // 오후 차량 3대 역주행
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath> // 단순 역주행으로 잘 안보임
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>  	//-- 트럭 야간 가다 서다 	
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>  	//-- 오후 차량 3대 역주행	
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath> 	//-- 단순 역주행으로 잘 안보임	
 <VideoPath>"C:\\NEXPA\\rawdata.avi"</VideoPath>
 <VideoPath>"TrafficVideo\\20180912_134130_cam_0.avi"</VideoPath>
 -->
-<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath> // background image path
+
+<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath> <!-- background image path -->
+
+<!-- Road Configuration -->
+<camera_height> 1100</camera_height>
+<lane_length> 20000 </lane_length>
+<lane2lane_width> 1050 </lane2lane_width>
+
+
 <StartX>0</StartX>
 <StartY>0.6</StartY>
 <EndX>1</EndX>
 <EndY>0.6</EndY>
+
+<!-- -- Detection - related : Lane Direction and etc -- -->
+<ldirection> 1 </ldirection>
+<bgsubtype> 0 </bgsubtype> 		<!-- // BGS_DIF: 0, BGS_CNT: 1 -->
+<use_mask> 0 </use_mask> 		<!-- // for template matching -->
+<match_method> 5 </match_method> 	<!-- // TM_CCOEFF_NORMED : 5 -->
+<max_Trackbar> 5 </max_Trackbar>	
+<confThreshold> 0.1 </confThreshold> 	<!-- // dnn related   from here   --> 
+<nmsThreshold> 0.4 </nmsThreshold>
+<inpWidthorg> 52 </inpWidthorg>		<!-- // should be 416x416  -->
+<inpHeightorg> 37 </inpHeightorg> 
+
+
+<!-- -- Road Map Points (12) -- -->
+
+
+<!----- LUT for objects -- --> 
+
+<!-- 	Object Tracking related -- -->
+<minVisibleCount> 3 </minVisibleCount>
+<max_Center_Pts> 150 </max_Center_Pts> 
+<numberOfTracePoints> 15 </numberOfTracePoints>
+<maxNumOfConsecutiveInFramesWithoutAMatch> 50 </maxNumOfConsecutiveInFramesWithoutAMatch>
+<maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>
+<movingThresholdInPixels> 0 </movingThresholdInPixels>
+<img_dif_th> 20 </img_dif_th>
+<BlobNCC_Th> 0.5 </BlobNCC_Th>
+<m_useLocalTracking> 0 </m_useLocalTracking>
+<m_externalTrackerForLost> 0 </m_externalTrackerForLost>
+<isSubImgTracking>0</isSubImgTracking>
+<HOG>1</HOG>
+<FIXEDWINDOW>1</FIXEDWINDOW>
+<MULTISCALE>1</MULTISCALE>
+<SILENT>0</SILENT>
+<LAB>0</LAB>
 
 </opencv_storage>

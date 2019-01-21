@@ -38,6 +38,7 @@ using namespace dnn;
 using namespace itms;
 using namespace dnn;
 
+
 cv::CascadeClassifier cascade;
 cv::HOGDescriptor hog;
 
@@ -120,77 +121,166 @@ vector<String> getOutputsNames(const Net& net);
 
 //-------------------- dnn related -------------------------------/
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-namespace FAV1
+namespace Config
 {
-  int carArea = 0;
-  int truckArea = 0;
-  int bikeArea =  0;
-  int humanArea = 0;
+	// debug parameters
+	bool debugShowImages = true;
+	bool debugShowImagesDetail = true;
+	bool debugGeneral = true;
+	bool debugGeneralDetail = true;
+	bool debugTrace = true;
+	bool debugTime = true;
+    // 
 
-  char VideoPath[512];
-  char BGImagePath[512];
-  double StartX = 0;
-  double EndX = 0;
-  double StartY = 0;
-  double EndY = 0;
+	// main processing parameters
+	float scaleFactor = .5;
+	// auto brightness and apply to threshold
+	bool isAutoBrightness = true;
+	int  max_past_frames_autoBrightness = 15;
+
+	char VideoPath[512];
+	char BGImagePath[512];
+	double StartX = 0;
+	double EndX = 0;
+	double StartY = 0;
+	double EndY = 0;
+		
+	 // raod configuration related
+	float camera_height = 11.0 * 100;				// camera height 11 meter
+	float lane_length = 200.0 * 100;				// lane length
+	float lane2lane_width = 3.5 * 3 * 100;			// lane width
+	
+	// road points settings
+
+	// object tracking related 
+	int minVisibleCount = 3;						// minimum survival consecutive frame for noise removal effect
+	int max_Center_Pts = 5 * 30;					// maximum number of center points (frames), about 5 sec.
+	int numberOfTracePoints = 15;					// # of tracking tracer in debug Image
+	int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
+	int maxNumOfConsecutiveInvisibleCounts = 100;	// for removing disappeared objects from the screen
+	int movingThresholdInPixels = 0;				// motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
+	int img_dif_th = 20;							// BGS_DIF biranry threshold (10~30) at day through night, 
+	float BlobNCC_Th = 0.5;							// blob NCC threshold < 0.5 means no BG
+	
+	bool m_useLocalTracking = false;				// local tracking  capture and detect level
+	bool m_externalTrackerForLost = true;			// do fastDSST for lost object
+	bool isSubImgTracking = false;					// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
+	// define FAST DSST
+	bool HOG = true;
+	bool FIXEDWINDOW = true;
+	bool MULTISCALE = true;
+	bool SILENT = false;
+	bool LAB = false;
+
+	LaneDirection ldirection = LD_NORTH;			// vertical lane
+	BgSubType bgsubtype = BGS_DIF;
+
+	// template matching algorithm implementation, demo
+	bool use_mask = false;
+	int match_method = cv::TM_CCOEFF_NORMED;
+	int max_Trackbar = 5;
+
+	// dnn -based approach 
+	// Initialize the parameters
+	float confThreshold = 0.1;						// Confidence threshold
+	float nmsThreshold = 0.4;						// Non-maximum suppression threshold
+	int inpWidthorg = 52;
+	int inpHeightorg = 37;
+
+	// configuration file loading flag
+	bool isLoaded = 0; // loading flag not from file 
 }
+
+using namespace Config;
+
 
 void loadConfig()
 {
-  CvFileStorage* fs = cvOpenFileStorage("./config/Area.xml", 0, CV_STORAGE_READ);
-  FAV1::carArea =   cvReadIntByName(fs, 0, "AllVehicleArea", 0);
-  FAV1::truckArea = cvReadIntByName(fs, 0, "HeavyVehicleArea", 0);
-  FAV1::bikeArea =  cvReadIntByName(fs, 0, "BikeArea", 0);
-  FAV1::humanArea = cvReadIntByName(fs, 0, "HumanArea", 0);
-  FAV1::StartX =    cvReadRealByName(fs, 0, "StartX", 0);
-  FAV1::EndX =      cvReadRealByName(fs, 0, "EndX", 0);
-  FAV1::StartY =    cvReadRealByName(fs, 0, "StartY", 0);
-  FAV1::EndY =      cvReadRealByName(fs, 0, "EndY", 0);
+	std::string configFile = "./config/Area.xml";
 
-  const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
-  const char *BGP = cvReadStringByName(fs, NULL, "BGImagePath", NULL);
-  strcpy(FAV1::VideoPath, VP);
-  strcpy(FAV1::BGImagePath, BGP);
-  cvReleaseFileStorage(&fs);
+	bool efiletest = existFileTest(configFile);
+
+	if (efiletest) {
+		CvFileStorage* fs = cvOpenFileStorage(configFile.c_str(), 0, CV_STORAGE_READ);
+		
+		// debug parameters		
+		Config::debugShowImages = cvReadIntByName(fs, 0, "debugShowImages", 1);
+		Config::debugShowImagesDetail = cvReadIntByName(fs, 0, "debugShowImagesDetail", 0);
+		Config::debugGeneral = cvReadIntByName(fs, 0, "debugGeneral", 0);
+		Config::debugGeneralDetail = cvReadIntByName(fs, 0, "debugGeneralDetail", 0);
+		Config::debugTrace = cvReadIntByName(fs, 0, "debugTrace", 0);
+		Config::debugTime = cvReadIntByName(fs, 0, "debugTime", 1);
+
+		// road configuration 
+		/*
+		 // raod configuration related
+		float camera_height = 11.0 * 100; // camera height 11 meter
+		float lane_length = 200.0 * 100;  // lane length
+		float lane2lane_width = 3.5 * 3 * 100; // lane width
+		
+		*/
+		Config::camera_height = cvReadRealByName(fs, 0, "camera_height", 11*100);
+		Config::lane_length = cvReadRealByName(fs, 0, "lane_length", 200*100);
+		Config::lane2lane_width = cvReadRealByName(fs, 0, "lane2lane_width", 3.5*3*100);
+		
+		Config::StartX = cvReadRealByName(fs, 0, "StartX", 0);
+		Config::EndX = cvReadRealByName(fs, 0, "EndX", 0);
+		Config::StartY = cvReadRealByName(fs, 0, "StartY", 0);
+		Config::EndY = cvReadRealByName(fs, 0, "EndY", 0);
+
+		Config::scaleFactor = cvReadRealByName(fs, 0, "scaleFactor", 0.5);
+		Config::isAutoBrightness = cvReadIntByName(fs, 0, "isAutoBrightness", 1);
+		Config::max_past_frames_autoBrightness = cvReadIntByName(fs, 0, "max_past_frames_autoBrightness", 15);
+
+		// detection related
+		Config::ldirection = LaneDirection(cvReadIntByName(fs, 0, "ldirection", LaneDirection::LD_NORTH));
+		Config::bgsubtype = BgSubType(cvReadIntByName(fs, 0, "bgsubtype", BgSubType::BGS_DIF));
+		Config::use_mask = cvReadIntByName(fs, 0, "use_mask", 0);
+		Config::match_method = cvReadIntByName(fs, 0, "match_method", cv::TM_CCOEFF_NORMED);
+		Config::max_Trackbar = cvReadIntByName(fs, 0, "max_Trackbar", 5);
+		Config::confThreshold = cvReadRealByName(fs, 0, "confThreshold", 0.1);
+		Config::nmsThreshold = cvReadRealByName(fs, 0, "nmsThreshold", 0.4);
+		Config::inpWidthorg = cvReadIntByName(fs, 0, "inpWidthorg", 52);
+		Config::inpHeightorg = cvReadIntByName(fs, 0, "inpHeightorg", 37);
+		
+		// file loading
+		const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
+		const char *BGP = cvReadStringByName(fs, NULL, "BGImagePath", NULL);
+		if(VP)
+		strcpy(Config::VideoPath, VP);
+		if(BGP)
+		strcpy(Config::BGImagePath, BGP);
+
+		// Object Tracking Related
+		Config::minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
+		Config::max_Center_Pts =  cvReadIntByName(fs, 0, "max_Center_Pts", 150);
+		Config::numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
+		Config::maxNumOfConsecutiveInFramesWithoutAMatch = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInFramesWithoutAMatch", 50);
+		Config::maxNumOfConsecutiveInvisibleCounts = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInvisibleCounts", 100);
+		Config::movingThresholdInPixels = cvReadIntByName(fs, 0, "movingThresholdInPixels", 0);
+		Config::img_dif_th = cvReadIntByName(fs, 0, "img_dif_th", 20);
+		Config::BlobNCC_Th = cvReadRealByName(fs, 0, "BlobNCC_Th", 0.5);
+
+		Config::m_useLocalTracking = cvReadIntByName(fs, 0, "m_useLocalTracking", 0);
+		Config::m_externalTrackerForLost = cvReadIntByName(fs, 0, "m_externalTrackerForLost", 0);
+		Config::isSubImgTracking = cvReadIntByName(fs, 0, "isSubImgTracking", 0);
+		Config::HOG = cvReadIntByName(fs, 0, "HOG", 1);
+		Config::FIXEDWINDOW = cvReadIntByName(fs, 0, "FIXEDWINDOW", 1);
+		Config::MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);
+		Config::SILENT = cvReadIntByName(fs, 0, "SILENT", 0);
+		Config::LAB = cvReadIntByName(fs, 0, "LAB", 0);
+		
+
+		cvReleaseFileStorage(&fs);
+		Config::isLoaded = true;
+	}
+	else {
+		Config::isLoaded = false;
+	}
 }
-enum BgSubType { // background substractor type
-	BGS_DIF = 0, // difference
-	BGS_CNT = 1, // COUNTER
-	BGS_ACC = 2  // ACCUMULATER
-};
-// parameters
-bool debugShowImages = true;
-bool debugShowImagesDetail =true;
-bool debugGeneral = true;
-bool debugGeneralDetail = true;
-bool debugTrace = true;
-bool debugTime = true;
-
-int minVisibleCount = 3;		  // minimum survival consecutive frame for noise removal effect
-int max_Center_Pts = 5*30;			  // maximum number of center points (frames), about 5 sec.
-int numberOfTracePoints = 15;	// # of tracking tracer in debug Image
-int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
-int maxNumOfConsecutiveInvisibleCounts = 100; // for removing disappeared objects from the screen
-int movingThresholdInPixels = 0;              // motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
-int img_dif_th = 20;                          // BGS_DIF biranry threshold (10~30) at day through night, 
-float BlobNCC_Th = 0.5;                       // blob NCC threshold <0.5 means no BG
 
 bool isWriteToFile = false;
 
-LaneDirection ldirection = LD_NORTH; // vertical lane
-BgSubType bgsubtype = BGS_DIF;
-
-// template matching algorithm implementation, demo
-bool use_mask = false;
-int match_method = cv::TM_CCOEFF_NORMED;
-int max_Trackbar = 5;
-
-// dnn -based approach 
-// Initialize the parameters
-float confThreshold = 0.1; // Confidence threshold
-float nmsThreshold = 0.4;  // Non-maximum suppression threshold
-int inpWidthorg = 52;
-int inpHeightorg = 37;
 int inpWidth = (inpWidthorg) % 32 == 0 ? inpWidthorg : inpWidthorg + (32 - (inpWidthorg % 32));// 1280 / 4;  //min(416, int(1280. / 720.*64.*3.) + 1);// 160; //1920 / 2;// 416;  // Width of network's input image
 int inpHeight = (inpHeightorg) % 32 == 0 ? inpHeightorg : inpHeightorg + (32 - (inpHeightorg % 32));// 720 / 4;  //64;// 160;// 1080 / 2;// 416; // Height of network's input image
 vector<string> classes;
@@ -206,34 +296,22 @@ void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, s
 void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
 // cascade detector related ends
 
-// raod configuration related
-float camera_height = 11.0 * 100; // camera height 11 meter
-float lane_length = 200.0 * 100;  // lane length
-float lane2lane_width = 3.5 * 3 * 100; // lane width
+// road configuration
 cv::Mat transmtxH;
 
 // tracking related blob
-bool m_useLocalTracking = false; // local tracking  capture and detect level
+								 // tracking related blob
 void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints); // collectPoints with a number of blobs
 void collectPointsInBlob(Blob &_blob);
 void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get points inside blob, if exists in a blob, otherwise, compute it.
-// get predicted blobs from the existing blobs
-void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
-bool m_externalTrackerForLost = true; // do fastDSST for lost object
-bool isSubImgTracking = true;			// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
 
-// define FAST DSST
-bool HOG = true;
-bool FIXEDWINDOW = true;
-bool MULTISCALE = true;
-bool SILENT = false;
-bool LAB = false;
+																			// get predicted blobs from the existing blobs
+void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
+
+
 // sangkny FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
 
 // end tracking
-// auto brightness and apply to threshold
-bool isAutoBrightness = true;
-int  max_past_frames_autoBrightness = 15;
 
 int main(void) {
 #ifdef _sk_Memory_Leakag_Detector
@@ -252,7 +330,7 @@ int main(void) {
 	cv::Mat imgFrame1; // previous frame
 	cv::Mat imgFrame2; // current frame
 
-  float scaleFactor = .5;
+  
   bool m_collectPoints = m_useLocalTracking; // detector level => blob 의 m_points 에 채우기
 
 
@@ -270,9 +348,9 @@ int main(void) {
 	int videoLength = 0;
   
 	loadConfig();
-	bool b = capVideo.open(FAV1::VideoPath);  
+	bool b = capVideo.open(Config::VideoPath);  
   // load background image	
-  cv::Mat BGImage = imread(FAV1::BGImagePath);
+  cv::Mat BGImage = imread(Config::BGImagePath);
   
 
   std::vector<Point> road_roi_pts;
@@ -304,7 +382,7 @@ int main(void) {
   // object size LUT config
   // sedan w
   // seda h 
-  vector<float> sedan_h = { -0.00004444328872f, 0.01751602326f, -2.293443176f, 112.527668f }; // scale factor 0.5
+  vector<float> sedan_h = { -0.00004444328872f, 0.01751602326f, -2.293443176f, 112.527668f }; // scale factor 0.5 need to go header
   vector<float> sedan_w = { -0.00003734137716f, 0.01448943505f, -1.902199174f, 98.56691135f };
   vector<float> suv_h = { -0.00005815785621f, 0.02216859672f, -2.797603666f, 139.0638999f };
   vector<float> suv_w = { -0.00004854032314f, 0.01884736545f, -2.425686251f, 121.9226426f };
@@ -312,6 +390,7 @@ int main(void) {
   vector<float> truck_w = { -0.00003778247771f, 0.015239317f, -2.091105041f, 110.7544702f };
   vector<float> human_h = { -0.000002473245036f, 0.001813179193f, -0.5058008988f, 49.27950311f };
   vector<float> human_w = { -0.000003459461125f, 0.001590306464f, -0.3208648543f, 28.23621306f };
+  
   ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
   ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
   ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
@@ -443,11 +522,11 @@ int main(void) {
 
     int intHorizontalLinePosition = (int)std::round((double)imgFrame1.rows * 0.5);
 
-    crossingLine[0].x = imgFrame1.cols * FAV1::StartX;
-    crossingLine[0].y = imgFrame1.rows * FAV1::StartY;
+    crossingLine[0].x = imgFrame1.cols * Config::StartX;
+    crossingLine[0].y = imgFrame1.rows * Config::StartY;
 
-    crossingLine[1].x = imgFrame1.cols * FAV1::EndX;
-    crossingLine[1].y = imgFrame1.rows * FAV1::EndY;
+    crossingLine[1].x = imgFrame1.cols * Config::EndX;
+    crossingLine[1].y = imgFrame1.rows * Config::EndY;
 
 
     char chCheckForEscKey = 0;
@@ -559,7 +638,7 @@ int main(void) {
 			pBgSub->getBackgroundImage(bgImage);
 			cv::imshow("backgroundImage", bgImage);
 			if (isWriteToFile && frameCount == 200) {
-			  string filename = FAV1::VideoPath;
+			  string filename = Config::VideoPath;
 			  filename.append("_"+to_string(scaleFactor)+"x.jpg");
 			  cv::imwrite(filename, bgImage);
 			  std::cout << " background image has been generated (!!)\n";
@@ -585,7 +664,7 @@ int main(void) {
 			pastBrightnessLevels.push_back(cvRound(roiMean));			
 			// adj function for adjusting image difference thresholding
 			int newTh = weightFnc(pastBrightnessLevels);
-			img_dif_th = newTh;
+			Config::img_dif_th = newTh;
 			if (debugGeneral && debugGeneralDetail) {
 				std::cout << "Brightness mean for Roi: " << roiMean << "\n";
 				int m = mean(pastBrightnessLevels)[0];
@@ -594,7 +673,7 @@ int main(void) {
 			}
 
 		}
-        cv::threshold(imgDifference, imgThresh, img_dif_th, 255.0, CV_THRESH_BINARY);
+        cv::threshold(imgDifference, imgThresh, Config::img_dif_th, 255.0, CV_THRESH_BINARY);
 		if (debugShowImages && debugShowImagesDetail) {
 			cv::imshow("imgThresh", imgThresh);
 			cv::waitKey(1);
@@ -654,7 +733,7 @@ int main(void) {
 				  // blob correlation
 				  blobncc = getNCC(BGImage(roi_rect), imgFrame2Copy(roi_rect), Mat(), match_method, use_mask); // backgrdoun image need to be updated periodically 
 				  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
-				  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
+				  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(Config::BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
 		//            regions_t tempRegion;
 		//            vector<Mat> outMat;                
 					/*float scaleRect = 1.5;
@@ -973,7 +1052,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 	while (existBlob != existingBlobs.end()) {
 			// check if a block is too old after disappeared in the screen
 		if (existBlob->blnStillBeingTracked == false
-				&& existBlob->intNumOfConsecutiveFramesWithoutAMatch>=maxNumOfConsecutiveInvisibleCounts) {
+				&& existBlob->intNumOfConsecutiveFramesWithoutAMatch>= Config::maxNumOfConsecutiveInvisibleCounts) {
 				// removing a blob from the list of existingBlobs						
 			  // overlapping test if overlapped or background, we will erase.
 			  std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
@@ -1003,10 +1082,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				cout << "age: " << existBlob->age << endl;
 				cout << "totalVisible #: " << existBlob->totalVisibleCount << endl;
 			  }
-			  if (existBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
+			  if (existBlob->centerPositions.size() > Config::maxNumOfConsecutiveInvisibleCounts / 2) { // current Blob was moving but now stopped.          
 				// this blob needs to declare stopped object and erase : 전에 움직임이 있다가 현재는 없는 object임.
 				// kind of trick !! which will remove the objects nodetected for long time
-				if (existBlob->centerPositions.size() > maxNumOfConsecutiveInvisibleCounts) {
+				if (existBlob->centerPositions.size() > Config::maxNumOfConsecutiveInvisibleCounts) {
 					if(debugTrace && debugGeneralDetail)
 						cout << "\n\n\n\n -------It--was moving--and --> stopped : object eliminated \n\n\n\n";
 					existBlob = existingBlobs.erase(existBlob);
@@ -1017,8 +1096,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				// check this out : sangkny on 2018/12/17
 				existBlob->blnCurrentMatchFoundOrNewBlob = false;
 				existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // this line required for isolated but Stopped
-				if (existBlob->centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
-					pop_front(existBlob->centerPositions, existBlob->centerPositions.size() - max_Center_Pts) ;
+				if (existBlob->centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+					pop_front(existBlob->centerPositions, existBlob->centerPositions.size() - Config::max_Center_Pts) ;
 				existBlob->predictNextPosition(); // can be removed if the above line is commented
 				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
 				++existBlob;
@@ -1200,8 +1279,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));
 					Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
 					
-					if (existingBlob.centerPositions.size() > max_Center_Pts)
-						pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - max_Center_Pts));
+					if (existingBlob.centerPositions.size() > Config::max_Center_Pts)
+						pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - Config::max_Center_Pts));
 
 					if (1 && debugShowImagesDetail) {
 						cv::Mat tmp2 = srcImg.clone();
@@ -1215,7 +1294,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					if (0 && debugShowImagesDetail) { // now only for full image coordinates
 						cv::Mat debugImage = srcImg.clone(), difImg;
 						absdiff(preImg, srcImg, difImg);
-						threshold(difImg, difImg, img_dif_th, 255, CV_THRESH_BINARY);
+						threshold(difImg, difImg, Config::img_dif_th, 255, CV_THRESH_BINARY);
 						if (debugImage.channels() < 3)
 							cvtColor(debugImage, debugImage, CV_GRAY2BGR);
 						cv::rectangle(debugImage, existingBlob.currentBoundingRect, SCALAR_CYAN, 1);
@@ -1269,8 +1348,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 						existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (prect.y + prect.height / 2.f));
 						Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
 						
-						if (existingBlob.centerPositions.size() > max_Center_Pts)
-							pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - max_Center_Pts));
+						if (existingBlob.centerPositions.size() > Config::max_Center_Pts)
+							pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - Config::max_Center_Pts));
 						
 						if (1 && debugShowImagesDetail) {
 							cv::Mat tmp2 = cv::Mat(srcImg, roiRect).clone();
@@ -1308,8 +1387,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				// however, the countour and its siblings stay as it is for next frame.
 				// 
 				existingBlob.centerPositions.push_back(existingBlob.centerPositions.back());
-				if (existingBlob.centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
-					pop_front(existingBlob.centerPositions, existingBlob.centerPositions.size() - max_Center_Pts);
+				if (existingBlob.centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+					pop_front(existingBlob.centerPositions, existingBlob.centerPositions.size() - Config::max_Center_Pts);
 			}			
 			
         }
@@ -1319,11 +1398,11 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
           existingBlob.totalVisibleCount++;          
         }
 
-        if (existingBlob.intNumOfConsecutiveFramesWithoutAMatch >= maxNumOfConsecutiveInFramesWithoutAMatch/* 1sec. it should be a predefined threshold */) {
+        if (existingBlob.intNumOfConsecutiveFramesWithoutAMatch >= Config::maxNumOfConsecutiveInFramesWithoutAMatch/* 1sec. it should be a predefined threshold */) {
             existingBlob.blnStillBeingTracked = false; /* still in the list of blobs */			
         }
         // object status, class update routine starts        
-        existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); 
+        existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, ldirection, Config::movingThresholdInPixels, Config::minVisibleCount);
 		// 벡터로 넣을지 생각해 볼 것, 그리고, regression from kalman 으로 부터 정지 등을 판단하는 것도 고려 중....
         // object classfication according to distance and width/height ratio, area 
 
@@ -1360,8 +1439,8 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 		//existingBlobs[intIndex].currentBoundingRect = cv::boundingRect(newContourPts); // actually it is same as existingBlobs[intIndex]
 
 		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());
-		if (existingBlobs[intIndex].centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
-			pop_front(existingBlobs[intIndex].centerPositions, existingBlobs[intIndex].centerPositions.size() - max_Center_Pts);
+		if (existingBlobs[intIndex].centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+			pop_front(existingBlobs[intIndex].centerPositions, existingBlobs[intIndex].centerPositions.size() - Config::max_Center_Pts);
 
 		//existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize; 
 		//existingBlobs[intIndex].dblCurrentAspectRatio = currentFrameBlob.dblCurrentAspectRatio;
@@ -1372,8 +1451,8 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
 		existingBlobs[intIndex].currentBoundingRect = currentFrameBlob.currentBoundingRect;
 
 		existingBlobs[intIndex].centerPositions.push_back(currentFrameBlob.centerPositions.back());		
-		if (existingBlobs[intIndex].centerPositions.size() > max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
-			pop_front(existingBlobs[intIndex].centerPositions, existingBlobs[intIndex].centerPositions.size() - max_Center_Pts);
+		if (existingBlobs[intIndex].centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+			pop_front(existingBlobs[intIndex].centerPositions, existingBlobs[intIndex].centerPositions.size() - Config::max_Center_Pts);
 
 
 		existingBlobs[intIndex].dblCurrentDiagonalSize = currentFrameBlob.dblCurrentDiagonalSize;
@@ -1583,7 +1662,7 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLine
 
     for (auto blob : blobs) {
 
-        if (blob.blnStillBeingTracked == true && blob.totalVisibleCount >= minVisibleCount && blob.centerPositions.size() >= 2) {
+        if (blob.blnStillBeingTracked == true && blob.totalVisibleCount >= Config::minVisibleCount && blob.centerPositions.size() >= 2) {
             int prevFrameIndex = (int)blob.centerPositions.size() - 2;
             int currFrameIndex = (int)blob.centerPositions.size() - 1;
 
@@ -1602,7 +1681,7 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy
 
   for (auto blob : blobs) {
 
-    if (blob.blnStillBeingTracked == true && blob.totalVisibleCount >= minVisibleCount && blob.centerPositions.size() >= 2) {
+    if (blob.blnStillBeingTracked == true && blob.totalVisibleCount >= Config::minVisibleCount && blob.centerPositions.size() >= 2) {
       int prevFrameIndex = (int)blob.centerPositions.size() - 2;
       int currFrameIndex = (int)blob.centerPositions.size() - 1;
 
@@ -1623,15 +1702,7 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy
           cout << "blob track id: " << blob.id << " is crossing the line." << endl;
           cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" <<blob.age<<", "<< blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
 #endif
-        if (cv::contourArea(blob.currentContour) > FAV1::truckArea) {
-          truckCount++;
-        }else if (cv::contourArea(blob.currentContour) > FAV1::bikeArea) {
-          bikeCount++;
-        }
-        // implement later 
-        //else if (cv::contourArea(blob.currentContour) > FAV1::humanArea) {
-        //  humanCount++;
-        //}
+        
 
         blnAtLeastOneBlobCrossedTheLine = true;
       }
@@ -1677,7 +1748,7 @@ void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy) {
               for (std::vector<cv::Point>::iterator it3 = centroids2.end()-1; it3 != centroids2.begin(); --it3)
               {
                 cv::circle(imgFrame2Copy, cv::Point((*it3).x, (*it3).y), 1, SCALAR_YELLOW, -1); // draw the trace of the object with Yellow                                
-                if (centroids2.end()-it3 > numberOfTracePoints)
+                if (centroids2.end()-it3 > Config::numberOfTracePoints)
                   break;
               }
               

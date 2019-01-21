@@ -298,7 +298,7 @@ bool update(cv::Mat &_image)
 		ss.clear();
 		ss << "#" << _frameIdx;
 		putText(hudImage, ss.str(), Point(hudImage.cols - 60, 20), FONT_HERSHEY_TRIPLEX, 0.5, Scalar(255, 0, 0));		
-		cv::namedWindow(windowTitle.c_str(), cv::WINDOW_NORMAL);
+		cv::namedWindow(windowTitle.c_str(), cv::WINDOW_AUTOSIZE);
 		imshow(_windowTitle.c_str(), hudImage);		
 	}
 
