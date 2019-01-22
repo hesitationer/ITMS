@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include "../../src/utils/BoxSeletor/cv_ext/init_box_selector.hpp"
 
+#define _writeXml
+
 #define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
 #define _CRTDBG_MAP_ALLOC
@@ -90,14 +92,18 @@ int main(int argc, char* argv[]) {
 		
 	double duration = 0;
 
-	/*
-	std::ofstream resultsFile;
-	resultsFile.open(seq_name + ".txt");*/
-
 	// Write Results
-	ofstream resultsFile;
-	string resultsPath = "output.txt";
+	string resultsPath; //= "RoadMapPoints.xml"; //"output.txt";
+#ifdef  _writeXml
+	resultsPath= "RoadMapPoints.xml"; //"output.txt";
+	FileStorage fs(resultsPath, FileStorage::WRITE);
+	std::vector<cv::Mat> vecMat;
+
+#else // txt 
+	resultsPath= "RoadMapPoints.txt";
+	ofstream resultsFile;	 // write txt
 	resultsFile.open(resultsPath);
+#endif //  _writeXml
 
 	// Frame counter
 	int nFrames = 0;
@@ -143,16 +149,32 @@ int main(int argc, char* argv[]) {
 		case 'q':
 		case 'Q':
 		case 27: //escape key
+#ifdef  _writeXml			
+			for(int i=0; i<_boundingBoxes.size(); i++){
+				cv::Mat A(_boundingBoxes.at(i));
+				vecMat.push_back(A);
+			}
+			for (int i = 0; i < vecMat.size(); i++) {
+				stringstream ss;
+				ss << i;
+				string str = "Road" + ss.str();
+				fs << str << vecMat[i];
+			}
+			fs.release();
+#else
 			if (resultsFile.is_open()) {
 				for (int ib = 0; ib<_boundingBoxes.size(); ib++) {
 					std::vector<cv::Point> db_boxPts = _boundingBoxes.at(ib);
-					for (int i = 0; i < db_boxPts.size(); i++) {						
+					for (int i = 0; i < db_boxPts.size(); i++) {
 						resultsFile << db_boxPts.at(i).x << "," << db_boxPts.at(i).y << endl;
 					}
 					resultsFile << endl;
 				}
 				resultsFile.close();
-			}
+		      }
+#endif // _writeXml
+
+			
 #ifdef _sk_Memory_Leakag_Detector
 #ifdef _DEBUG
 			_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
@@ -164,7 +186,21 @@ int main(int argc, char* argv[]) {
 		}
 	}
 		
-	if (resultsFile.is_open()){
+#ifdef _writeXml
+	for (int i = 0; i<_boundingBoxes.size(); i++) {
+		cv::Mat A(_boundingBoxes.at(i));
+		vecMat.push_back(A);
+	}
+	for (int i = 0; i < vecMat.size(); i++) {
+		stringstream ss;
+		ss << i;
+		string str = "Road" + ss.str();
+		fs << str << vecMat[i];
+			}
+	fs.release();
+
+#else	
+	if (resultsFile.is_open()) {
 		for (int ib = 0; ib<_boundingBoxes.size(); ib++) {
 			std::vector<cv::Point> db_boxPts = _boundingBoxes.at(ib);
 			for (int i = 0; i < db_boxPts.size(); i++) {
@@ -174,6 +210,7 @@ int main(int argc, char* argv[]) {
 		}
 		resultsFile.close();
 	}
+#endif	
 
 #ifdef _sk_Memory_Leakag_Detector
 #ifdef _DEBUG
