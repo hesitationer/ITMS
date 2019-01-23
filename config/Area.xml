@@ -31,7 +31,7 @@
 <!-- Road Configuration -->
 <camera_height> 1100</camera_height>
 <lane_length> 20000 </lane_length>
-<lane2lane_width> 1050 </lane2lane_width>
+<lane2lane_width> 700 </lane2lane_width>
 
 
 <StartX>0</StartX>

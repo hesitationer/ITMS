@@ -149,7 +149,7 @@ namespace Config
 	 // raod configuration related
 	float camera_height = 11.0 * 100;				// camera height 11 meter
 	float lane_length = 200.0 * 100;				// lane length
-	float lane2lane_width = 3.5 * 3 * 100;			// lane width
+	float lane2lane_width = 3.5 * 2 * 100;			// lane width
 	
 	// road points settings
 
@@ -189,7 +189,15 @@ namespace Config
 	int inpHeightorg = 37;
 
 	// configuration file loading flag
-	bool isLoaded = 0; // loading flag not from file 
+	bool isLoaded = false; // loading flag not from file 
+
+    // road map
+	bool existroadMapFile = false; //exist and loaded then true;
+    
+    std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
+	// vehicle ration 
+	bool existvehicleRatioFile = false; // exist and loaded then true
+	std::vector<std::vector<float>> vehicleRatios;
 }
 
 using namespace Config;
@@ -198,9 +206,138 @@ using namespace Config;
 void loadConfig()
 {
 	std::string configFile = "./config/Area.xml";
+	std::string roadmapFile = "./config/roadMapPoints.xml";
+	std::string vehicleRatioFile = "./config/vehicleRatio.xml";
+	std::vector<Point> road_roi_pts;
+	if(existFileTest(roadmapFile)){  // try to load        
+        FileStorage fr(roadmapFile, FileStorage::READ);
+        
+        if(fr.isOpened()){
+            Mat aMat;
+            int countlabel = 0;
+            while (1) {
+                road_roi_pts.clear();
+                stringstream ss;
+                ss << countlabel;
+                string str = "Road" + ss.str();
+                cout << str << endl;
+                fr[str] >> aMat;
+                if (fr[str].isNone() == 1) {
+                    break;
+                }
+                for (int i = 0; i<aMat.rows; i++){
+                    cout<< i<<": "<< aMat.at<Vec2i>(i)<<endl;
+                    road_roi_pts.push_back(Point(aMat.at<Vec2i>(i))*scaleFactor); // The file data should be measured with original size.
+                }
+                Road_ROI_Pts.push_back(road_roi_pts);                
+                countlabel++;
+            }
+            road_roi_pts.clear();
+            fr.release();
+
+            if(debugGeneralDetail)
+                for (unsigned j = 0; j < Road_ROI_Pts.size(); j++) {                    
+                    cout << "Vec:" << Road_ROI_Pts.at(j) << endl;
+               }            
+            existroadMapFile = true;
+        }else{
+            existroadMapFile = false;
+        }
+	}	
+    if(!existroadMapFile){ 
+        if(debugGeneralDetail){
+            cout << " Road Map file is not exist at" << roadmapFile << endl;
+            cout<< " the defualt map is used now." << endl;
+        }
+        // use default
+        //20180912_112338
+        // side walk1
+        road_roi_pts.push_back(Point(932.75, 100.25)*scaleFactor);
+        road_roi_pts.push_back(Point(952.25, 106.25)*scaleFactor);
+        road_roi_pts.push_back(Point(434.75, 1055.75)*scaleFactor);
+        road_roi_pts.push_back(Point(235.25, 1054.25)*scaleFactor);
+        Road_ROI_Pts.push_back(road_roi_pts);
+        road_roi_pts.clear();
+        // car lane
+        road_roi_pts.push_back(Point(949.25, 104.75)*scaleFactor);
+        road_roi_pts.push_back(Point(1015.25, 103.25)*scaleFactor);
+        road_roi_pts.push_back(Point(1105.25, 1048.25)*scaleFactor);
+        road_roi_pts.push_back(Point(416.75, 1057.25)*scaleFactor);
+        Road_ROI_Pts.push_back(road_roi_pts);
+        road_roi_pts.clear();
+        // side walk2
+        road_roi_pts.push_back(Point(1009.25, 101.75)*scaleFactor);
+        road_roi_pts.push_back(Point(1045.25, 98.75)*scaleFactor);
+        road_roi_pts.push_back(Point(1397.75, 1052.75)*scaleFactor);
+        road_roi_pts.push_back(Point(1087.25, 1049.75)*scaleFactor);
+        Road_ROI_Pts.push_back(road_roi_pts);
+        road_roi_pts.clear();
+    }
+	if (existFileTest(vehicleRatioFile)) {
+		FileStorage fv(vehicleRatioFile, FileStorage::READ);
+		if (fv.isOpened()) {
+			Mat aMat;
+			int countlabel = 0;
+			std::vector<float> vehiclePts;
+			while (1) {
+				vehiclePts.clear();
+				stringstream ss;
+				ss << countlabel;
+				string str = "Vehicle" + ss.str();
+				cout << str << endl;
+				fv[str] >> aMat;
+				if (fv[str].isNone() == 1) {
+					break;
+				}
+				for (int i = 0; i < aMat.rows; i++) {
+					cout << i << ": " << aMat.at<float>(i)*scaleFactor << endl;
+					vehiclePts.push_back(aMat.at<float>(i)*scaleFactor); // The file data should be measured with original size.
+				}
+				vehicleRatios.push_back(vehiclePts);
+				countlabel++;
+			}
+			fv.release();
+			existvehicleRatioFile = true;
+		}
+	}
+	if (!existvehicleRatioFile) { // used default		
+		std::vector<float> sedan_h = { -0.00004444328872f*2.0, 0.01751602326f*2.0, -2.293443176f*2.0, 112.527668f*2.0 }; // scale factor 0.5 need to go header
+		std::vector<float> sedan_w = { -0.00003734137716f*2.0, 0.01448943505f*2.0, -1.902199174f*2.0, 98.56691135f*2.0 };
+		std::vector<float> suv_h = { -0.00005815785621f*2.0, 0.02216859672f*2.0, -2.797603666f*2.0, 139.0638999f*2.0 };
+		std::vector<float> suv_w = { -0.00004854032314f*2.0, 0.01884736545f*2.0, -2.425686251f*2.0, 121.9226426f*2.0 };
+		std::vector<float> truck_h = { -0.00006123592908f*2.0, 0.02373661426f*2.0, -3.064585294f*2.0, 149.6535855f*2.0 };
+		std::vector<float> truck_w = { -0.00003778247771f*2.0, 0.015239317f*2.0, -2.091105041f*2.0, 110.7544702f*2.0 };
+		std::vector<float> human_h = { -0.000002473245036f*2.0, 0.001813179193f*2.0, -0.5058008988f*2.0, 49.27950311f*2.0 };
+		std::vector<float> human_w = { -0.000003459461125f*2.0, 0.001590306464f*2.0, -0.3208648543f*2.0, 28.23621306f*2.0 };
+
+		vehicleRatios.clear();				
+		float myconstant{scaleFactor};
+		std::transform(sedan_h.begin(), sedan_h.end(), sedan_h.begin(), [myconstant](auto& c) {return c*myconstant; }); // multiply my constant
+		vehicleRatios.push_back(sedan_h);
+		
+		std::transform(sedan_w.begin(), sedan_w.end(), sedan_w.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(sedan_w);
+		
+		std::transform(suv_h.begin(), suv_h.end(), suv_h.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(suv_h);
+		
+		std::transform(suv_w.begin(), suv_w.end(), suv_w.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(suv_w);
+		
+		std::transform(truck_h.begin(), truck_h.end(), truck_h.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(truck_h);
+		
+		std::transform(truck_w.begin(), truck_w.end(), truck_w.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(truck_w);
+		
+		std::transform(human_h.begin(), human_h.end(), human_h.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(human_h);
+		
+		std::transform(human_w.begin(), human_w.end(), human_w.begin(), [myconstant](auto& c) {return c*myconstant; });
+		vehicleRatios.push_back(human_w);		
+	}
 
 	bool efiletest = existFileTest(configFile);
-
 	if (efiletest) {
 		CvFileStorage* fs = cvOpenFileStorage(configFile.c_str(), 0, CV_STORAGE_READ);
 		
@@ -272,6 +409,7 @@ void loadConfig()
 		Config::LAB = cvReadIntByName(fs, 0, "LAB", 0);		
 
 		cvReleaseFileStorage(&fs);
+
 		Config::isLoaded = true;
 	}
 	else {
@@ -353,52 +491,43 @@ int main(void) {
   cv::Mat BGImage = imread(Config::BGImagePath);
   
 
-  std::vector<Point> road_roi_pts;
-  std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
+  //std::vector<Point> road_roi_pts;
+  //std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
  
 
-  //20180912_112338
-  // side walk1
-  road_roi_pts.push_back(Point(932.75, 100.25)*scaleFactor);
-  road_roi_pts.push_back(Point(952.25, 106.25)*scaleFactor);
-  road_roi_pts.push_back(Point(434.75, 1055.75)*scaleFactor);
-  road_roi_pts.push_back(Point(235.25, 1054.25)*scaleFactor);
-  Road_ROI_Pts.push_back(road_roi_pts);
-  road_roi_pts.clear();
-  // car lane
-  road_roi_pts.push_back(Point(949.25, 104.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1015.25, 103.25)*scaleFactor);
-  road_roi_pts.push_back(Point(1105.25, 1048.25)*scaleFactor);
-  road_roi_pts.push_back(Point(416.75, 1057.25)*scaleFactor);
-  Road_ROI_Pts.push_back(road_roi_pts);
-  road_roi_pts.clear();
-  // side walk2
-  road_roi_pts.push_back(Point(1009.25, 101.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1045.25, 98.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1397.75, 1052.75)*scaleFactor);
-  road_roi_pts.push_back(Point(1087.25, 1049.75)*scaleFactor);
-  Road_ROI_Pts.push_back(road_roi_pts);
-  road_roi_pts.clear();
+  
   // object size LUT config
   // sedan w
   // seda h 
-  vector<float> sedan_h = { -0.00004444328872f, 0.01751602326f, -2.293443176f, 112.527668f }; // scale factor 0.5 need to go header
-  vector<float> sedan_w = { -0.00003734137716f, 0.01448943505f, -1.902199174f, 98.56691135f };
-  vector<float> suv_h = { -0.00005815785621f, 0.02216859672f, -2.797603666f, 139.0638999f };
-  vector<float> suv_w = { -0.00004854032314f, 0.01884736545f, -2.425686251f, 121.9226426f };
-  vector<float> truck_h = { -0.00006123592908f, 0.02373661426f, -3.064585294f, 149.6535855f };
-  vector<float> truck_w = { -0.00003778247771f, 0.015239317f, -2.091105041f, 110.7544702f };
-  vector<float> human_h = { -0.000002473245036f, 0.001813179193f, -0.5058008988f, 49.27950311f };
-  vector<float> human_w = { -0.000003459461125f, 0.001590306464f, -0.3208648543f, 28.23621306f };
-  
-  ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
+  //std::vector<float> sedan_h = { -0.00004444328872f*2.0, 0.01751602326f*2.0, -2.293443176f*2.0, 112.527668f*2.0 }; // scale factor 1.0 need to go header
+  //std::vector<float> sedan_w = { -0.00003734137716f*2.0, 0.01448943505f*2.0, -1.902199174f*2.0, 98.56691135f*2.0 };
+  //std::vector<float> suv_h = { -0.00005815785621f*2.0, 0.02216859672f*2.0, -2.797603666f*2.0, 139.0638999f*2.0 };
+  //std::vector<float> suv_w = { -0.00004854032314f*2.0, 0.01884736545f*2.0, -2.425686251f*2.0, 121.9226426f*2.0 };
+  //std::vector<float> truck_h = { -0.00006123592908f*2.0, 0.02373661426f*2.0, -3.064585294f*2.0, 149.6535855f*2.0 };
+  //std::vector<float> truck_w = { -0.00003778247771f*2.0, 0.015239317f*2.0, -2.091105041f*2.0, 110.7544702f*2.0 };
+  //std::vector<float> human_h = { -0.000002473245036f*2.0, 0.001813179193f*2.0, -0.5058008988f*2.0, 49.27950311f*2.0 };
+  //std::vector<float> human_w = { -0.000003459461125f*2.0, 0.001590306464f*2.0, -0.3208648543f*2.0, 28.23621306f*2.0 };
+  //
+  /*ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
   ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
   ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
   ITMSPolyValues polyvalue_suv_w(suv_w, suv_w.size());
   ITMSPolyValues polyvalue_truck_h(truck_h, truck_h.size());
   ITMSPolyValues polyvalue_truck_w(truck_w, truck_w.size());
   ITMSPolyValues polyvalue_human_h(human_h, human_h.size());
-  ITMSPolyValues polyvalue_human_w(human_w, human_w.size());
+  ITMSPolyValues polyvalue_human_w(human_w, human_w.size());*/
+  
+  // create poly values for each object
+  assert(vehicleRatios.size() == 8);
+  ITMSPolyValues polyvalue_sedan_h(vehicleRatios.at(0), vehicleRatios.at(0).size()); // sedan_h
+  ITMSPolyValues polyvalue_sedan_w(vehicleRatios.at(1), vehicleRatios.at(1).size()); // sedan_w
+  ITMSPolyValues polyvalue_suv_h(vehicleRatios.at(2), vehicleRatios.at(2).size());   // suv_h
+  ITMSPolyValues polyvalue_suv_w(vehicleRatios.at(3), vehicleRatios.at(3).size());   // suv_w
+  ITMSPolyValues polyvalue_truck_h(vehicleRatios.at(4), vehicleRatios.at(4).size()); // truck_h
+  ITMSPolyValues polyvalue_truck_w(vehicleRatios.at(5), vehicleRatios.at(5).size()); // truck_w
+  ITMSPolyValues polyvalue_human_h(vehicleRatios.at(6), vehicleRatios.at(6).size()); // human_h
+  ITMSPolyValues polyvalue_human_w(vehicleRatios.at(7), vehicleRatios.at(7).size()); // human_w
+
   float value = polyvalue_sedan_w.getPolyValue(10.5);
 
   //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p  
@@ -408,10 +537,15 @@ int main(void) {
   std::vector<cv::Point2f> srcPts; // skewed ROI source points
   std::vector<cv::Point2f> tgtPts; // deskewed reference ROI points (rectangular. Top-to-bottom representation but, should be bottom-to-top measure in practice
 
-  srcPts.push_back(Point2f(949.25, 104.75)*scaleFactor); // detect region left-top p0
-  srcPts.push_back(Point2f(1045.25, 98.75)*scaleFactor); // detect region right-top p1
-  srcPts.push_back(Point2f(1397.75, 1052.75)*scaleFactor); // detect region right-bottom p2 
-  srcPts.push_back(Point2f(416.75, 1057.25)*scaleFactor); // detect region left-bottom  p3
+  //srcPts.push_back(Point2f(949.25, 104.75)*scaleFactor); // detect region left-top p0
+  //srcPts.push_back(Point2f(1045.25, 98.75)*scaleFactor); // detect region right-top p1
+  //srcPts.push_back(Point2f(1397.75, 1052.75)*scaleFactor); // detect region right-bottom p2 
+  //srcPts.push_back(Point2f(416.75, 1057.25)*scaleFactor); // detect region left-bottom  p3
+
+  srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(0))); // detect region left-top p0
+  srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(1))); // detect region right-top p1
+  srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(2))); // detect region right-bottom p2 
+  srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(3))); // detect region left-bottom  p3
 
   tgtPts.push_back(Point2f(0, 0));                        // pp0
   tgtPts.push_back(Point2f(lane2lane_width,0));           // pp1
@@ -2667,7 +2801,7 @@ void predictBlobs(std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFr
 #endif
 			blob.currentBoundingRect = br;
 			std::vector<cv::Point> contour, preContour;			
-			for(int j=0; j<blob.m_points.size();j++)
+			for(size_t j=0; j<blob.m_points.size();j++)
 				preContour.push_back(static_cast<Point>(blob.m_points.at(j)+cv::Point2f(0.5, 0.5))); // rounding 
 			cv::convexHull(preContour, contour, false);
 			
