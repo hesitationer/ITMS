@@ -9,9 +9,15 @@
 <debugTrace>1</debugTrace>
 <debugTime>1</debugTime>
 <scaleFactor>0.5</scaleFactor> 						<!-- processing image scale factor -->
-<isAutoBrightness>1</isAutoBrightness>				<!-- auto brightness and apply to threshold -->
-<max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
+<isAutoBrightness>1</isAutoBrightness>				<!-- auto brightness and apply to threshold -->
+
+<AutoBrightness_x>1162</AutoBrightness_x>			<!-- auto brightness rect [1162, 808, 110, 142] -->
+<AutoBrightness_y>808</AutoBrightness_y>
+<AutoBrightness_width>110</AutoBrightness_width>
+<AutoBrightness_height>142</AutoBrightness_height>
+
+<max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
 <VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>  
 <!--
@@ -31,7 +37,7 @@
 <!-- Road Configuration -->
 <camera_height> 1100</camera_height>
 <lane_length> 20000 </lane_length>
-<lane2lane_width> 700 </lane2lane_width>
+<lane2lane_width> 700 </lane2lane_width>			<!-- 3.5 * 2 * 100 -->
 
 
 <StartX>0</StartX>
@@ -52,9 +58,10 @@
 
 
 <!-- -- Road Map Points (12) -- -->
-
+<!--    File Loading            -->
 
 <!----- LUT for objects -- --> 
+<!--    File Loading       -->
 
 <!-- 	Object Tracking related -- -->
 <minVisibleCount> 3 </minVisibleCount>
@@ -63,10 +70,11 @@
 <maxNumOfConsecutiveInFramesWithoutAMatch> 50 </maxNumOfConsecutiveInFramesWithoutAMatch>
 <maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>
 <movingThresholdInPixels> 0 </movingThresholdInPixels>
-<img_dif_th> 20 </img_dif_th>
+
+<img_dif_th> 20 </img_dif_th>   <!-- Threshold  -->
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>
-<m_externalTrackerForLost> 0 </m_externalTrackerForLost>
+<m_externalTrackerForLost> 1 </m_externalTrackerForLost>
 <isSubImgTracking>0</isSubImgTracking>
 <HOG>1</HOG>
 <FIXEDWINDOW>1</FIXEDWINDOW>

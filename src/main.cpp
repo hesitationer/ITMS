@@ -136,9 +136,10 @@ namespace Config
 	float scaleFactor = .5;
 	// auto brightness and apply to threshold
 	bool isAutoBrightness = true;
+	int AutoBrightness_x = 1162;	
 	int  max_past_frames_autoBrightness = 15;
-	cv::Rect brightness_rect;
-
+	cv::Rect AutoBrightness_Rect(1162, 808, 110, 142);// 1x, default[1162, 808, 110, 142] for darker region,
+													  // brighter region [938, 760, 124, 94]; // for a little brighter asphalt
 	char VideoPath[512];
 	char BGImagePath[512];
 	double StartX = 0;
@@ -198,6 +199,11 @@ namespace Config
 	// vehicle ration 
 	bool existvehicleRatioFile = false; // exist and loaded then true
 	std::vector<std::vector<float>> vehicleRatios;
+
+	// road configuration
+	// road deskew matrix
+	cv::Mat transmtxH;					// this value will be computed in the processing
+
 }
 
 using namespace Config;
@@ -210,8 +216,7 @@ void loadConfig()
 	std::string vehicleRatioFile = "./config/vehicleRatio.xml";
 	std::vector<Point> road_roi_pts;
 	if(existFileTest(roadmapFile)){  // try to load        
-        FileStorage fr(roadmapFile, FileStorage::READ);
-        
+        FileStorage fr(roadmapFile, FileStorage::READ);        
         if(fr.isOpened()){
             Mat aMat;
             int countlabel = 0;
@@ -359,7 +364,7 @@ void loadConfig()
 		*/
 		Config::camera_height = cvReadRealByName(fs, 0, "camera_height", 11*100);
 		Config::lane_length = cvReadRealByName(fs, 0, "lane_length", 200*100);
-		Config::lane2lane_width = cvReadRealByName(fs, 0, "lane2lane_width", 3.5*3*100);
+		Config::lane2lane_width = cvReadRealByName(fs, 0, "lane2lane_width", 3.5*2*100);
 		
 		Config::StartX = cvReadRealByName(fs, 0, "StartX", 0);
 		Config::EndX = cvReadRealByName(fs, 0, "EndX", 0);
@@ -368,6 +373,11 @@ void loadConfig()
 
 		Config::scaleFactor = cvReadRealByName(fs, 0, "scaleFactor", 0.5);
 		Config::isAutoBrightness = cvReadIntByName(fs, 0, "isAutoBrightness", 1);
+		Config::AutoBrightness_Rect.x = (cvReadIntByName(fs, 0, "AutoBrightness_x", 1162*scaleFactor))*scaleFactor;
+		Config::AutoBrightness_Rect.y = (cvReadIntByName(fs, 0, "AutoBrightness_y", 808 * scaleFactor))*scaleFactor;
+		Config::AutoBrightness_Rect.width = (cvReadIntByName(fs, 0, "AutoBrightness_width", 110 * scaleFactor))*scaleFactor;
+		Config::AutoBrightness_Rect.height = (cvReadIntByName(fs, 0, "AutoBrightness_heigh", 142 * scaleFactor))*scaleFactor;
+		
 		Config::max_past_frames_autoBrightness = cvReadIntByName(fs, 0, "max_past_frames_autoBrightness", 15);
 
 		// detection related
@@ -434,11 +444,11 @@ void detectCascadeRoiVehicle(/* put config file */cv::Mat img, cv::Rect& rect, s
 void detectCascadeRoiHuman(/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
 // cascade detector related ends
 
-// road configuration
-cv::Mat transmtxH;
+//// road configuration
+//// road deskew matrix
+//cv::Mat transmtxH;
 
-// tracking related blob
-								 // tracking related blob
+// tracking related blob								
 void collectPointsInBlobs(std::vector<Blob> &_blobs, bool _collectPoints); // collectPoints with a number of blobs
 void collectPointsInBlob(Blob &_blob);
 void getCollectPoints(Blob& _blob, std::vector<Point2f> &_collectedPts);	// get points inside blob, if exists in a blob, otherwise, compute it.
@@ -462,6 +472,7 @@ int main(void) {
 	int trackId = 0;          // unique object id
 	int showId = 0;           //     
 
+	loadConfig();
 
 	cv::VideoCapture capVideo;
 
@@ -474,8 +485,7 @@ int main(void) {
 
 	std::vector<Blob> blobs;
 	std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold
-	cv::Rect brightnessRoi(cv::Rect(1162 * scaleFactor, 808 * scaleFactor, 110 * scaleFactor, 142 * scaleFactor)); // for a little darker asphalt
-	// cv::Rect brightnessRor(cv::Rect(938 * scaleFactor, 760 * scaleFactor, 124 * scaleFactor, 94 * scaleFactor)); // for a little brighter asphalt
+	cv::Rect brightnessRoi = Config::AutoBrightness_Rect;	
 
 	cv::Point crossingLine[2];
 
@@ -483,9 +493,8 @@ int main(void) {
 	int truckCount = 0;
 	int bikeCount = 0;
 	int humanCount = 0;
-	int videoLength = 0;
-  
-	loadConfig();
+	int videoLength = 0;  
+	
 	bool b = capVideo.open(Config::VideoPath);  
   // load background image	
   cv::Mat BGImage = imread(Config::BGImagePath);
@@ -493,8 +502,6 @@ int main(void) {
 
   //std::vector<Point> road_roi_pts;
   //std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
- 
-
   
   // object size LUT config
   // sedan w
@@ -533,7 +540,7 @@ int main(void) {
   //absolute coordinator unit( pixel to centimeters) using Homography pp = H*p  
   //float camera_height = 11.0 * 100; // camera height 11 meter
   //float lane_length = 200.0 * 100;  // lane length
-  //float lane2lane_width = 3.5 * 3* 100; // lane width
+  //float lane2lane_width = 3.5 * 2* 100; // lane width
   std::vector<cv::Point2f> srcPts; // skewed ROI source points
   std::vector<cv::Point2f> tgtPts; // deskewed reference ROI points (rectangular. Top-to-bottom representation but, should be bottom-to-top measure in practice
 
@@ -579,18 +586,16 @@ int main(void) {
   testPx.push_back(Point2f(1000, 125)*scaleFactor);
   distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
   cout << " distance: " << distance / 100 << " meters from the starting point.\n";*/
-  // define the case cade detector
-  std::string runtime_data_dir1 = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/";
-  std::string xmlFile = runtime_data_dir1 + "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
-  if (!cascade.load(xmlFile)) {
+  
+  // define the case cade detector  
+  std::string cascadexmlFile = "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
+  if (!existFileTest(cascadexmlFile) || !cascade.load(cascadexmlFile)) {
 	  std::cout << "Plase check the xml file in the given location !!(!)\n";
-	  std::cout << xmlFile << std::endl;
+	  std::cout << cascadexmlFile << std::endl;
 	  return 0;
   }  
   hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector()); // use default descriptor, see reference for more detail
-  
- 
-  
+    
 	if (!capVideo.isOpened()) {                                                 // if unable to open video file
 		std::cout << "error reading video file" << std::endl << std::endl;      // show error message
 		_getch();                   // it may be necessary to change or remove this line if not using Windows
@@ -646,15 +651,7 @@ int main(void) {
       imshow("BGImage", BGImage);      
     }
 
-
-    /*int intHorizontalLinePosition = (int)std::round((double)imgFrame1.rows * 0.5);
-    crossingLine[0].x = 0;
-    crossingLine[0].y = intHorizontalLinePosition;
-
-    crossingLine[1].x = imgFrame1.cols - 1;
-    crossingLine[1].y = intHorizontalLinePosition;*/
-
-    int intHorizontalLinePosition = (int)std::round((double)imgFrame1.rows * 0.5);
+	int intHorizontalLinePosition = (int)std::round((double)imgFrame1.rows * 0.5);
 
     crossingLine[0].x = imgFrame1.cols * Config::StartX;
     crossingLine[0].y = imgFrame1.rows * Config::StartY;
@@ -729,6 +726,7 @@ int main(void) {
 	//// end template matching algorithm
 
   // Deep learning based Detection and Classification //
+	/*
     std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/Multitarget-tracker-master/data/";
     string classesFile = runtime_data_dir + "coco.names";
     ifstream ifs(classesFile.c_str());
@@ -739,9 +737,10 @@ int main(void) {
     // Give the configuration and weight files for the model
     String modelConfiguration = runtime_data_dir + "yolov3-tiny.cfg"; // was yolov3.cfg
     String modelWeights = runtime_data_dir + "yolov3-tiny.weights";   // was ylov3.weights
-                                                                      //String modelConfiguration = runtime_data_dir + "tiny-yolo.cfg"; // was 
-                                                                      //String modelWeights = runtime_data_dir + "tiny-yolo.weights";   // was 
-                                                                      // Load the network
+	//String modelConfiguration = runtime_data_dir + "tiny-yolo.cfg"; // was 
+    //String modelWeights = runtime_data_dir + "tiny-yolo.weights";   // was 
+    // Load the network
+	*/
 	// sangkny YOLO test
     /*
 	Net net = readNetFromDarknet(modelConfiguration, modelWeights);
@@ -808,6 +807,7 @@ int main(void) {
 
 		}
         cv::threshold(imgDifference, imgThresh, Config::img_dif_th, 255.0, CV_THRESH_BINARY);
+
 		if (debugShowImages && debugShowImagesDetail) {
 			cv::imshow("imgThresh", imgThresh);
 			cv::waitKey(1);
@@ -961,7 +961,6 @@ int main(void) {
 				imshow("diffFrame", temp);*/
 				/*for(auto prdBlob:predictedBlobs)
 					currentFrameBlobs.push_back(prdBlob);*/
-
 				mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(currentFrameBlobs, predictedBlobs);
 			}
 		}
