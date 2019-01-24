@@ -57,20 +57,28 @@ namespace Config
 {
 	string run_time_dir;
 	string video_path;	
+	string out_Filename;
 }
 
 bool loadConfig(void)
 {
-	bool fexist = existFileTest("./config/RoadPoint_Config.xml");
+	string strConfFile = "./config/RoadPoint_Config.xml";
+	bool fexist = existFileTest(strConfFile);
+	if (!fexist) {
+		cout << "No File Error at: " << strConfFile << endl;
+		return false;
+	}
 	
 	//char currentPath[_MAX_PATH];
 	//_getcwd(currentPath, _MAX_PATH); // current working dir
 	//printf("%s\n", currentPath);	
 
-	CvFileStorage* fs = cvOpenFileStorage("./config/RoadPoint_Config.xml", 0, CV_STORAGE_READ);
+	CvFileStorage* fs = cvOpenFileStorage(strConfFile.c_str(), 0, CV_STORAGE_READ);
 	const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
 	//strcpy(Config::VideoPath, VP);	
 	Config::video_path = (std::string)VP;	
+	VP = cvReadStringByName(fs, NULL, "Out_Filename", NULL);
+	Config::out_Filename = (std::string)VP;
 	cvReleaseFileStorage(&fs);
 
 	return fexist;
@@ -84,8 +92,9 @@ int main(int argc, char* argv[]) {
 #endif	
 	std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
 
-	loadConfig(); // get the exe location
-
+	if (!loadConfig()) {		
+		return -1;
+	}
 	string filename = Config::video_path;//"D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/20180912_112338_cam_0.avi"/* 20180911_113611_cam_0 20180912_192157_cam_0.avi*//*_paras.device*/;
 	VideoCapture cam(/*0*/filename); //webcam : 0
 	
@@ -95,7 +104,7 @@ int main(int argc, char* argv[]) {
 	// Write Results
 	string resultsPath; //= "RoadMapPoints.xml"; //"output.txt";
 #ifdef  _writeXml
-	resultsPath= "RoadMapPoints.xml"; //"output.txt";
+	resultsPath= Config::out_Filename; //"output.txt";
 	FileStorage fs(resultsPath, FileStorage::WRITE);
 	std::vector<cv::Mat> vecMat;
 
