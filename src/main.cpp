@@ -587,7 +587,7 @@ int main(void) {
   distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
   cout << " distance: " << distance / 100 << " meters from the starting point.\n";*/
   
-  // define the case cade detector  
+  // define the casecade detector  
   std::string cascadexmlFile = "config/cascade.xml"; // cars.xml with 1 neighbors good, cascade.xml with 5 neighbors, people cascadG.xml(too many PA) with 4 neighbors and size(30,80), size(80,200)
   if (!existFileTest(cascadexmlFile) || !cascade.load(cascadexmlFile)) {
 	  std::cout << "Plase check the xml file in the given location !!(!)\n";
