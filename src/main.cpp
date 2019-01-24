@@ -104,6 +104,7 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLine
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, cv::Point Pt1, cv::Point Pt2, int &carCount, int &truckCount, int &bikeCount);
 void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy);
 void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
+void drawRoadRoiOnImage(std::vector<std::vector<cv::Point>> &_roadROIPts, cv::Mat &_srcImg);
 void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus); // update simple blob properties including os counters
 ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
 
@@ -161,7 +162,7 @@ namespace Config
 	int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 	int maxNumOfConsecutiveInvisibleCounts = 100;	// for removing disappeared objects from the screen
 	int movingThresholdInPixels = 0;				// motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
-	int img_dif_th = 20;							// BGS_DIF biranry threshold (10~30) at day through night, 
+	int img_dif_th = 15;							// BGS_DIF biranry threshold (10~30) at day through night, 
 	float BlobNCC_Th = 0.5;							// blob NCC threshold < 0.5 means no BG
 	
 	bool m_useLocalTracking = false;				// local tracking  capture and detect level
@@ -406,7 +407,9 @@ void loadConfig()
 		Config::maxNumOfConsecutiveInFramesWithoutAMatch = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInFramesWithoutAMatch", 50);
 		Config::maxNumOfConsecutiveInvisibleCounts = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInvisibleCounts", 100);
 		Config::movingThresholdInPixels = cvReadIntByName(fs, 0, "movingThresholdInPixels", 0);
+		
 		Config::img_dif_th = cvReadIntByName(fs, 0, "img_dif_th", 20);
+		
 		Config::BlobNCC_Th = cvReadRealByName(fs, 0, "BlobNCC_Th", 0.5);
 
 		Config::m_useLocalTracking = cvReadIntByName(fs, 0, "m_useLocalTracking", 0);
@@ -848,10 +851,10 @@ int main(void) {
             if (possibleBlob.currentBoundingRect.area() > 10 &&
               possibleBlob.dblCurrentAspectRatio > 0.2 &&
               possibleBlob.dblCurrentAspectRatio < 6.0 &&
-              possibleBlob.currentBoundingRect.width > 6 &&
-              possibleBlob.currentBoundingRect.height > 6 &&
-              possibleBlob.dblCurrentDiagonalSize > 3.0 &&
-              (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
+              possibleBlob.currentBoundingRect.width > 3 &&
+              possibleBlob.currentBoundingRect.height > 3 &&
+              possibleBlob.dblCurrentDiagonalSize > 3.0/* &&
+              (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50*/) {
               //  new approach according to 
               // 1. distance, 2. correlation within certain range
 				  std::vector<cv::Point2f> blob_ntPts;
@@ -982,16 +985,17 @@ int main(void) {
 				drawAndShowContours(imgThresh.size(), blobs, "All imgBlobs");
 		
 			drawBlobInfoOnImage(blobs, imgFrame2Copy);  // blob(tracked) information
-		}    
+			drawRoadRoiOnImage(Road_ROI_Pts, imgFrame2Copy);
+		
         //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, intHorizontalLinePosition, carCount);
-        bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1],carCount, truckCount, bikeCount);
+			bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1], carCount, truckCount, bikeCount);
 
-        if (blnAtLeastOneBlobCrossedTheLine == true) {
-            cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_GREEN, 2);
-        } else {
-            cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_RED, 2);
-        }
-		if (debugShowImages) {
+			if (blnAtLeastOneBlobCrossedTheLine == true) {
+				cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_GREEN, 2);
+			}
+			else {
+				cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_RED, 2);
+			}
 			drawCarCountOnImage(carCount, imgFrame2Copy);
 			cv::imshow("imgFrame2Copy", imgFrame2Copy);
 			cv::waitKey(1);
@@ -1907,6 +1911,12 @@ void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy) {
 
     cv::putText(imgFrame2Copy, std::to_string(carCount), ptTextTopRightPosition, intFontFace, dblFontScale, SCALAR_YELLOW, intFontThickness);
 
+}
+void drawRoadRoiOnImage(std::vector<std::vector<cv::Point>> &_roadROIPts, cv::Mat &_srcImg) {
+	for(int i=0; i<_roadROIPts.size();i++)
+		for (int j = 0; j < _roadROIPts.at(i).size(); j++) {			
+			cv::line(_srcImg, _roadROIPts.at(i).at(j), _roadROIPts.at(i).at((j + 1) % _roadROIPts.at(i).size()), SCALAR_YELLOW, 1);
+		}
 }
 
 // utils

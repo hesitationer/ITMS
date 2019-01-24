@@ -12,6 +12,7 @@
 <scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor -->
 
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
+<img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
 
 <AutoBrightness_x>1162</AutoBrightness_x>           <!-- auto brightness rect [1162, 808, 110, 142] -->
 <AutoBrightness_y>808</AutoBrightness_y>
@@ -20,7 +21,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>  
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath> 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
 <VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  주간 단독 보행 후 , 자동차 주행 
@@ -72,7 +73,6 @@
 <maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>
 <movingThresholdInPixels> 0 </movingThresholdInPixels>
 
-<img_dif_th> 20 </img_dif_th>   <!-- Threshold  -->
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>
 <m_externalTrackerForLost> 0 </m_externalTrackerForLost>
