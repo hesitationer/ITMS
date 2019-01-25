@@ -9,7 +9,7 @@ const int KEY_ESC = 27;
 //CvHaarClassifierCascade *cascade;
 cv::CascadeClassifier cascade;
 cv::HOGDescriptor hog;
-float scaleFactor = .5;
+float Config::scaleFactor = .5;
 
 void detect(Mat img);
 inline bool existFileTest(const std::string& name);
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 			break;
 		}
 		//cvResize(frame1, frame);
-		resize(frame1, frame, Size(), scaleFactor, scaleFactor, 1);
+		resize(frame1, frame, Size(), Config::scaleFactor, Config::scaleFactor, 1);
 		detect(frame);
 
 		key = waitKey(100);

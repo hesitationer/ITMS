@@ -8,7 +8,7 @@ const int KEY_ESC = 27;
 
 #define MAX_POINTS 16
 
-float scaleFactor = .5;
+float Config::scaleFactor = .5;
 Point _pt1, _pt2;
 bool _bLeftDownAndMove = false;
 bool _bROI_Selected = false;
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
   int fourcc = VideoWriter::fourcc('D', 'I', 'V', 'X');
   bool isColor = true;
   int fps = 24;
-  Size size = Size((int)capture.get(CAP_PROP_FRAME_WIDTH)*scaleFactor, (int)capture.get(CAP_PROP_FRAME_HEIGHT)*scaleFactor);
+  Size size = Size((int)capture.get(CAP_PROP_FRAME_WIDTH)*Config::scaleFactor, (int)capture.get(CAP_PROP_FRAME_HEIGHT)*Config::scaleFactor);
   VideoWriter outputVideo("trackingRect.avi", fourcc, fps, size, isColor);
   if (fourcc != -1) { // for waiting read the camera if you use it
 	  imshow("dstImg", NULL);
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 		  break;
 	  }
 	  //cvResize(frame1, frame);
-	  resize(frame, frame, Size(), scaleFactor, scaleFactor, 1);
+	  resize(frame, frame, Size(), Config::scaleFactor, Config::scaleFactor, 1);
 	  frame.copyTo(dstImg);	  
 	  imshow("dstImg", dstImg);
 	  cvtColor(dstImg, curImg, COLOR_BGR2GRAY);

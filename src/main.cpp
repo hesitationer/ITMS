@@ -161,8 +161,12 @@ namespace Config
 	int numberOfTracePoints = 15;					// # of tracking tracer in debug Image
 	int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 	int maxNumOfConsecutiveInvisibleCounts = 100;	// for removing disappeared objects from the screen
-	int movingThresholdInPixels = 0;				// motion threshold in pixels affected by scaleFactor, average point를 이용해야 함..
+	int movingThresholdInPixels = 0;				// motion threshold in pixels affected by Config::scaleFactor, average point를 이용해야 함..
 	int img_dif_th = 15;							// BGS_DIF biranry threshold (10~30) at day through night, 
+													// Day/Night and Object Probability
+	int nightBrightness_Th = 20;					
+	float nightObjectProb_Th = 0.8;
+
 	float BlobNCC_Th = 0.5;							// blob NCC threshold < 0.5 means no BG
 	
 	bool m_useLocalTracking = false;				// local tracking  capture and detect level
@@ -205,6 +209,7 @@ namespace Config
 	// road deskew matrix
 	cv::Mat transmtxH;					// this value will be computed in the processing
 
+	
 }
 
 using namespace Config;
@@ -216,6 +221,97 @@ void loadConfig()
 	std::string roadmapFile = "./config/roadMapPoints.xml";
 	std::string vehicleRatioFile = "./config/vehicleRatio.xml";
 	std::vector<Point> road_roi_pts;
+
+	// parameters need to be loaded first
+	bool efiletest = existFileTest(configFile);
+	if (efiletest) {
+		CvFileStorage* fs = cvOpenFileStorage(configFile.c_str(), 0, CV_STORAGE_READ);
+
+		// debug parameters		
+		Config::debugShowImages = cvReadIntByName(fs, 0, "debugShowImages", 1);
+		Config::debugShowImagesDetail = cvReadIntByName(fs, 0, "debugShowImagesDetail", 0);
+		Config::debugGeneral = cvReadIntByName(fs, 0, "debugGeneral", 0);
+		Config::debugGeneralDetail = cvReadIntByName(fs, 0, "debugGeneralDetail", 0);
+		Config::debugTrace = cvReadIntByName(fs, 0, "debugTrace", 0);
+		Config::debugTime = cvReadIntByName(fs, 0, "debugTime", 1);
+
+		// road configuration 
+		/*
+		// raod configuration related
+		float camera_height = 11.0 * 100; // camera height 11 meter
+		float lane_length = 200.0 * 100;  // lane length
+		float lane2lane_width = 3.5 * 3 * 100; // lane width
+
+		*/
+		Config::camera_height = cvReadRealByName(fs, 0, "camera_height", 11 * 100);
+		Config::lane_length = cvReadRealByName(fs, 0, "lane_length", 200 * 100);
+		Config::lane2lane_width = cvReadRealByName(fs, 0, "lane2lane_width", 3.5 * 2 * 100);
+
+		Config::StartX = cvReadRealByName(fs, 0, "StartX", 0);
+		Config::EndX = cvReadRealByName(fs, 0, "EndX", 0);
+		Config::StartY = cvReadRealByName(fs, 0, "StartY", 0);
+		Config::EndY = cvReadRealByName(fs, 0, "EndY", 0);
+
+		Config::scaleFactor = cvReadRealByName(fs, 0, "scaleFactor", 0.5);
+		Config::isAutoBrightness = cvReadIntByName(fs, 0, "isAutoBrightness", 1);
+		Config::AutoBrightness_Rect.x = (cvReadIntByName(fs, 0, "AutoBrightness_x", 1162 * Config::scaleFactor))*Config::scaleFactor;
+		Config::AutoBrightness_Rect.y = (cvReadIntByName(fs, 0, "AutoBrightness_y", 808 * Config::scaleFactor))*Config::scaleFactor;
+		Config::AutoBrightness_Rect.width = (cvReadIntByName(fs, 0, "AutoBrightness_width", 110 * Config::scaleFactor))*Config::scaleFactor;
+		Config::AutoBrightness_Rect.height = (cvReadIntByName(fs, 0, "AutoBrightness_heigh", 142 * Config::scaleFactor))*Config::scaleFactor;
+
+		Config::max_past_frames_autoBrightness = cvReadIntByName(fs, 0, "max_past_frames_autoBrightness", 15);
+				
+		Config::nightBrightness_Th = cvReadIntByName(fs, 0, "nightBrightness_Th", 20);
+		Config::nightObjectProb_Th = cvReadRealByName(fs, 0, "nightObjectProb_Th", 0.8);
+
+		// detection related
+		Config::ldirection = LaneDirection(cvReadIntByName(fs, 0, "ldirection", LaneDirection::LD_NORTH));
+		Config::bgsubtype = BgSubType(cvReadIntByName(fs, 0, "bgsubtype", BgSubType::BGS_DIF));
+		Config::use_mask = cvReadIntByName(fs, 0, "use_mask", 0);
+		Config::match_method = cvReadIntByName(fs, 0, "match_method", cv::TM_CCOEFF_NORMED);
+		Config::max_Trackbar = cvReadIntByName(fs, 0, "max_Trackbar", 5);
+		Config::confThreshold = cvReadRealByName(fs, 0, "confThreshold", 0.1);
+		Config::nmsThreshold = cvReadRealByName(fs, 0, "nmsThreshold", 0.4);
+		Config::inpWidthorg = cvReadIntByName(fs, 0, "inpWidthorg", 52);
+		Config::inpHeightorg = cvReadIntByName(fs, 0, "inpHeightorg", 37);
+
+		// file loading
+		const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
+		const char *BGP = cvReadStringByName(fs, NULL, "BGImagePath", NULL);
+		if (VP)
+			strcpy(Config::VideoPath, VP);
+		if (BGP)
+			strcpy(Config::BGImagePath, BGP);
+
+		// Object Tracking Related
+		Config::minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
+		Config::max_Center_Pts = cvReadIntByName(fs, 0, "max_Center_Pts", 150);
+		Config::numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
+		Config::maxNumOfConsecutiveInFramesWithoutAMatch = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInFramesWithoutAMatch", 50);
+		Config::maxNumOfConsecutiveInvisibleCounts = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInvisibleCounts", 100);
+		Config::movingThresholdInPixels = cvReadIntByName(fs, 0, "movingThresholdInPixels", 0);
+
+		Config::img_dif_th = cvReadIntByName(fs, 0, "img_dif_th", 20);
+
+		Config::BlobNCC_Th = cvReadRealByName(fs, 0, "BlobNCC_Th", 0.5);
+
+		Config::m_useLocalTracking = cvReadIntByName(fs, 0, "m_useLocalTracking", 0);
+		Config::m_externalTrackerForLost = cvReadIntByName(fs, 0, "m_externalTrackerForLost", 0);
+		Config::isSubImgTracking = cvReadIntByName(fs, 0, "isSubImgTracking", 0);
+		Config::HOG = cvReadIntByName(fs, 0, "HOG", 1);
+		Config::FIXEDWINDOW = cvReadIntByName(fs, 0, "FIXEDWINDOW", 1);
+		Config::MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);
+		Config::SILENT = cvReadIntByName(fs, 0, "SILENT", 0);
+		Config::LAB = cvReadIntByName(fs, 0, "LAB", 0);
+
+		cvReleaseFileStorage(&fs);
+
+		Config::isLoaded = true;
+	}
+	else {
+		Config::isLoaded = false;
+	}
+
 	if(existFileTest(roadmapFile)){  // try to load        
         FileStorage fr(roadmapFile, FileStorage::READ);        
         if(fr.isOpened()){
@@ -233,7 +329,7 @@ void loadConfig()
                 }
                 for (int i = 0; i<aMat.rows; i++){
                     cout<< i<<": "<< aMat.at<Vec2i>(i)<<endl;
-                    road_roi_pts.push_back(Point(aMat.at<Vec2i>(i))*scaleFactor); // The file data should be measured with original size.
+                    road_roi_pts.push_back(Point(aMat.at<Vec2i>(i))*Config::scaleFactor); // The file data should be measured with original size.
                 }
                 Road_ROI_Pts.push_back(road_roi_pts);                
                 countlabel++;
@@ -258,24 +354,24 @@ void loadConfig()
         // use default
         //20180912_112338
         // side walk1
-        road_roi_pts.push_back(Point(932.75, 100.25)*scaleFactor);
-        road_roi_pts.push_back(Point(952.25, 106.25)*scaleFactor);
-        road_roi_pts.push_back(Point(434.75, 1055.75)*scaleFactor);
-        road_roi_pts.push_back(Point(235.25, 1054.25)*scaleFactor);
+        road_roi_pts.push_back(Point(932.75, 100.25)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(952.25, 106.25)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(434.75, 1055.75)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(235.25, 1054.25)*Config::scaleFactor);
         Road_ROI_Pts.push_back(road_roi_pts);
         road_roi_pts.clear();
         // car lane
-        road_roi_pts.push_back(Point(949.25, 104.75)*scaleFactor);
-        road_roi_pts.push_back(Point(1015.25, 103.25)*scaleFactor);
-        road_roi_pts.push_back(Point(1105.25, 1048.25)*scaleFactor);
-        road_roi_pts.push_back(Point(416.75, 1057.25)*scaleFactor);
+        road_roi_pts.push_back(Point(949.25, 104.75)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(1015.25, 103.25)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(1105.25, 1048.25)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(416.75, 1057.25)*Config::scaleFactor);
         Road_ROI_Pts.push_back(road_roi_pts);
         road_roi_pts.clear();
         // side walk2
-        road_roi_pts.push_back(Point(1009.25, 101.75)*scaleFactor);
-        road_roi_pts.push_back(Point(1045.25, 98.75)*scaleFactor);
-        road_roi_pts.push_back(Point(1397.75, 1052.75)*scaleFactor);
-        road_roi_pts.push_back(Point(1087.25, 1049.75)*scaleFactor);
+        road_roi_pts.push_back(Point(1009.25, 101.75)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(1045.25, 98.75)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(1397.75, 1052.75)*Config::scaleFactor);
+        road_roi_pts.push_back(Point(1087.25, 1049.75)*Config::scaleFactor);
         Road_ROI_Pts.push_back(road_roi_pts);
         road_roi_pts.clear();
     }
@@ -296,8 +392,8 @@ void loadConfig()
 					break;
 				}
 				for (int i = 0; i < aMat.rows; i++) {
-					cout << i << ": " << aMat.at<float>(i)*scaleFactor << endl;
-					vehiclePts.push_back(aMat.at<float>(i)*scaleFactor); // The file data should be measured with original size.
+					cout << i << ": " << aMat.at<float>(i)*Config::scaleFactor << endl;
+					vehiclePts.push_back(aMat.at<float>(i)*Config::scaleFactor); // The file data should be measured with original size.
 				}
 				vehicleRatios.push_back(vehiclePts);
 				countlabel++;
@@ -317,7 +413,7 @@ void loadConfig()
 		std::vector<float> human_w = { -0.000003459461125f*2.0, 0.001590306464f*2.0, -0.3208648543f*2.0, 28.23621306f*2.0 };
 
 		vehicleRatios.clear();				
-		float myconstant{scaleFactor};
+		float myconstant{Config::scaleFactor};
 		std::transform(sedan_h.begin(), sedan_h.end(), sedan_h.begin(), [myconstant](auto& c) {return c*myconstant; }); // multiply my constant
 		vehicleRatios.push_back(sedan_h);
 		
@@ -343,91 +439,7 @@ void loadConfig()
 		vehicleRatios.push_back(human_w);		
 	}
 
-	bool efiletest = existFileTest(configFile);
-	if (efiletest) {
-		CvFileStorage* fs = cvOpenFileStorage(configFile.c_str(), 0, CV_STORAGE_READ);
-		
-		// debug parameters		
-		Config::debugShowImages = cvReadIntByName(fs, 0, "debugShowImages", 1);
-		Config::debugShowImagesDetail = cvReadIntByName(fs, 0, "debugShowImagesDetail", 0);
-		Config::debugGeneral = cvReadIntByName(fs, 0, "debugGeneral", 0);
-		Config::debugGeneralDetail = cvReadIntByName(fs, 0, "debugGeneralDetail", 0);
-		Config::debugTrace = cvReadIntByName(fs, 0, "debugTrace", 0);
-		Config::debugTime = cvReadIntByName(fs, 0, "debugTime", 1);
 
-		// road configuration 
-		/*
-		 // raod configuration related
-		float camera_height = 11.0 * 100; // camera height 11 meter
-		float lane_length = 200.0 * 100;  // lane length
-		float lane2lane_width = 3.5 * 3 * 100; // lane width
-		
-		*/
-		Config::camera_height = cvReadRealByName(fs, 0, "camera_height", 11*100);
-		Config::lane_length = cvReadRealByName(fs, 0, "lane_length", 200*100);
-		Config::lane2lane_width = cvReadRealByName(fs, 0, "lane2lane_width", 3.5*2*100);
-		
-		Config::StartX = cvReadRealByName(fs, 0, "StartX", 0);
-		Config::EndX = cvReadRealByName(fs, 0, "EndX", 0);
-		Config::StartY = cvReadRealByName(fs, 0, "StartY", 0);
-		Config::EndY = cvReadRealByName(fs, 0, "EndY", 0);
-
-		Config::scaleFactor = cvReadRealByName(fs, 0, "scaleFactor", 0.5);
-		Config::isAutoBrightness = cvReadIntByName(fs, 0, "isAutoBrightness", 1);
-		Config::AutoBrightness_Rect.x = (cvReadIntByName(fs, 0, "AutoBrightness_x", 1162*scaleFactor))*scaleFactor;
-		Config::AutoBrightness_Rect.y = (cvReadIntByName(fs, 0, "AutoBrightness_y", 808 * scaleFactor))*scaleFactor;
-		Config::AutoBrightness_Rect.width = (cvReadIntByName(fs, 0, "AutoBrightness_width", 110 * scaleFactor))*scaleFactor;
-		Config::AutoBrightness_Rect.height = (cvReadIntByName(fs, 0, "AutoBrightness_heigh", 142 * scaleFactor))*scaleFactor;
-		
-		Config::max_past_frames_autoBrightness = cvReadIntByName(fs, 0, "max_past_frames_autoBrightness", 15);
-
-		// detection related
-		Config::ldirection = LaneDirection(cvReadIntByName(fs, 0, "ldirection", LaneDirection::LD_NORTH));
-		Config::bgsubtype = BgSubType(cvReadIntByName(fs, 0, "bgsubtype", BgSubType::BGS_DIF));
-		Config::use_mask = cvReadIntByName(fs, 0, "use_mask", 0);
-		Config::match_method = cvReadIntByName(fs, 0, "match_method", cv::TM_CCOEFF_NORMED);
-		Config::max_Trackbar = cvReadIntByName(fs, 0, "max_Trackbar", 5);
-		Config::confThreshold = cvReadRealByName(fs, 0, "confThreshold", 0.1);
-		Config::nmsThreshold = cvReadRealByName(fs, 0, "nmsThreshold", 0.4);
-		Config::inpWidthorg = cvReadIntByName(fs, 0, "inpWidthorg", 52);
-		Config::inpHeightorg = cvReadIntByName(fs, 0, "inpHeightorg", 37);
-		
-		// file loading
-		const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
-		const char *BGP = cvReadStringByName(fs, NULL, "BGImagePath", NULL);
-		if(VP)
-		strcpy(Config::VideoPath, VP);
-		if(BGP)
-		strcpy(Config::BGImagePath, BGP);
-
-		// Object Tracking Related
-		Config::minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
-		Config::max_Center_Pts =  cvReadIntByName(fs, 0, "max_Center_Pts", 150);
-		Config::numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
-		Config::maxNumOfConsecutiveInFramesWithoutAMatch = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInFramesWithoutAMatch", 50);
-		Config::maxNumOfConsecutiveInvisibleCounts = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInvisibleCounts", 100);
-		Config::movingThresholdInPixels = cvReadIntByName(fs, 0, "movingThresholdInPixels", 0);
-		
-		Config::img_dif_th = cvReadIntByName(fs, 0, "img_dif_th", 20);
-		
-		Config::BlobNCC_Th = cvReadRealByName(fs, 0, "BlobNCC_Th", 0.5);
-
-		Config::m_useLocalTracking = cvReadIntByName(fs, 0, "m_useLocalTracking", 0);
-		Config::m_externalTrackerForLost = cvReadIntByName(fs, 0, "m_externalTrackerForLost", 0);
-		Config::isSubImgTracking = cvReadIntByName(fs, 0, "isSubImgTracking", 0);
-		Config::HOG = cvReadIntByName(fs, 0, "HOG", 1);
-		Config::FIXEDWINDOW = cvReadIntByName(fs, 0, "FIXEDWINDOW", 1);
-		Config::MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);
-		Config::SILENT = cvReadIntByName(fs, 0, "SILENT", 0);
-		Config::LAB = cvReadIntByName(fs, 0, "LAB", 0);		
-
-		cvReleaseFileStorage(&fs);
-
-		Config::isLoaded = true;
-	}
-	else {
-		Config::isLoaded = false;
-	}
 }
 
 bool isWriteToFile = false;
@@ -547,10 +559,10 @@ int main(void) {
   std::vector<cv::Point2f> srcPts; // skewed ROI source points
   std::vector<cv::Point2f> tgtPts; // deskewed reference ROI points (rectangular. Top-to-bottom representation but, should be bottom-to-top measure in practice
 
-  //srcPts.push_back(Point2f(949.25, 104.75)*scaleFactor); // detect region left-top p0
-  //srcPts.push_back(Point2f(1045.25, 98.75)*scaleFactor); // detect region right-top p1
-  //srcPts.push_back(Point2f(1397.75, 1052.75)*scaleFactor); // detect region right-bottom p2 
-  //srcPts.push_back(Point2f(416.75, 1057.25)*scaleFactor); // detect region left-bottom  p3
+  //srcPts.push_back(Point2f(949.25, 104.75)*Config::scaleFactor); // detect region left-top p0
+  //srcPts.push_back(Point2f(1045.25, 98.75)*Config::scaleFactor); // detect region right-top p1
+  //srcPts.push_back(Point2f(1397.75, 1052.75)*Config::scaleFactor); // detect region right-bottom p2 
+  //srcPts.push_back(Point2f(416.75, 1057.25)*Config::scaleFactor); // detect region left-bottom  p3
 
   srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(0))); // detect region left-top p0
   srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(1))); // detect region right-top p1
@@ -571,7 +583,7 @@ int main(void) {
   if (debugGeneralDetail) {
 	  cout << " transfromation matrix H: " << transmtxH << endl;	  
 	  std::vector<cv::Point2f> testPx, HtestPx;
-	  testPx.push_back(Point2f(1000, 125)*scaleFactor);	  
+	  testPx.push_back(Point2f(1000, 125)*Config::scaleFactor);	  
 	  cv::perspectiveTransform(testPx, HtestPx, transmtxH);
 	  // test part if the given concept is working or not
 	  // one point mapping to find the real distance 
@@ -586,7 +598,7 @@ int main(void) {
   // sangkny test : distance
   /*float distance = 0;
   std::vector<cv::Point2f> testPx;
-  testPx.push_back(Point2f(1000, 125)*scaleFactor);
+  testPx.push_back(Point2f(1000, 125)*Config::scaleFactor);
   distance = getDistanceInMeterFromPixels(testPx, transmtxH, lane_length, false);
   cout << " distance: " << distance / 100 << " meters from the starting point.\n";*/
   
@@ -634,19 +646,19 @@ int main(void) {
     capVideo.read(imgFrame2);
     if (imgFrame1.empty() || imgFrame2.empty())
       return 0;
-    resize(imgFrame1, imgFrame1, Size(), scaleFactor, scaleFactor);
-    resize(imgFrame2, imgFrame2, Size(), scaleFactor, scaleFactor);
+    resize(imgFrame1, imgFrame1, Size(), Config::scaleFactor, Config::scaleFactor);
+    resize(imgFrame2, imgFrame2, Size(), Config::scaleFactor, Config::scaleFactor);
     
     // background image // gray
     if (!BGImage.empty()) {
-      resize(BGImage, BGImage, Size(), scaleFactor, scaleFactor);
+      resize(BGImage, BGImage, Size(), Config::scaleFactor, Config::scaleFactor);
       if (BGImage.channels() > 1)
         cv::cvtColor(BGImage, BGImage, CV_BGR2GRAY);
 	}
 	else {
 		cout << "Background image is not selected. Please check this out (!)(!)\n";
 		BGImage = imgFrame1.clone();
-		//resize(BGImage, BGImage, Size(), scaleFactor, scaleFactor);
+		//resize(BGImage, BGImage, Size(), Config::scaleFactor, Config::scaleFactor);
 		if (BGImage.channels() > 1)
 			cv::cvtColor(BGImage, BGImage, CV_BGR2GRAY);
 	}
@@ -775,7 +787,7 @@ int main(void) {
 			cv::imshow("backgroundImage", bgImage);
 			if (isWriteToFile && frameCount == 200) {
 			  string filename = Config::VideoPath;
-			  filename.append("_"+to_string(scaleFactor)+"x.jpg");
+			  filename.append("_"+to_string(Config::scaleFactor)+"x.jpg");
 			  cv::imwrite(filename, bgImage);
 			  std::cout << " background image has been generated (!!)\n";
 			}
@@ -1008,7 +1020,7 @@ int main(void) {
 
         if ((capVideo.get(CV_CAP_PROP_POS_FRAMES) + 1) < capVideo.get(CV_CAP_PROP_FRAME_COUNT)) {
             capVideo.read(imgFrame2);            
-            resize(imgFrame2, imgFrame2, Size(), scaleFactor, scaleFactor);
+            resize(imgFrame2, imgFrame2, Size(), Config::scaleFactor, Config::scaleFactor);
             if (imgFrame2.empty()) {
               std::cout << "The input image is empty!! Please check the video file!!" << std::endl;
               _getch();
@@ -1334,9 +1346,11 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					// verify it
 					std::vector<cv::Rect> cars;					
 					detectCascadeRoiVehicle(srcImg, expRect, cars);
-					if(cars.size())
+					if (cars.size())
 						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-					else if(/* at night and */classProb < 0.8)
+					else if (Config::img_dif_th >= Config::nightBrightness_Th &&/* at night */ classProb >= Config::nightObjectProb_Th)
+						;	// just put this candidate
+					else //if(/* at night and */classProb < 0.8)
 						continue;
 				}
 				else if (currentFrameBlob.oc == itms::ObjectClass::OC_HUMAN) {
@@ -1345,8 +1359,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					detectCascadeRoiHuman(srcImg, expRect, people);
 					if (people.size())
 						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-					else if(/* at night */ classProb < 0.8)
-						continue;
+					else if (Config::img_dif_th >= Config::nightBrightness_Th &&/* at night */ classProb >= Config::nightObjectProb_Th) // at daytime, need to classify using cascade classifier, otherwise, at night, we put the candidate
+						;		// put this contour as it is 
+					else
+						continue; // just skip the contour
 				}
 				else {// should not com in this loop (OC_OTHER)
 				;
