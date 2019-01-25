@@ -20,11 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\bgsubcnt.cpp" />
-    <ClCompile Include="src\fastdsst\fdssttracker.cpp" />
-    <ClCompile Include="src\fastdsst\fhog.cpp" />
     <ClCompile Include="src\itms_Blob.cpp" />
     <ClCompile Include="src\itms_blob_utils.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\psrdsst\gradientMex.cpp" />
+    <ClCompile Include="src\psrdsst\math_helper.cpp" />
+    <ClCompile Include="src\psrdsst\math_spectrums.cpp" />
+    <ClCompile Include="src\psrdsst\shift.cpp" />
     <ClCompile Include="src\utils\itms_utils.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -1,6 +1,7 @@
 // Blob.cpp
 
 #include "itms_Blob.h"
+#include "./psrdsst/dsst_tracker.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {
@@ -62,11 +63,15 @@ namespace itms {
 	os_notified = OS_NOTDETERMINED; // final notified object status
   }
   Blob::~Blob() {	  
-	if (m_tracker) {
+	/*if (m_tracker) {
 		m_tracker.release();	
 		m_tracker_initialized = false;	
-	}	  
-	;
+	}	  */
+	  if (m_tracker_psr) {
+		  m_tracker_psr.release();
+		  m_tracker_initialized = false;
+	  }
+	
  }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   void Blob::predictNextPosition(void) {
@@ -313,14 +318,15 @@ namespace itms {
   
   void Blob::CreateExternalTracker(void)
   {
-	  if (!m_tracker) {
-		  bool HOG = true;
+	  if (!m_tracker_psr) {
+		  /*bool HOG = true;
 		  bool FIXEDWINDOW = false;
 		  bool MULTISCALE = true;
 		  bool SILENT = false;
-		  bool LAB = true;
+		  bool LAB = true;*/
 		  //m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
-		  m_tracker = cv::makePtr<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+		  cf_tracking::DsstParameters dsstprameters;
+		   m_tracker_psr = cv::makePtr<cf_tracking::DsstTracker>(dsstprameters);					 // unique_ptr option 2
 	  }
   }
 } // end of namespace itms

@@ -11,7 +11,8 @@
 #include<opencv2/imgproc/imgproc.hpp>
 
 #include<memory>
-#include "../src/fastdsst/fdssttracker.hpp"
+// #include "../src/fastdsst/fdssttracker.hpp" // fast tracker
+#include"./psrdsst/dsst_tracker.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {  
@@ -111,7 +112,8 @@ namespace itms {
 
 	/// visual tracking 
 	//std::unique_ptr<FDSSTTracker> m_tracker;
-	cv::Ptr<FDSSTTracker> m_tracker;
+	// cv::Ptr<FDSSTTracker> m_tracker; // sankgny 2019. 01. 25
+	cv::Ptr<cf_tracking::DsstTracker> m_tracker_psr;
 	bool m_tracker_initialized = false;
 
     // function prototypes ////////////////////////////////////////////////////////////////////////
