@@ -853,8 +853,8 @@ int main(void) {
               possibleBlob.dblCurrentAspectRatio < 6.0 &&
               possibleBlob.currentBoundingRect.width > 3 &&
               possibleBlob.currentBoundingRect.height > 3 &&
-              possibleBlob.dblCurrentDiagonalSize > 3.0/* &&
-              (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50*/) {
+              possibleBlob.dblCurrentDiagonalSize > 3.0 &&
+              (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
               //  new approach according to 
               // 1. distance, 2. correlation within certain range
 				  std::vector<cv::Point2f> blob_ntPts;
@@ -1336,7 +1336,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					detectCascadeRoiVehicle(srcImg, expRect, cars);
 					if(cars.size())
 						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-					else
+					else if(/* at night and */classProb < 0.8)
 						continue;
 				}
 				else if (currentFrameBlob.oc == itms::ObjectClass::OC_HUMAN) {
@@ -1345,7 +1345,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					detectCascadeRoiHuman(srcImg, expRect, people);
 					if (people.size())
 						currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
-					else
+					else if(/* at night */ classProb < 0.8)
 						continue;
 				}
 				else {// should not com in this loop (OC_OTHER)
