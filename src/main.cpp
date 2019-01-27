@@ -678,7 +678,7 @@ int main(void) {
     char chCheckForEscKey = 0;
 
     bool blnFirstFrame = true;
-	int m_startFrame = 0;	
+	int m_startFrame = 240;	
     int frameCount = m_startFrame + 1;
 
     // Video save start
@@ -989,7 +989,7 @@ int main(void) {
                 blobs.push_back(currentFrameBlob);
             }
         } else {
-            matchCurrentFrameBlobsToExistingBlobs(imgFrame1Copy, imgFrame2Copy, blobs, currentFrameBlobs, trackId);
+            matchCurrentFrameBlobsToExistingBlobs(imgFrame1Copy/* imgFrame1 */, imgFrame2Copy/* imgFrame2 */, blobs, currentFrameBlobs, trackId);
         }
 		imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 		if (debugShowImages ) {
@@ -1213,10 +1213,11 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				if (intSect >= 1 && existingBlobs[i].blnStillBeingTracked) { // deserted blob will be eliminated, 1, 2, 3 indicate the inclusion of one block in another
 				  overlappedBobPair.push_back(std::pair<int, int>(i, intSect));
 				}
+
 			  }
 			// erase the blob
 			if (overlappedBobPair.size() > 0) { // how about itself ? 
-			  if (debugTrace /*&& debugGeneralDetail*/) {
+			  if (debugTrace && debugGeneralDetail) {
 				cout << " (!)==> Old and deserted blob id: " << existBlob->id << " is eliminated at " << existBlob->centerPositions.back() << Size(existBlob->currentBoundingRect.width, existBlob->currentBoundingRect.height)<<"\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
 				cout << "cpt size: " << existBlob->centerPositions.size() << endl;
 				cout << "age: " << existBlob->age << endl;
@@ -1225,7 +1226,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 			  existBlob = existingBlobs.erase(existBlob);
 			}else{ // partial(0) or no overlapped (-1)
 			  // conditional elimination
-			  if (debugTrace /* && debugGeneralDetail*/) {
+			  if (debugTrace  && debugGeneralDetail) {
 				cout << " (!)! Old blob id: " << existBlob->id << " is conditionally eliminated at " << existBlob->centerPositions.back() << Size(existBlob->currentBoundingRect.width, existBlob->currentBoundingRect.height) << "\n(blobs Capacity: " << existingBlobs.capacity() << ")" << endl;
 				cout << "cpt size: " << existBlob->centerPositions.size() << endl;
 				cout << "age: " << existBlob->age << endl;
@@ -1244,11 +1245,13 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				// -------------------------------------------------------------
 				// check this out : sangkny on 2018/12/17
 				existBlob->blnCurrentMatchFoundOrNewBlob = false;
-				existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // this line required for isolated but Stopped
-				if (existBlob->centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
-					pop_front(existBlob->centerPositions, existBlob->centerPositions.size() - Config::max_Center_Pts) ;
-				existBlob->predictNextPosition(); // can be removed if the above line is commented
-				////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
+				if (!m_externalTrackerForLost) { // sangkny 2019/01/27 // 어짜피 아래 m_externalTrackerForLost 옵션이 있으면 다시 함.. 
+					existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // this line required for isolated but Stopped
+					if (existBlob->centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
+						pop_front(existBlob->centerPositions, existBlob->centerPositions.size() - Config::max_Center_Pts);
+					existBlob->predictNextPosition(); // can be removed if the above line is commented
+					////existingBlob->os = getObjectStatusFromBlobCenters(*existingBlob, ldirection, movingThresholdInPixels, minVisibleCount); // 벡터로 넣을지 생각해 볼 것, update로 이전 2018. 10.25
+				}
 				++existBlob;
 				continue; // can be removed this
 				// ---------------------------------------------------------------
@@ -1407,7 +1410,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
 				// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
 				cv::Rect newRoi, m_predictionRect;				
-				int expandY =10;
+				int expandY =5;
 				float heightRatio = (float)(existingBlob.currentBoundingRect.height+ expandY)/(existingBlob.currentBoundingRect.height);
 				int expandX = max(0, cvRound((float)(existingBlob.currentBoundingRect.width)*heightRatio- existingBlob.currentBoundingRect.width));
 				cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
@@ -1423,15 +1426,13 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 
 						/*existingBlob.m_tracker->init(expRect, preImg);
 						existingBlob.m_tracker_initialized = true;*/
-						
+						newRoi = expRect;
 						if (preImg.channels() < 3) {
 							cv::Mat preImg3;
 							cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
-							newRoi = expRect;
-							success = existingBlob.m_tracker_psr->reinit(preImg3, newRoi);
-						}
-						else {
-							newRoi = expRect;
+							
+							success = existingBlob.m_tracker_psr->reinit(preImg3, newRoi);						}
+						else {							
 							success = existingBlob.m_tracker_psr->reinit(preImg, newRoi);
 						}
 						existingBlob.m_tracker_initialized = true;
@@ -1475,6 +1476,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					if (existingBlob.centerPositions.size() > Config::max_Center_Pts)
 						pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - Config::max_Center_Pts));
 
+					existingBlob.predictNextPosition();
+
 					if (1 && debugShowImagesDetail) {
 						cv::Mat tmp2 = srcImg.clone();
 						if (tmp2.channels() < 3)
@@ -1515,11 +1518,12 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					Clamp(roiRect.x, roiRect.width, srcImg.cols);
 					Clamp(roiRect.y, roiRect.height, srcImg.rows);
 
-					cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height); // relative subImage coordinates
+					cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height); 
+					// relative subImage coordinates
 					if (!existingBlob.m_tracker_psr || existingBlob.m_tracker_psr.empty()) {
 						existingBlob.CreateExternalTracker();						
 					}					
-					cv:Rect2d newsubRoi = lastRect;
+					cv:Rect2d newsubRoi = lastRect;  // local window rect
 					if (lastRect.x >= 0 &&
 						lastRect.y >= 0 &&
 						lastRect.x + lastRect.width < roiRect.width &&
@@ -1538,22 +1542,40 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 								success = existingBlob.m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);							
 							existingBlob.m_tracker_initialized = true; // ??????????????						
 						}
+						
+
 						// update position and update the current frame because we not do this sometime if necessary
 						
 						if (preImg.channels() < 3) {
 							bool success0 = existingBlob.m_tracker_psr->updateAt(cv::Mat(preImg3, roiRect), newsubRoi);
 							if(!success0){ // lastRect is not new, and old one is used								
-								newsubRoi = lastRect;								
+								newsubRoi = lastRect;			
+								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi);
+								success = false; // i think, it should be eliminated
 							}
-							success = existingBlob.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi);
+							else { // success 0 then update 
+								success = existingBlob.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi);
+							}
 						}
+						else {
+							bool success0 = existingBlob.m_tracker_psr->updateAt(cv::Mat(preImg, roiRect), newsubRoi);
+							if (!success0) { // lastRect is not new, and old one is used								
+								newsubRoi = lastRect;
+								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
+								success = false; // i think, it should be eliminated
+							}
+							else { // success 0 then update 
+								success = existingBlob.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi);
+							}
+						}
+
 						cv::Rect prect;
 						if(success)
 							prect=cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
 						else
 							prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
 						// sangkny update the center points of the existing blob which has been untracted
-						existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));
+						existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));						
 						
 						cv::Rect tmpRect = existingBlob.currentBoundingRect;
 						existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (prect.x + prect.width / 2.f));  // move to the newRoi center with keep the size of Boundary
@@ -1564,16 +1586,26 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 						if (existingBlob.centerPositions.size() > Config::max_Center_Pts)
 							pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - Config::max_Center_Pts));
 						
-						if (1 && debugShowImagesDetail) {
+						existingBlob.predictNextPosition();
+
+						if (1 && debugShowImagesDetail) { // local image debug
 							cv::Mat tmp2 = cv::Mat(srcImg, roiRect).clone();
 							if (tmp2.channels() < 3)
 								cvtColor(tmp2, tmp2, CV_GRAY2BGR);
 							cv::rectangle(tmp2, lastRect, SCALAR_CYAN, 1);
-							cv::rectangle(tmp2, newRoi, SCALAR_MAGENTA, 2);
+							cv::rectangle(tmp2, newsubRoi, SCALAR_MAGENTA, 2);
+							if(!success){
+								cv::Point_<double> tl = newsubRoi.tl();
+								cv::Point_<double> br = newsubRoi.br();
+
+								line(tmp2, tl, br, Scalar(0, 0, 255));
+								line(tmp2, cv::Point_<double>(tl.x, br.y),
+									cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
+							}
 							cv::imshow("track", tmp2);
 							cv::waitKey(1);
 						}
-						if (1 && debugShowImagesDetail) {
+						if (1 && debugShowImagesDetail) { // full image debug
 							cv::Mat tmp2 = srcImg.clone();
 							if (tmp2.channels() < 3)
 								cvtColor(tmp2, tmp2, CV_GRAY2BGR);
@@ -1602,6 +1634,8 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				existingBlob.centerPositions.push_back(existingBlob.centerPositions.back());
 				if (existingBlob.centerPositions.size() > Config::max_Center_Pts)						// sangkny 2019. 01. 18 for stable speed processing
 					pop_front(existingBlob.centerPositions, existingBlob.centerPositions.size() - Config::max_Center_Pts);
+
+				existingBlob.predictNextPosition();
 			}			
 			
         }
