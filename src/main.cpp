@@ -11,7 +11,7 @@
 
 
 // dnn: deep neural network
-#include <opencv2/dnn.hpp>
+//#include <opencv2/dnn.hpp>
 #include <sstream>
 #include<conio.h>           // it may be necessary to change or remove this line if not using Windows
 #include <time.h>
@@ -1019,8 +1019,9 @@ int main(void) {
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is
 
         if ((capVideo.get(CV_CAP_PROP_POS_FRAMES) + 1) < capVideo.get(CV_CAP_PROP_FRAME_COUNT)) {
-            capVideo.read(imgFrame2);  
-			capVideo.read(imgFrame2);
+            capVideo.read(imgFrame2);
+			//frameCount++;
+			//capVideo.read(imgFrame2);
             resize(imgFrame2, imgFrame2, Size(), Config::scaleFactor, Config::scaleFactor);
             if (imgFrame2.empty()) {
               std::cout << "The input image is empty!! Please check the video file!!" << std::endl;
@@ -1194,8 +1195,8 @@ void mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(std::vector<Blob> &currentF
 // 2019. 01. 04 -> Apply fastDSST when the existing blob was not matched by current blob
 void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id){
 	// lost object tracker
-	size_t N = existingBlobs.size();
-	std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
+	//size_t N = existingBlobs.size();
+	//std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
 
 	// blob iterator
 	std::vector<Blob>::iterator existBlob = existingBlobs.begin();
@@ -1324,7 +1325,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 		      //	addBlobToExistingBlobs(currentFrameBlob, existingBlobs, intIndexOfHighestScore);
 
 				// lost object detection 
-				assignment.at(intIndexOfLeastDistance) = 1;
+//				assignment.at(intIndexOfLeastDistance) = 1;
         }
         else { // this routine contains new and unassigned track(blob)s
           // add new blob
@@ -1448,7 +1449,7 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 					}					
 					// as of 2019. 01. 18, just put the new center points except for countour information	
 					if (success) {
-						existingBlob.centerPositions.push_back(Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
+						existingBlob.centerPositions.push_back(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
 
 						cv::Rect tmpRect = existingBlob.currentBoundingRect;
 						existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));  // move to the newRoi center with keep the size of Boundary
@@ -1517,10 +1518,10 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 						lastRect.y + lastRect.height < roiRect.height &&
 						lastRect.area() > 0) {
 						cv::Mat preImg3, srcImg3;
-						if (preImg.channels() < 3)
-							cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
-						if (srcImg.channels() < 3)
+						if (preImg.channels() < 3) {
+							cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);							
 							cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);
+						}
 
 						if(!existingBlob.m_tracker_initialized){							
 							success = (preImg.channels() < 3) ? 
@@ -1717,7 +1718,7 @@ void addBlobToExistingBlobs(Blob &currentFrameBlob, std::vector<Blob> &existingB
       vector<Point2f> blobCenterPxs;
       blobCenterPxs.push_back(currentFrameBlob.centerPositions.back());
       float distance = getDistanceInMeterFromPixels(blobCenterPxs, transmtxH, lane_length, false);
-      if (debugGeneral)
+      if (debugGeneral && debugGeneralDetail)
         cout << " distance: " << distance / 100 << " meters from the starting point.\n";
       
       ObjectClass objclass;
