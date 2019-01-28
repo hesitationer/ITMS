@@ -678,7 +678,7 @@ int main(void) {
     char chCheckForEscKey = 0;
 
     bool blnFirstFrame = true;
-	int m_startFrame = 240;	
+	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;
 
     // Video save start
@@ -1019,7 +1019,8 @@ int main(void) {
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is
 
         if ((capVideo.get(CV_CAP_PROP_POS_FRAMES) + 1) < capVideo.get(CV_CAP_PROP_FRAME_COUNT)) {
-            capVideo.read(imgFrame2);            
+            capVideo.read(imgFrame2);  
+			capVideo.read(imgFrame2);
             resize(imgFrame2, imgFrame2, Size(), Config::scaleFactor, Config::scaleFactor);
             if (imgFrame2.empty()) {
               std::cout << "The input image is empty!! Please check the video file!!" << std::endl;
@@ -1418,47 +1419,33 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 				if (0 && debugGeneral && debugGeneralDetail)
 					cout << "From boundingRect: " << existingBlob.currentBoundingRect << " => To expectedRect: " << expRect << endl;
 
-				if (!isSubImgTracking) { // full image-based approach
+				if (!isSubImgTracking) { // Global/full image-based approach
 					if (!existingBlob.m_tracker_psr || existingBlob.m_tracker_psr.empty())
 						existingBlob.CreateExternalTracker();	// create ExternalTracker
 					bool success = false;
+					cv::Mat preImg3, srcImg3;
+					if (preImg.channels() < 3) {						
+						cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
+						cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);						
+					}
+					newRoi = expRect;
 					if (!existingBlob.m_tracker_initialized) {		// do it only once
-
 						/*existingBlob.m_tracker->init(expRect, preImg);
-						existingBlob.m_tracker_initialized = true;*/
-						newRoi = expRect;
-						if (preImg.channels() < 3) {
-							cv::Mat preImg3;
-							cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
-							
-							success = existingBlob.m_tracker_psr->reinit(preImg3, newRoi);						}
-						else {							
-							success = existingBlob.m_tracker_psr->reinit(preImg, newRoi);
-						}
+						existingBlob.m_tracker_initialized = true;*/												
+						success = (preImg.channels() < 3)? existingBlob.m_tracker_psr->reinit(preImg3, newRoi): existingBlob.m_tracker_psr->reinit(preImg, newRoi);
+						
 						existingBlob.m_tracker_initialized = true;
 					}
+					else 						
+						success = (preImg.channels() < 3)? existingBlob.m_tracker_psr->updateAt(srcImg3, newRoi):existingBlob.m_tracker_psr->updateAt(srcImg, newRoi);
 					//newRoi = existingBlob.m_tracker->update(srcImg); // do update for full image-based fast dsst
-					if (preImg.channels() < 3) {
-						cv::Mat preImg3;
-						cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
+					
+					if(!success) {
 						newRoi = expRect;
-						success = existingBlob.m_tracker_psr->updateAt(preImg3, newRoi);
-					}
-					else {
-						newRoi = expRect;
-						success = existingBlob.m_tracker_psr->updateAt(preImg, newRoi);
-					}
 
-					if (srcImg.channels() < 3) { // psr_dsst takes only 3 channels like BGR not GRAY !!!
-						cv::Mat srcImg3;
-						cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);		
-						newRoi = expRect;
-						success = existingBlob.m_tracker_psr->update(srcImg3, newRoi); // do update for full image-based fast dsst
-					}
-					else {
-						newRoi = expRect;
-						success = existingBlob.m_tracker_psr->update(srcImg, newRoi); // do update for full image-based fast dsst
-					}
+						success = (preImg.channels() < 3) ? existingBlob.m_tracker_psr->reinit(preImg3, newRoi): existingBlob.m_tracker_psr->reinit(preImg, newRoi);
+						success = (preImg.channels() < 3) ? existingBlob.m_tracker_psr->update(srcImg3, newRoi): existingBlob.m_tracker_psr->update(srcImg, newRoi);						
+					}					
 					// as of 2019. 01. 18, just put the new center points except for countour information	
 					if (success) {
 						existingBlob.centerPositions.push_back(Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
@@ -1536,39 +1523,29 @@ void matchCurrentFrameBlobsToExistingBlobs(cv::Mat& preImg, cv::Mat& srcImg, std
 							cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);
 
 						if(!existingBlob.m_tracker_initialized){							
-							if (preImg.channels() < 3) {								
-								success = existingBlob.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi);
-							}else
-								success = existingBlob.m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);							
+							success = (preImg.channels() < 3) ? 
+								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi): 
+								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);							
 							existingBlob.m_tracker_initialized = true; // ??????????????						
 						}
-						
-
-						// update position and update the current frame because we not do this sometime if necessary
-						
-						if (preImg.channels() < 3) {
-							bool success0 = existingBlob.m_tracker_psr->updateAt(cv::Mat(preImg3, roiRect), newsubRoi);
-							if(!success0){ // lastRect is not new, and old one is used								
-								newsubRoi = lastRect;			
-								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi);
-								success = false; // i think, it should be eliminated
-							}
-							else { // success 0 then update 
-								success = existingBlob.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi);
-							}
-						}
 						else {
-							bool success0 = existingBlob.m_tracker_psr->updateAt(cv::Mat(preImg, roiRect), newsubRoi);
-							if (!success0) { // lastRect is not new, and old one is used								
-								newsubRoi = lastRect;
-								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
-								success = false; // i think, it should be eliminated
-							}
-							else { // success 0 then update 
-								success = existingBlob.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi);
-							}
+							success = (preImg.channels() < 3) ?
+								existingBlob.m_tracker_psr->updateAt(cv::Mat(srcImg3, roiRect), newsubRoi) :
+								existingBlob.m_tracker_psr->updateAt(cv::Mat(srcImg, roiRect), newsubRoi);
 						}
 
+						// update position and update the current frame because we not do this sometime if necessary						
+						if(!success){ // lastRect is not new, and old one is used								
+							newsubRoi = lastRect;			
+							success = (preImg.channels() < 3) ? 
+								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi): 
+								existingBlob.m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
+
+							success = (preImg.channels() < 3) ? 
+								existingBlob.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi): 
+								existingBlob.m_tracker_psr->update(cv::Mat(srcImg, roiRect), newsubRoi);
+						} // else is not required because if updateAt is successful, the new location after update is same							
+						
 						cv::Rect prect;
 						if(success)
 							prect=cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
