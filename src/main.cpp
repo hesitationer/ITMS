@@ -377,11 +377,11 @@ void loadConfig()
     }
 
 	// generate the boundary ROI points from Road_ROI_Pts.
-	int interval = 10; // 10 pixel
+	int interval = 6; // 10 pixel
 	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(0).at(0).x+interval, Road_ROI_Pts.at(0).at(0).y+interval));
 	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(2).at(1).x-interval, Road_ROI_Pts.at(2).at(1).y+interval));
-	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(2).at(2).x-interval, Road_ROI_Pts.at(2).at(2).y-interval));
-	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(0).at(3).x+interval, Road_ROI_Pts.at(0).at(3).y-interval));
+	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(2).at(2).x-interval, Road_ROI_Pts.at(2).at(2).y-std::min(100, 12*interval)));
+	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(0).at(3).x+interval, Road_ROI_Pts.at(0).at(3).y-std::min(100, 12*interval)));
 
 
 	if (existFileTest(vehicleRatioFile)) {
