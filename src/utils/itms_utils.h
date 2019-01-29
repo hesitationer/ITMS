@@ -49,6 +49,12 @@ namespace itms {
   Rect expandRect(Rect original, int expandXPixels, int expandYPixels, int maxX, int maxY); // 
   Rect maxSqRect(Rect& original, int maxX, int maxY); // make squre with max length
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
+	
+																					// returns the value according to the tp position according to starting point sP and ending point eP;
+	// + : left/bottom(below), 0: on the line, -: right/top(above)
+  inline bool isPointBelowLine(cv::Point sP, cv::Point eP, cv::Point tP) {
+	  return ((eP.x - sP.x)*(tP.y - sP.y) - (eP.y - sP.y)*(tP.x - sP.x)) > 0;
+  }
    
   //// system related  
   inline bool existFileTest(const std::string& name) {
@@ -160,6 +166,9 @@ namespace itms {
 	  std::vector<float> mPolyCoeffs;
 	  int mPolySize;
   };
+
+  
+
 }
 #endif // _ITMS_UTILS_H
 

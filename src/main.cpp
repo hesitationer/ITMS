@@ -102,6 +102,7 @@ void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> 
 void drawAndShowContours(cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);
 bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, cv::Point Pt1, cv::Point Pt2, int &carCount, int &truckCount, int &bikeCount);
+bool checkIfBlobsCrossedTheBoundary(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, itms::LaneDirection _laneDirection, std::vector<cv::Point> &_tboundaryPts);
 void drawBlobInfoOnImage(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy);
 void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
 void drawRoadRoiOnImage(std::vector<std::vector<cv::Point>> &_roadROIPts, cv::Mat &_srcImg);
@@ -201,15 +202,14 @@ namespace Config
 	bool existroadMapFile = false; //exist and loaded then true;
     
     std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
+	std::vector<cv::Point> Boundary_ROI_Pts;		// Boundary_ROI Points
 	// vehicle ration 
 	bool existvehicleRatioFile = false; // exist and loaded then true
 	std::vector<std::vector<float>> vehicleRatios;
 
 	// road configuration
 	// road deskew matrix
-	cv::Mat transmtxH;					// this value will be computed in the processing
-
-	
+	cv::Mat transmtxH;					// this value will be computed in the processing	
 }
 
 using namespace Config;
@@ -375,6 +375,15 @@ void loadConfig()
         Road_ROI_Pts.push_back(road_roi_pts);
         road_roi_pts.clear();
     }
+
+	// generate the boundary ROI points from Road_ROI_Pts.
+	int interval = 10; // 10 pixel
+	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(0).at(0).x+interval, Road_ROI_Pts.at(0).at(0).y+interval));
+	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(2).at(1).x-interval, Road_ROI_Pts.at(2).at(1).y+interval));
+	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(2).at(2).x-interval, Road_ROI_Pts.at(2).at(2).y-interval));
+	Config::Boundary_ROI_Pts.push_back(cv::Point(Road_ROI_Pts.at(0).at(3).x+interval, Road_ROI_Pts.at(0).at(3).y-interval));
+
+
 	if (existFileTest(vehicleRatioFile)) {
 		FileStorage fv(vehicleRatioFile, FileStorage::READ);
 		if (fv.isOpened()) {
@@ -724,7 +733,12 @@ int main(void) {
     if (road_mask.channels() > 1)
       cvtColor(road_mask, road_mask, CV_BGR2GRAY);
     if (debugShowImages && debugShowImagesDetail) {
-      imshow("road mask", road_mask);
+		cv::Mat debugImg = road_mask.clone();
+		if (debugImg.channels() < 3)
+			cvtColor(debugImg, debugImg, CV_GRAY2BGR);      
+	  for (int i = 0; i < Config::Boundary_ROI_Pts.size(); i++)
+		  line(debugImg, Config::Boundary_ROI_Pts.at(i% Config::Boundary_ROI_Pts.size()), Config::Boundary_ROI_Pts.at((i + 1) % Config::Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
+	  imshow("road mask", debugImg);
       waitKey(1);
     }
 	
@@ -1000,7 +1014,8 @@ int main(void) {
 			drawRoadRoiOnImage(Road_ROI_Pts, imgFrame2Copy);
 		
         //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, intHorizontalLinePosition, carCount);
-			bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1], carCount, truckCount, bikeCount);
+			//bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1], carCount, truckCount, bikeCount);
+			bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheBoundary(blobs, imgFrame2Copy, Config::ldirection,Config::Boundary_ROI_Pts);
 
 			if (blnAtLeastOneBlobCrossedTheLine == true) {
 				cv::line(imgFrame2Copy, crossingLine[0], crossingLine[1], SCALAR_GREEN, 2);
@@ -1911,10 +1926,10 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy
       int currFrameIndex = (int)blob.centerPositions.size() - 1;
 
       // Horizontal Line
-      if (blob.centerPositions[currFrameIndex].x > Pt1.x  
+      if (/*blob.centerPositions[currFrameIndex].x > Pt1.x  
         && blob.centerPositions[currFrameIndex].x < Pt2.x  
         &&  blob.centerPositions[prevFrameIndex].y < std::max(Pt2.y,Pt1.y) 
-        && blob.centerPositions[currFrameIndex].y >= std::min(Pt1.y,Pt2.y)) 
+        && blob.centerPositions[currFrameIndex].y >= std::min(Pt1.y,Pt2.y)*/ isPointBelowLine(Pt1, Pt2, blob.centerPositions[prevFrameIndex]) ^ isPointBelowLine(Pt1, Pt2, blob.centerPositions[currFrameIndex]))
       {
         carCount++;
 
@@ -1927,15 +1942,120 @@ bool checkIfBlobsCrossedTheLine(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy
           cout << "blob track id: " << blob.id << " is crossing the line." << endl;
           cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" <<blob.age<<", "<< blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
 #endif
-        
-
-        blnAtLeastOneBlobCrossedTheLine = true;
+          blnAtLeastOneBlobCrossedTheLine = true;
       }
     }
 
   }
 
   return blnAtLeastOneBlobCrossedTheLine;
+}
+
+// this fucntion can detect the status of the blob and update the blob status, then the next module can erase the blob if necessary
+bool checkIfBlobsCrossedTheBoundary(std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, itms::LaneDirection _laneDirection, std::vector<cv::Point>& _tboundaryPts) {
+	bool blnAtLeastOneBlobCrossedTheBoundary = false;
+	// boundary should be clockwise direction 
+	assert(_tboundaryPts.size() == 4); // the Tracking boudnary should be insize the real boundary
+	if (_tboundaryPts.size() < 4)
+		return blnAtLeastOneBlobCrossedTheBoundary;
+
+	// declare two top/left  and right/bottom lines according to Lane Direction
+	std::vector<cv::Point> tlLine(2); // top/ left line 
+	std::vector<cv::Point> brLine(2); // bottom/ right line	
+	
+	switch (_laneDirection)  { // if we put this at the beginning like configuration, the processing time will be reduced 
+		case itms::LD_SOUTH:
+		case itms::LD_SOUTHEAST:
+		case itms::LD_SOUTHWEST:
+			tlLine.at(0) = _tboundaryPts[2]; // <-- begin
+			tlLine.at(1) = _tboundaryPts[3]; // <-- end
+			brLine.at(0) = _tboundaryPts[1]; // 
+			brLine.at(1) = _tboundaryPts[0];
+			break;
+		case itms::LD_NORTH:		
+		case itms::LD_NORTHEAST:
+		case itms::LD_NORTHWEST:
+			tlLine.at(0) = _tboundaryPts[0]; // --> begin
+			tlLine.at(1) = _tboundaryPts[1]; // --> end
+			brLine.at(0) = _tboundaryPts[3]; // 
+			brLine.at(1) = _tboundaryPts[2];
+		
+			break;
+		case itms::LD_EAST:
+			tlLine.at(0) = _tboundaryPts[0]; // --> begin
+			tlLine.at(1) = _tboundaryPts[3]; // --> end
+			brLine.at(0) = _tboundaryPts[1]; // 
+			brLine.at(1) = _tboundaryPts[2];
+
+			break;
+		case itms::LD_WEST:		
+			tlLine.at(0) = _tboundaryPts[3]; // <-- begin
+			tlLine.at(1) = _tboundaryPts[0]; // <-- end
+			brLine.at(0) = _tboundaryPts[2]; // 
+			brLine.at(1) = _tboundaryPts[1];
+			break;
+		  default: // NORTH
+			  tlLine.at(0) = _tboundaryPts[0]; // --> begin
+			  tlLine.at(1) = _tboundaryPts[1]; // --> end
+			  brLine.at(0) = _tboundaryPts[3]; // 
+			  brLine.at(1) = _tboundaryPts[2];
+			break;
+	}	
+
+
+	for (auto blob : blobs) {
+
+		if (blob.blnStillBeingTracked == true && blob.totalVisibleCount >= Config::minVisibleCount && blob.centerPositions.size() >= 2) {
+			int prevFrameIndex = (int)blob.centerPositions.size() - 2;
+			int currFrameIndex = (int)blob.centerPositions.size() - 1;
+
+			// Cross line checking
+			bool tlFlag_pre = false, tlFlag_cur = false, brFlag_pre = false, brFlag_cur = false; // flag for crossing the boundary
+			tlFlag_pre = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob.centerPositions[prevFrameIndex]);
+			tlFlag_cur = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob.centerPositions[currFrameIndex]); // top left line first
+			if (tlFlag_pre ^ tlFlag_cur)
+			{ // update 
+			  // normal:
+			  // blob is out from inside, therefore, it should be erased
+			  // and the driving direction is forward moving
+			  // abnorma: Wrong Way Driving
+
+#ifdef SHOW_STEPS
+				cv::Mat crop = Mat::zeros(Size(blob.currentBoundingRect.width, blob.currentBoundingRect.height), imgFrame2Copy.type());
+				crop = imgFrame2Copy(blob.currentBoundingRect).clone();
+				cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
+				cv::imshow("cropImage", crop);
+				cv::waitKey(1);
+				cout << "blob track id: " << blob.id << " is crossing the line." << endl;
+				cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob.age << ", " << blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
+				cout << " --> --> tbLine: This object should be eliminated -------> \n";
+#endif
+				blnAtLeastOneBlobCrossedTheBoundary = true;
+			}
+			else { // to save the computation, I used if separately
+				brFlag_pre = isPointBelowLine(brLine.at(0), brLine.at(1), blob.centerPositions[prevFrameIndex]);
+				brFlag_cur = isPointBelowLine(brLine.at(0), brLine.at(1), blob.centerPositions[currFrameIndex]); // top left line first
+				if (brFlag_pre ^ brFlag_cur) {
+#ifdef SHOW_STEPS
+					cv::Mat crop = Mat::zeros(Size(blob.currentBoundingRect.width, blob.currentBoundingRect.height), imgFrame2Copy.type());
+					crop = imgFrame2Copy(blob.currentBoundingRect).clone();
+					cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
+					cv::imshow("cropImage", crop);
+					cv::waitKey(1);
+					cout << "blob track id: " << blob.id << " is crossing the line." << endl;
+					cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob.age << ", " << blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
+					cout << " --> --> brLine: This object should be eliminated -------> \n";
+#endif
+
+					blnAtLeastOneBlobCrossedTheBoundary = true;
+				}
+			
+			}
+		}
+
+	}
+
+	return blnAtLeastOneBlobCrossedTheBoundary;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
