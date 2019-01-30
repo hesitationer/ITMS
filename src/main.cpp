@@ -181,7 +181,7 @@ namespace Config
 	bool LAB = false;
 
 	LaneDirection ldirection = LD_NORTH;			// vertical lane
-	BgSubType bgsubtype = BGS_DIF;
+	BgSubType bgsubtype = BgSubType::BGS_DIF;
 
 	// template matching algorithm implementation, demo
 	bool use_mask = false;
@@ -2002,58 +2002,76 @@ bool checkIfBlobsCrossedTheBoundary(std::vector<Blob> &blobs, cv::Mat &imgFrame2
 			break;
 	}	
 
+	std::vector<Blob>::iterator blob = blobs.begin();
+	while (blob != blobs.end()) {
 
-	for (auto blob : blobs) {
-
-		if (blob.blnStillBeingTracked == true && blob.totalVisibleCount >= Config::minVisibleCount && blob.centerPositions.size() >= 2) {
-			int prevFrameIndex = (int)blob.centerPositions.size() - 2;
-			int currFrameIndex = (int)blob.centerPositions.size() - 1;
+		if (blob->blnStillBeingTracked == true && blob->totalVisibleCount >= Config::minVisibleCount && blob->centerPositions.size() >= 2) {
+			int prevFrameIndex = (int)blob->centerPositions.size() - 2;
+			int currFrameIndex = (int)blob->centerPositions.size() - 1;
 
 			// Cross line checking
 			bool tlFlag_pre = false, tlFlag_cur = false, brFlag_pre = false, brFlag_cur = false; // flag for crossing the boundary
-			tlFlag_pre = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob.centerPositions[prevFrameIndex]);
-			tlFlag_cur = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob.centerPositions[currFrameIndex]); // top left line first
-			if (tlFlag_pre ^ tlFlag_cur)
+			tlFlag_pre = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob->centerPositions[prevFrameIndex]);
+			tlFlag_cur = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob->centerPositions[currFrameIndex]); // top left line first
+			if (tlFlag_pre ^ tlFlag_cur) // XOR
 			{ // update 
 			  // normal:
 			  // blob is out from inside, therefore, it should be erased
 			  // and the driving direction is forward moving
 			  // abnorma: Wrong Way Driving
-
 #ifdef SHOW_STEPS
-				cv::Mat crop = Mat::zeros(Size(blob.currentBoundingRect.width, blob.currentBoundingRect.height), imgFrame2Copy.type());
-				crop = imgFrame2Copy(blob.currentBoundingRect).clone();
+				cv::Mat crop = Mat::zeros(Size(blob->currentBoundingRect.width, blob->currentBoundingRect.height), imgFrame2Copy.type());
+				crop = imgFrame2Copy(blob->currentBoundingRect).clone();
 				cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
 				cv::imshow("cropImage", crop);
 				cv::waitKey(1);
-				cout << "blob track id: " << blob.id << " is crossing the line." << endl;
-				cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob.age << ", " << blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
+				cout << "blob track id: " << blob->id << " is crossing the line." << endl;
+				cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob->age << ", " << blob->totalVisibleCount << ", " << blob->showId << ")" << endl;
 				cout << " --> --> tbLine: This object should be eliminated -------> \n";
 #endif
 				blnAtLeastOneBlobCrossedTheBoundary = true;
+				if (tlFlag_pre) { // forward moving to go out of boundary, eliminate
+					if (debugGeneralDetail)
+						cout << " a blob: " << blob->id << " is eliminated at boundary!!! \n\n\n\n";					
+					blob = blobs.erase(blob);					
+					continue;
+				}
+				else {
+					blob->os = OS_MOVING_BACKWARD; // it should be notified 
+				}
+				
 			}
 			else { // to save the computation, I used if separately
-				brFlag_pre = isPointBelowLine(brLine.at(0), brLine.at(1), blob.centerPositions[prevFrameIndex]);
-				brFlag_cur = isPointBelowLine(brLine.at(0), brLine.at(1), blob.centerPositions[currFrameIndex]); // top left line first
+				brFlag_pre = isPointBelowLine(brLine.at(0), brLine.at(1), blob->centerPositions[prevFrameIndex]);
+				brFlag_cur = isPointBelowLine(brLine.at(0), brLine.at(1), blob->centerPositions[currFrameIndex]); // top left line first
 				if (brFlag_pre ^ brFlag_cur) {
 #ifdef SHOW_STEPS
-					cv::Mat crop = Mat::zeros(Size(blob.currentBoundingRect.width, blob.currentBoundingRect.height), imgFrame2Copy.type());
-					crop = imgFrame2Copy(blob.currentBoundingRect).clone();
+					cv::Mat crop = Mat::zeros(Size(blob->currentBoundingRect.width, blob->currentBoundingRect.height), imgFrame2Copy.type());
+					crop = imgFrame2Copy(blob->currentBoundingRect).clone();
 					cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
 					cv::imshow("cropImage", crop);
 					cv::waitKey(1);
-					cout << "blob track id: " << blob.id << " is crossing the line." << endl;
-					cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob.age << ", " << blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
+					cout << "blob track id: " << blob->id << " is crossing the line." << endl;
+					cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob->age << ", " << blob->totalVisibleCount << ", " << blob->showId << ")" << endl;
 					cout << " --> --> brLine: This object should be eliminated -------> \n";
 #endif
-
 					blnAtLeastOneBlobCrossedTheBoundary = true;
+					if (brFlag_cur) { //out of boundary and WWR (wrong way driving)
+						if (debugGeneralDetail)
+							cout << " A blob :" << blob->id << "at br line is erased !! \n\n\n\n";
+						blob = blobs.erase(blob);
+						continue;
+					}
+					else { // in 
+						blob->os = OS_MOVING_FORWARD; // check this out
+					}
+					
 				}
 			
 			}
 		}
-
-	}
+		++blob;
+	}// while
 
 	return blnAtLeastOneBlobCrossedTheBoundary;
 }

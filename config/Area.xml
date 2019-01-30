@@ -24,7 +24,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath> 
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
@@ -77,8 +77,8 @@
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                <!-- local region tracking -->
-<m_externalTrackerForLost> 0 </m_externalTrackerForLost>    <!-- lost object global searching ---->
-<isSubImgTracking>1</isSubImgTracking>                      <!-- loast object local searching -->
+<m_externalTrackerForLost> 1 </m_externalTrackerForLost>    <!-- lost object global searching ---->
+<isSubImgTracking>0</isSubImgTracking>                      <!-- loast object local searching -->
 <HOG>1</HOG>
 <FIXEDWINDOW>1</FIXEDWINDOW>
 <MULTISCALE>1</MULTISCALE>
