@@ -55,18 +55,6 @@ cv::HOGDescriptor hog;
 #endif
 #endif
 
-// #define _CASCADE_HUMAN 
-
-// global variables ///////////////////////////////////////////////////////////////////////////////
-const cv::Scalar SCALAR_BLACK = cv::Scalar(0.0, 0.0, 0.0);
-const cv::Scalar SCALAR_WHITE = cv::Scalar(255.0, 255.0, 255.0);
-const cv::Scalar SCALAR_YELLOW = cv::Scalar(0.0, 255.0, 255.0);
-const cv::Scalar SCALAR_GREEN = cv::Scalar(0.0, 255.0, 0.0);
-const cv::Scalar SCALAR_RED = cv::Scalar(0.0, 0.0, 255.0);
-const cv::Scalar SCALAR_BLUE = cv::Scalar(255.0, 0.0, 0.0);
-const cv::Scalar SCALAR_MAGENTA = cv::Scalar(255.0, 0.0, 255.0);
-const cv::Scalar SCALAR_CYAN = cv::Scalar(255.0, 255.0, 0.0);
-
 
 // function prototypes ////////////////////////////////////////////////////////////////////////////
 // utils
@@ -83,10 +71,6 @@ float getNCC(cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method
 // type2srt returns the type of cv::Mat
 string type2str(int type); // get Math type()
 int InterSectionRect(cv::Rect &rect1, cv::Rect &rect2);
-
-
-///////////// callback function --------------------   ///////////////////////////
-//void MatchingMethod(int, void*);
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -123,6 +107,7 @@ vector<String> getOutputsNames(const Net& net);
 
 //-------------------- dnn related -------------------------------/
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
 namespace Config
 {
 	// debug parameters
@@ -132,13 +117,13 @@ namespace Config
 	bool debugGeneralDetail = true;
 	bool debugTrace = true;
 	bool debugTime = true;
-    // 
+	// 
 
 	// main processing parameters
 	float scaleFactor = .5;
 	// auto brightness and apply to threshold
 	bool isAutoBrightness = true;
-	int AutoBrightness_x = 1162;	
+	int AutoBrightness_x = 1162;
 	int  max_past_frames_autoBrightness = 15;
 	cv::Rect AutoBrightness_Rect(1162, 808, 110, 142);// 1x, default[1162, 808, 110, 142] for darker region,
 													  // brighter region [938, 760, 124, 94]; // for a little brighter asphalt
@@ -148,15 +133,15 @@ namespace Config
 	double EndX = 0;
 	double StartY = 0;
 	double EndY = 0;
-		
-	 // raod configuration related
+
+	// raod configuration related
 	float camera_height = 11.0 * 100;				// camera height 11 meter
 	float lane_length = 200.0 * 100;				// lane length
 	float lane2lane_width = 3.5 * 2 * 100;			// lane width
-	
-	// road points settings
 
-	// object tracking related 
+													// road points settings
+
+													// object tracking related 
 	int minVisibleCount = 3;						// minimum survival consecutive frame for noise removal effect
 	int max_Center_Pts = 5 * 30;					// maximum number of center points (frames), about 5 sec.
 	int numberOfTracePoints = 15;					// # of tracking tracer in debug Image
@@ -165,15 +150,15 @@ namespace Config
 	int movingThresholdInPixels = 0;				// motion threshold in pixels affected by Config::scaleFactor, average point를 이용해야 함..
 	int img_dif_th = 15;							// BGS_DIF biranry threshold (10~30) at day through night, 
 													// Day/Night and Object Probability
-	int nightBrightness_Th = 20;					
+	int nightBrightness_Th = 20;
 	float nightObjectProb_Th = 0.8;
 
 	float BlobNCC_Th = 0.5;							// blob NCC threshold < 0.5 means no BG
-	
+
 	bool m_useLocalTracking = false;				// local tracking  capture and detect level
 	bool m_externalTrackerForLost = false;			// do fastDSST for lost object
 	bool isSubImgTracking = false;					// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
-	// define FAST DSST
+													// define FAST DSST
 	bool HOG = true;
 	bool FIXEDWINDOW = true;
 	bool MULTISCALE = true;
@@ -198,12 +183,12 @@ namespace Config
 	// configuration file loading flag
 	bool isLoaded = false; // loading flag not from file 
 
-    // road map
+						   // road map
 	bool existroadMapFile = false; //exist and loaded then true;
-    
-    std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
+
+	std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
 	std::vector<cv::Point> Boundary_ROI_Pts;		// Boundary_ROI Points
-	// vehicle ration 
+													// vehicle ration 
 	bool existvehicleRatioFile = false; // exist and loaded then true
 	std::vector<std::vector<float>> vehicleRatios;
 
@@ -211,7 +196,6 @@ namespace Config
 	// road deskew matrix
 	cv::Mat transmtxH;					// this value will be computed in the processing	
 }
-
 using namespace Config;
 
 
@@ -522,31 +506,7 @@ int main(void) {
 	bool b = capVideo.open(Config::VideoPath);  
   // load background image	
   cv::Mat BGImage = imread(Config::BGImagePath);
-  
-
-  //std::vector<Point> road_roi_pts;
-  //std::vector<std::vector<Point>> Road_ROI_Pts; // sidewalks and carlanes
-  
-  // object size LUT config
-  // sedan w
-  // seda h 
-  //std::vector<float> sedan_h = { -0.00004444328872f*2.0, 0.01751602326f*2.0, -2.293443176f*2.0, 112.527668f*2.0 }; // scale factor 1.0 need to go header
-  //std::vector<float> sedan_w = { -0.00003734137716f*2.0, 0.01448943505f*2.0, -1.902199174f*2.0, 98.56691135f*2.0 };
-  //std::vector<float> suv_h = { -0.00005815785621f*2.0, 0.02216859672f*2.0, -2.797603666f*2.0, 139.0638999f*2.0 };
-  //std::vector<float> suv_w = { -0.00004854032314f*2.0, 0.01884736545f*2.0, -2.425686251f*2.0, 121.9226426f*2.0 };
-  //std::vector<float> truck_h = { -0.00006123592908f*2.0, 0.02373661426f*2.0, -3.064585294f*2.0, 149.6535855f*2.0 };
-  //std::vector<float> truck_w = { -0.00003778247771f*2.0, 0.015239317f*2.0, -2.091105041f*2.0, 110.7544702f*2.0 };
-  //std::vector<float> human_h = { -0.000002473245036f*2.0, 0.001813179193f*2.0, -0.5058008988f*2.0, 49.27950311f*2.0 };
-  //std::vector<float> human_w = { -0.000003459461125f*2.0, 0.001590306464f*2.0, -0.3208648543f*2.0, 28.23621306f*2.0 };
-  //
-  /*ITMSPolyValues polyvalue_sedan_h(sedan_h, sedan_h.size());
-  ITMSPolyValues polyvalue_sedan_w(sedan_w, sedan_w.size());
-  ITMSPolyValues polyvalue_suv_h(suv_h, suv_h.size());
-  ITMSPolyValues polyvalue_suv_w(suv_w, suv_w.size());
-  ITMSPolyValues polyvalue_truck_h(truck_h, truck_h.size());
-  ITMSPolyValues polyvalue_truck_w(truck_w, truck_w.size());
-  ITMSPolyValues polyvalue_human_h(human_h, human_h.size());
-  ITMSPolyValues polyvalue_human_w(human_w, human_w.size());*/
+   
   
   // create poly values for each object
   assert(vehicleRatios.size() == 8);
@@ -567,12 +527,7 @@ int main(void) {
   //float lane2lane_width = 3.5 * 2* 100; // lane width
   std::vector<cv::Point2f> srcPts; // skewed ROI source points
   std::vector<cv::Point2f> tgtPts; // deskewed reference ROI points (rectangular. Top-to-bottom representation but, should be bottom-to-top measure in practice
-
-  //srcPts.push_back(Point2f(949.25, 104.75)*Config::scaleFactor); // detect region left-top p0
-  //srcPts.push_back(Point2f(1045.25, 98.75)*Config::scaleFactor); // detect region right-top p1
-  //srcPts.push_back(Point2f(1397.75, 1052.75)*Config::scaleFactor); // detect region right-bottom p2 
-  //srcPts.push_back(Point2f(416.75, 1057.25)*Config::scaleFactor); // detect region left-bottom  p3
-
+  
   srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(0))); // detect region left-top p0
   srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(1))); // detect region right-top p1
   srcPts.push_back(static_cast<Point2f>(Config::Road_ROI_Pts.at(1).at(2))); // detect region right-bottom p2 

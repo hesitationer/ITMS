@@ -160,7 +160,7 @@ int main(int argc, char** argv)
   namedWindow(kWinName, WINDOW_AUTOSIZE/*WINDOW_NORMAL*/);
 
   // Process frames.
-  float Config::scaleFactor = .5;
+  float scaleFactor = .5;
   while (waitKey(1) < 0)
   {
     // get frame from the video
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
       break;
     }
 	//resize the input image
-	resize(frame, frame, Size(), Config::scaleFactor, Config::scaleFactor);
+	resize(frame, frame, Size(), scaleFactor, scaleFactor);
 	// detect object using DNN
 	vector<Mat> outs;	
 	regions_t res_regions=DetectInCrop(net, frame, Size(inpWidth,inpHeight), outs);

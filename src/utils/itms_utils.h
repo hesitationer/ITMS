@@ -9,40 +9,61 @@
 
 #include <iostream>
 #include "opencv/cv.hpp"
+#include "../../src/itms_Blob.h"
 
 
 using namespace cv;
 using namespace std;
-class CRegion
-{
-public:
-	CRegion()
-		: m_type(""), m_confidence(-1)
-	{
-	}
+using namespace itms;
 
-	CRegion(const cv::Rect& rect)
-		: m_rect(rect)
-	{
 
-	}
 
-	CRegion(const cv::Rect& rect, const std::string& type, float confidence)
-		: m_rect(rect), m_type(type), m_confidence(confidence)
-	{
-
-	}
-
-	cv::Rect m_rect;
-	std::vector<cv::Point2f> m_points;
-
-	std::string m_type;
-	float m_confidence;
-};
-
-typedef std::vector<CRegion> regions_t;
 
 namespace itms {
+
+	// global variables ///////////////////////////////////////////////////////////////////////////////
+	const cv::Scalar SCALAR_BLACK = cv::Scalar(0.0, 0.0, 0.0);
+	const cv::Scalar SCALAR_WHITE = cv::Scalar(255.0, 255.0, 255.0);
+	const cv::Scalar SCALAR_YELLOW = cv::Scalar(0.0, 255.0, 255.0);
+	const cv::Scalar SCALAR_GREEN = cv::Scalar(0.0, 255.0, 0.0);
+	const cv::Scalar SCALAR_RED = cv::Scalar(0.0, 0.0, 255.0);
+	const cv::Scalar SCALAR_BLUE = cv::Scalar(255.0, 0.0, 0.0);
+	const cv::Scalar SCALAR_MAGENTA = cv::Scalar(255.0, 0.0, 255.0);
+	const cv::Scalar SCALAR_CYAN = cv::Scalar(255.0, 255.0, 0.0);
+	
+
+	class CRegion
+	{
+	public:
+		CRegion()
+			: m_type(""), m_confidence(-1)
+		{
+		}
+
+		CRegion(const cv::Rect& rect)
+			: m_rect(rect)
+		{
+
+		}
+
+		CRegion(const cv::Rect& rect, const std::string& type, float confidence)
+			: m_rect(rect), m_type(type), m_confidence(confidence)
+		{
+
+		}
+
+		cv::Rect m_rect;
+		std::vector<cv::Point2f> m_points;
+
+		std::string m_type;
+		float m_confidence;
+	};
+
+	typedef std::vector<CRegion> regions_t;
+
+
+
+
 	////// simple functions 
 
   void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages);
@@ -166,9 +187,13 @@ namespace itms {
 	  std::vector<float> mPolyCoeffs;
 	  int mPolySize;
   };
+  // itms main functions
 
   
 
 }
+
+
+
 #endif // _ITMS_UTILS_H
 
