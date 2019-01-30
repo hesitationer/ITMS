@@ -16,11 +16,7 @@ using namespace cv;
 using namespace std;
 using namespace itms;
 
-
-
-
 namespace itms {
-
 	// global variables ///////////////////////////////////////////////////////////////////////////////
 	const cv::Scalar SCALAR_BLACK = cv::Scalar(0.0, 0.0, 0.0);
 	const cv::Scalar SCALAR_WHITE = cv::Scalar(255.0, 255.0, 255.0);

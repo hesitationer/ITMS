@@ -735,7 +735,8 @@ int main(void) {
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
 		double t1 = (double)cvGetTickCount();
-        std::vector<Blob> currentFrameBlobs;
+       
+		std::vector<Blob> currentFrameBlobs;
 
         cv::Mat imgFrame1Copy = imgFrame1.clone();
         cv::Mat imgFrame2Copy = imgFrame2.clone();
