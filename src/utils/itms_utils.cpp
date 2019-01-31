@@ -1876,7 +1876,8 @@ namespace itms {
 	  else {
 		  _config = config;
 		  isConfigFileLoaded = true;
-	  }
+		  Init();
+	  }	  
   }
   bool itmsFunctions::Init() {
 	  //pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
@@ -1885,7 +1886,8 @@ namespace itms {
 	  pastBrightnessLevels.clear();
 
 	  brightnessRoi = _config->AutoBrightness_Rect;
-
+	  m_collectPoints = _config->m_useLocalTracking;
+	  blnFirstFrame = true;
 	  if (existFileTest(_config->BGImagePath)) {
 		  BGImage = cv::imread(_config->BGImagePath);
 		  if (!BGImage.empty()) {
@@ -1919,6 +1921,10 @@ namespace itms {
 
   }
   bool itmsFunctions::process(cv::Mat curImg) {
+	  if (!isInitialized) {
+		  cout << "itmsFunctions is not initialized (!)(!)\n";
+		  return false;
+	  }
 	  if (curImg.empty())
 		  return false;
 	  if (curImg.channels() > 1) {		  
@@ -1973,7 +1979,238 @@ namespace itms {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);
 	  }
 
-  }
+	  // if needs to adjust img_dif_th
+	  if (_config->isAutoBrightness) {
+		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
+		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
+		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness) // the size of vector is max_past_frames
+																				  //pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
+			  pop_front(pastBrightnessLevels); // remove an elemnt from the front of 
+		  pastBrightnessLevels.push_back(cvRound(roiMean));
+		  // adj function for adjusting image difference thresholding
+		  int newTh = weightFnc(pastBrightnessLevels);
+		  _config->img_dif_th = newTh;
+		  if (_config->debugGeneral &&_config->debugGeneralDetail) {
+			  std::cout << "Brightness mean for Roi: " << roiMean << "\n";
+			  int m = mean(pastBrightnessLevels)[0];
+			  std::cout << "Brightness mean for Past Frames: " << m << "\n";
+			  std::cout << "New Dif Th : " << newTh << "\n";
+		  }
+
+	  }
+	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);
+
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  cv::imshow("imgThresh", imgThresh);
+		  cv::waitKey(1);
+	  }
+
+	  for (unsigned int i = 0; i < 1; i++) {
+		  if (_config->bgsubtype == BgSubType::BGS_CNT)
+			  cv::erode(imgThresh, imgThresh, structuringElement3x3);
+		  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+		  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+		  if (_config->bgsubtype == BgSubType::BGS_DIF)
+			  cv::erode(imgThresh, imgThresh, structuringElement5x5);
+	  }
+
+	  cv::Mat imgThreshCopy = imgThresh.clone();
+
+	  std::vector<std::vector<cv::Point> > contours;
+
+	  cv::findContours(imgThreshCopy, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  drawAndShowContours(imgThresh.size(), contours, "imgContours");
+	  }
+
+	  std::vector<std::vector<cv::Point> > convexHulls(contours.size());
+
+	  for (unsigned int i = 0; i < contours.size(); i++) {
+		  cv::convexHull(contours[i], convexHulls[i]);
+	  }
+
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  drawAndShowContours(imgThresh.size(), convexHulls, "imgConvexHulls");
+	  }
+
+	  std::vector<Blob> currentFrameBlobs;
+
+	  for (auto &convexHull : convexHulls) {
+		  Blob possibleBlob(convexHull);
+
+		  if (possibleBlob.currentBoundingRect.area() > 10 &&
+			  possibleBlob.dblCurrentAspectRatio > 0.2 &&
+			  possibleBlob.dblCurrentAspectRatio < 6.0 &&
+			  possibleBlob.currentBoundingRect.width > 3 &&
+			  possibleBlob.currentBoundingRect.height > 3 &&
+			  possibleBlob.dblCurrentDiagonalSize > 3.0 &&
+			  (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
+			  //  new approach according to 
+			  // 1. distance, 2. correlation within certain range
+			  std::vector<cv::Point2f> blob_ntPts;
+			  blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));
+			  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+			  cv::Rect roi_rect = possibleBlob.currentBoundingRect;
+			  float blobncc = 0;
+			  if (_config->debugGeneral && _config->debugGeneralDetail) {
+				  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+			  }
+			  // bg image
+			  // currnt image
+			  // blob correlation
+			  blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask); 
+			  // backgrdoun image need to be updated periodically 
+			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
+			  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(_config->BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
+				//            regions_t tempRegion;
+				//            vector<Mat> outMat;                
+				/*float scaleRect = 1.5;
+				Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2.cols, imgFrame2.rows);*/
+				//Rect expRect = maxSqExpandRect(roi_rect, scaleRect, imgFrame2Copy.cols, imgFrame2Copy.rows);
+				//            /*tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
+				//            if (tempRegion.size() > 0) {
+				//              for (int tr = 0; tr < tempRegion.size(); tr++)
+				//                cout << "=========> (!)(!) class:" << tempRegion[tr].m_type << ", prob:" << tempRegion[tr].m_confidence << endl;
+				//            }*/
+				////detectCascadeRoi(imgFrame2Copy, expRect); // detect both cars and humans
+				//vector<Rect> Cars, Humans;
+				//detectCascadeRoiVehicle(imgFrame2Copy, expRect, Cars); // detect cars only
+				//detectCascadeRoiHuman(imgFrame2Copy, expRect, Humans); // detect people only
+				//if(debugGeneralDetail && Cars.size())
+				//	cout<< " ==>>>> Car is detected !!"<<endl;
+				//if(debugGeneralDetail && Humans.size())
+				//	cout << " ==>>>> Human is detected !!" << endl;
+				// classify and put it to the blobls
+				  ObjectClass objclass;
+				  float classProb = 0.f;
+				  classifyObjectWithDistanceRatio(*_config, possibleBlob, realDistance / 100, objclass, classProb);
+				  // update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
+				  // verify the object with cascade object detection
+				  if (classProb > 0.79 /* 1.0 */) {
+					  currentFrameBlobs.push_back(possibleBlob);
+				  }
+				  else if (classProb>0.5f) {
+
+					  // check with a ML-based approach
+					  //float scaleRect = 1.5;
+					  //Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
+
+					  //if (possibleBlob.oc == itms::ObjectClass::OC_VEHICLE) {
+					  //	// verify it
+					  //	std::vector<cv::Rect> cars;
+					  //	detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
+					  //	if (cars.size())
+					  //		possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+					  //	//else													// commented  :  put the all candidates commented out : it does not put the object in the candidates
+					  //	//	continue;
+					  //}
+					  //else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
+					  //	// verify it
+					  //	std::vector<cv::Rect> people;
+					  //	detectCascadeRoiHuman(imgFrame2Copy, expRect, people);
+					  //	if (people.size())
+					  //		possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+					  //	//else
+					  //	//	continue;
+					  //}
+					  //else {// should not com in this loop (OC_OTHER)
+					  //	int kkk = 0;
+					  //}						
+					  currentFrameBlobs.push_back(possibleBlob);
+				  }
+
+			  }
+		  }
+	  }
+
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  // all of the currentFrameBlobs at this stage have 1 visible count yet. 
+		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "imgCurrentFrameBlobs");
+	  }
+	  // merge assuming
+	  // blobs are in the ROI because of ROI map
+	  // 남북 이동시는 가로가 세로보다 커야 한다.
+	  //     
+	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
+	  if (m_collectPoints) {
+		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");
+			  waitKey(1);
+		  }
+		  //collectPointsInBlobs(currentFrameBlobs, m_collectPoints);	// collecting points in all blobs for local tracking , please check this out
+		  //collectPointsInBlobs(blobs, m_collectPoints);	// collecting points in all blobs for local tracking 
+		  // if local tracking, then check the local movements of the existing blobs and merge with the current 
+		  // merging blobs with frame difference-based blobs.
+		  // 0. get the blob prediction
+		  // 1. draw for verification
+		  // 2. merge them into currentFrameBlbos
+		  std::vector<itms::Blob> predictedBlobs;
+		  predictBlobs(*_config, blobs/* existing blbos */, preImg.getUMat(cv::ACCESS_READ)/* prevFrame */, curImg.getUMat(cv::ACCESS_READ)/* curFrame */, predictedBlobs);
+		  if (predictedBlobs.size()) {
+			  /*	imshow("imgFrame1CopyGray", imgFrame1Copy);
+			  imshow("imgFrame2CopyGray", imgFrame2Copy);
+			  Mat temp= Mat::zeros(imgFrame1Copy.size(), imgFrame1Copy.type());
+			  absdiff(imgFrame1Copy, imgFrame2Copy, temp);
+			  threshold(temp, temp, 10, 255,THRESH_BINARY);
+			  imshow("diffFrame", temp);*/
+			  /*for(auto prdBlob:predictedBlobs)
+			  currentFrameBlobs.push_back(prdBlob);*/
+			  mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(currentFrameBlobs, predictedBlobs);
+		  }
+	  }
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
+		  waitKey(1);
+	  }
+	  if (blnFirstFrame == true) {
+		  for (auto &currentFrameBlob : currentFrameBlobs) {
+			  blobs.push_back(currentFrameBlob);
+		  }
+	  }
+	  else {
+		  int trackId = 1;
+		  matchCurrentFrameBlobsToExistingBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, trackId);
+	  }
+	  //imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
+	  if (_config->debugShowImages) {
+		  cv::Mat debugImg = curImg.clone();
+		  if (debugImg.channels() < 3)
+			  cvtColor(debugImg, debugImg, cv::COLOR_GRAY2BGR);
+		  if (_config->debugShowImagesDetail)
+			  drawAndShowContours(*_config, imgThresh.size(), blobs, "All imgBlobs");
+
+		  drawBlobInfoOnImage(*_config, blobs, debugImg);  // blob(tracked) information
+		  drawRoadRoiOnImage(_config->Road_ROI_Pts, debugImg);
+
+		  //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, intHorizontalLinePosition, carCount);
+		  //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1], carCount, truckCount, bikeCount);
+		  bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheBoundary(*_config, blobs, debugImg, _config->ldirection, _config->Boundary_ROI_Pts);
+		  
+		  std::vector<cv::Point> crossingLine;
+		  crossingLine.push_back(cv::Point(0, _config->Boundary_ROI_Pts.at(3).y));
+		  crossingLine.push_back(cv::Point(curImg.cols - 1, _config->Boundary_ROI_Pts.at(2).y));
+
+		  if (blnAtLeastOneBlobCrossedTheLine == true) {
+			  cv::line(debugImg, crossingLine[0], crossingLine[1], SCALAR_GREEN, 2);
+		  }
+		  else {
+			  cv::line(debugImg, crossingLine[0], crossingLine[1], SCALAR_RED, 2);
+		  }
+		  int carcount = 1;
+		  drawCarCountOnImage(carcount, curImg);
+		  cv::imshow("current Image", debugImg);
+		  cv::waitKey(1);
+	  }
+
+	  // now we prepare for the next iteration
+	  currentFrameBlobs.clear();
+
+	  preImg = curImg.clone();           // move frame 1 up to where frame 2 is	  
+
+	  blnFirstFrame = false;
+
+  }// end process
 
 
 } // itms namespace

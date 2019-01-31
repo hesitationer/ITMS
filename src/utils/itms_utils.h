@@ -372,6 +372,8 @@ namespace itms {
 	  // parameters
 	  bool isInitialized = false;
 	  bool isConfigFileLoaded = false;
+	  bool m_collectPoints = false; 
+	  bool blnFirstFrame = true;
 	  // functions
 	  cv::Mat preImg;
   private:
