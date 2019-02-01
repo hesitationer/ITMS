@@ -69,6 +69,10 @@ namespace itms {
  
   ///////////////////////////////////////////////////////////////////////////////
   // main functions body
+  bool isPointBelowLine(cv::Point sP, cv::Point eP, cv::Point tP) {
+	  return ((eP.x - sP.x)*(tP.y - sP.y) - (eP.y - sP.y)*(tP.x - sP.x)) > 0;
+  }
+
   void copyBlob2Blob(Blob &srcBlob, Blob &tgtBlob) {
 
 	  tgtBlob.currentContour.clear();
@@ -784,9 +788,9 @@ namespace itms {
 	  deltaX = blob.predictedNextPosition.x - wpa.x;
 	  deltaY = blob.predictedNextPosition.y - wpa.y;
 
-	  switch (lanedirection) {
-	  case LD_SOUTH:
+	  switch (lanedirection) {	  
 	  case LD_NORTH:
+	  case LD_SOUTH:
 		  if (abs(deltaY) <= movingThresholdInPixels)
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
@@ -966,14 +970,6 @@ namespace itms {
 	  std::vector<cv::Point> brLine(2); // bottom/ right line	
 
 	  switch (_laneDirection) { // if we put this at the beginning like configuration, the processing time will be reduced 
-	  case itms::LD_SOUTH:
-	  case itms::LD_SOUTHEAST:
-	  case itms::LD_SOUTHWEST:
-		  tlLine.at(0) = _tboundaryPts[2]; // <-- begin
-		  tlLine.at(1) = _tboundaryPts[3]; // <-- end
-		  brLine.at(0) = _tboundaryPts[1]; // 
-		  brLine.at(1) = _tboundaryPts[0];
-		  break;
 	  case itms::LD_NORTH:
 	  case itms::LD_NORTHEAST:
 	  case itms::LD_NORTHWEST:
@@ -981,8 +977,17 @@ namespace itms {
 		  tlLine.at(1) = _tboundaryPts[1]; // --> end
 		  brLine.at(0) = _tboundaryPts[3]; // 
 		  brLine.at(1) = _tboundaryPts[2];
-
 		  break;
+
+	  case itms::LD_SOUTH:
+	  case itms::LD_SOUTHEAST:
+	  case itms::LD_SOUTHWEST:
+		  tlLine.at(0) = _tboundaryPts[2]; // <-- begin
+		  tlLine.at(1) = _tboundaryPts[3]; // <-- end
+		  brLine.at(0) = _tboundaryPts[1]; // 
+		  brLine.at(1) = _tboundaryPts[0];
+		  break;	  
+
 	  case itms::LD_EAST:
 		  tlLine.at(0) = _tboundaryPts[0]; // --> begin
 		  tlLine.at(1) = _tboundaryPts[3]; // --> end
@@ -1305,13 +1310,14 @@ namespace itms {
 
   void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus) {
 	  itms::ObjectStatus prevOS = updateBlob.os;  // previous object status
-	  switch (curStatus) { // at this point, blob.os is the previous status !!!
-	  case OS_NOTDETERMINED:
-		  updateBlob.os_notdetermined_cnter++;
-		  updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
-		  updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
-		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
+	  switch (curStatus) { // at this point, blob.os is the previous status !!!	  
 
+	  case OS_MOVING_FORWARD:
+		  updateBlob.os_mvForward_cnter++;
+		  updateBlob.os_NumOfConsecutivemvForward_cnter = (prevOS == OS_MOVING_FORWARD) ? updateBlob.os_NumOfConsecutivemvForward_cnter + 1 : 1;
+		  updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+		  //blob.os_NumOfConsecutivemvForward_cnter = 1;
+		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
 		  break;
 
 	  case OS_STOPPED:
@@ -1322,13 +1328,7 @@ namespace itms {
 		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
 		  break;
 
-	  case OS_MOVING_FORWARD:
-		  updateBlob.os_mvForward_cnter++;
-		  updateBlob.os_NumOfConsecutivemvForward_cnter = (prevOS == OS_MOVING_FORWARD) ? updateBlob.os_NumOfConsecutivemvForward_cnter + 1 : 1;
-		  updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
-															//blob.os_NumOfConsecutivemvForward_cnter = 1;
-		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
-		  break;
+	  
 
 	  case OS_MOVING_BACKWARD:
 		  updateBlob.os_mvBackward_cnter++;
@@ -1338,6 +1338,13 @@ namespace itms {
 		  //blob.os_NumOfConsecutivemvBackward_cnter = 1;
 		  break;
 
+	  case OS_NOTDETERMINED:
+		  updateBlob.os_notdetermined_cnter++;
+		  updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
+		  updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
+		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
+
+		  break;
 	  defualt:
 		  // no nothing...
 		  cout << " object status is not correct!! inside updateBlobProperties \n";
@@ -1604,7 +1611,7 @@ namespace itms {
 	  }
   }
   // find people in the given ROI
-  void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people)
+  void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people)
   {
 	  /* this function return the location of human according to the detection method
 	  1. svm based algorithm which needs more computation time
@@ -1615,7 +1622,7 @@ namespace itms {
 	  //bool debugGeneralDetails = true;
 	  //bool debugShowImage = true;
 
-	  Mat hogImg = img(rect).clone();
+	  cv::Mat hogImg = img(rect);// .clone();
 	  // debug details
 
 #ifdef _CASCADE_HUMAN
@@ -1653,7 +1660,7 @@ namespace itms {
 		  std::cout << "=>=> " << people.size() << " people detected in detect cascadeRoiHuamn function." << std::endl;
 	  }
 
-	  for (int i = 0; i < (people.size() ? people.size()/*object->total*/ : 0); i++)
+	  for (size_t i = 0; i < (people.size() ? people.size()/*object->total*/ : 0); i++)
 	  {
 		  Rect r1 = people.at(i);
 		  // check the center point of the given ROI is in the rect of the output
@@ -1920,7 +1927,7 @@ namespace itms {
 	  return isInitialized = true;
 
   }
-  bool itmsFunctions::process(cv::Mat curImg) {
+  bool itmsFunctions::process(cv::Mat& curImg) {
 	  if (!isInitialized) {
 		  cout << "itmsFunctions is not initialized (!)(!)\n";
 		  return false;
@@ -1984,8 +1991,10 @@ namespace itms {
 		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
 		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
 		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness) // the size of vector is max_past_frames
-																				  //pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
-			  pop_front(pastBrightnessLevels); // remove an elemnt from the front of 
+			pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
+			//  pop_front(pastBrightnessLevels); // remove an elemnt from the front of 
+			
+			  
 		  pastBrightnessLevels.push_back(cvRound(roiMean));
 		  // adj function for adjusting image difference thresholding
 		  int newTh = weightFnc(pastBrightnessLevels);

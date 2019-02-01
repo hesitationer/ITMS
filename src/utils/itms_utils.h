@@ -29,7 +29,7 @@ namespace itms {
 	// Object size fitting class
 	class ITMSPolyValues {
 	public:
-		ITMSPolyValues() { mPolySize = 0; };
+		ITMSPolyValues():mPolySize(0) {};
 		// put polynomial coefficient from the index 0 to the end
 		ITMSPolyValues(std::vector<float> polyCoeffs, int polyCoeffSize) {
 			assert(polyCoeffs.size() == (size_t)polyCoeffSize);
@@ -208,10 +208,8 @@ namespace itms {
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
 	
 																					// returns the value according to the tp position according to starting point sP and ending point eP;
-	// + : left/bottom(below), 0: on the line, -: right/top(above)
-  inline bool isPointBelowLine(cv::Point sP, cv::Point eP, cv::Point tP) {
-	  return ((eP.x - sP.x)*(tP.y - sP.y) - (eP.y - sP.y)*(tP.x - sP.x)) > 0;
-  }
+  // + : left/bottom(below), 0: on the line, -: right/top(above)
+  bool isPointBelowLine(cv::Point sP, cv::Point eP, cv::Point tP);
    
   //// system related  
   inline bool existFileTest(const std::string& name) {
@@ -337,8 +335,8 @@ namespace itms {
 
   // cascade detector related
   void detectCascadeRoi(itms::Config& _conf, cv::Mat img, cv::Rect& rect);
-  void detectCascadeRoiVehicle(itms::Config& _conf, /* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars);
-  void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
+  void detectCascadeRoiVehicle(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars);
+  void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
   // cascade detector related ends
 
   //// road configuration
@@ -363,7 +361,7 @@ namespace itms {
 	  itmsFunctions() {};
 	  itmsFunctions(Config* config);
 	  bool Init(void);
-	  bool process(cv::Mat curImg);
+	  bool process(cv::Mat& curImg);
 	  
 	  ~itmsFunctions() {};
 	  
