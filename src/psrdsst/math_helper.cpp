@@ -29,7 +29,7 @@
 //  the use of this software, even if advised of the possibility of such damage.
 */
 
-#include "math_helper.hpp"
+#include "./psrdsst/math_helper.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace cf_tracking

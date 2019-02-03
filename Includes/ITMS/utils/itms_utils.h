@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include "opencv/cv.hpp"
-#include "itms_Blob.h"
+#include "./itms_Blob.h"
 
 using namespace cv;
 using namespace std;

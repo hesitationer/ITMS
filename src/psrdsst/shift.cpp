@@ -43,7 +43,7 @@
 #include <limits>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include "shift.hpp"
+#include "./psrdsst/shift.hpp"
 
 /*! @brief shift the values in a matrix by an (x,y) offset
  *

@@ -50,7 +50,7 @@
 //      (not casted to double)
 // * needs more testing (conjB == true) is untested
 
-#include "math_spectrums.hpp"
+#include "./psrdsst/math_spectrums.hpp"
 
 void divSpectrums(cv::InputArray _numeratorA, cv::InputArray _denominatorB,
     cv::OutputArray _dst, int flags, bool conjB)

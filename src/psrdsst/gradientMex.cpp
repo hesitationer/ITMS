@@ -43,10 +43,10 @@ either expressed or implied, of the FreeBSD Project.
 
 TODO: Fix hackfixes properly; see function fhog and grad1...
 *******************************************************************************/
-#include "gradientMex.hpp"
+#include "./psrdsst/gradientMex.hpp"
 #include <math.h>
 #include "string.h"
-#include "sse.hpp"
+#include "./psrdsst/sse.hpp"
 #include <iostream>
 
 #define PI 3.14159265f
