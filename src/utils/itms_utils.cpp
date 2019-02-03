@@ -1922,11 +1922,9 @@ namespace itms {
 			  cout << "Please check the background file : " << _config->BGImagePath << endl;
 		  // alternative frame will be the previous frame at processing
 	  }
-
-
 	  return isInitialized = true;
-
   }
+
   bool itmsFunctions::process(cv::Mat& curImg) {
 	  if (!isInitialized) {
 		  cout << "itmsFunctions is not initialized (!)(!)\n";
@@ -1992,8 +1990,7 @@ namespace itms {
 		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
 		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness) // the size of vector is max_past_frames
 			pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
-			//  pop_front(pastBrightnessLevels); // remove an elemnt from the front of 
-			
+			//  pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
 			  
 		  pastBrightnessLevels.push_back(cvRound(roiMean));
 		  // adj function for adjusting image difference thresholding
@@ -2072,25 +2069,7 @@ namespace itms {
 			  // backgrdoun image need to be updated periodically 
 			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
 			  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(_config->BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
-				//            regions_t tempRegion;
-				//            vector<Mat> outMat;                
-				/*float scaleRect = 1.5;
-				Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2.cols, imgFrame2.rows);*/
-				//Rect expRect = maxSqExpandRect(roi_rect, scaleRect, imgFrame2Copy.cols, imgFrame2Copy.rows);
-				//            /*tempRegion = DetectInCrop(net, imgFrame2(expRect), adjustNetworkInputSize(Size(max(416, min(416, expRect.width*2)), max(416, min(416, expRect.height*2)))), outMat);
-				//            if (tempRegion.size() > 0) {
-				//              for (int tr = 0; tr < tempRegion.size(); tr++)
-				//                cout << "=========> (!)(!) class:" << tempRegion[tr].m_type << ", prob:" << tempRegion[tr].m_confidence << endl;
-				//            }*/
-				////detectCascadeRoi(imgFrame2Copy, expRect); // detect both cars and humans
-				//vector<Rect> Cars, Humans;
-				//detectCascadeRoiVehicle(imgFrame2Copy, expRect, Cars); // detect cars only
-				//detectCascadeRoiHuman(imgFrame2Copy, expRect, Humans); // detect people only
-				//if(debugGeneralDetail && Cars.size())
-				//	cout<< " ==>>>> Car is detected !!"<<endl;
-				//if(debugGeneralDetail && Humans.size())
-				//	cout << " ==>>>> Human is detected !!" << endl;
-				// classify and put it to the blobls
+				
 				  ObjectClass objclass;
 				  float classProb = 0.f;
 				  classifyObjectWithDistanceRatio(*_config, possibleBlob, realDistance / 100, objclass, classProb);
@@ -2191,9 +2170,7 @@ namespace itms {
 
 		  drawBlobInfoOnImage(*_config, blobs, debugImg);  // blob(tracked) information
 		  drawRoadRoiOnImage(_config->Road_ROI_Pts, debugImg);
-
-		  //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, intHorizontalLinePosition, carCount);
-		  //bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheLine(blobs, imgFrame2Copy, crossingLine[0], crossingLine[1], carCount, truckCount, bikeCount);
+		  
 		  bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheBoundary(*_config, blobs, debugImg, _config->ldirection, _config->Boundary_ROI_Pts);
 		  
 		  std::vector<cv::Point> crossingLine;
@@ -2207,7 +2184,7 @@ namespace itms {
 			  cv::line(debugImg, crossingLine[0], crossingLine[1], SCALAR_RED, 2);
 		  }
 		  int carcount = 1;
-		  drawCarCountOnImage(carcount, curImg);
+		  drawCarCountOnImage(carcount, debugImg);
 		  cv::imshow("current Image", debugImg);
 		  cv::waitKey(1);
 	  }

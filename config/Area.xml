@@ -3,7 +3,7 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>
-<debugShowImagesDetail>1</debugShowImagesDetail>
+<debugShowImagesDetail>0</debugShowImagesDetail>
 <debugGeneral>0</debugGeneral>
 <debugGeneralDetail>0</debugGeneralDetail>
 <debugTrace>0</debugTrace>

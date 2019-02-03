@@ -69,6 +69,8 @@ namespace itms {
 
 	struct Config
 	{
+	public:
+
 		// debug parameters
 		bool debugShowImages = true;
 		bool debugShowImagesDetail = true;
