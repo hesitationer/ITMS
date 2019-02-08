@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMSAPI", "Intelligent_Traffic_Monitoring_System.vcxproj", "{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_APP", "ITMS_APP.vcxproj", "{061A8A19-4757-47D9-8E19-FED8AC96EE2E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMSAPI", "Intelligent_Traffic_Monitoring_System.vcxproj", "{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,23 +19,6 @@ Global
 		RelWithDebInfo|x86 = RelWithDebInfo|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x64.ActiveCfg = Debug|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x64.Build.0 = Debug|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x86.ActiveCfg = Debug|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x86.Build.0 = Debug|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x64.ActiveCfg = Release|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x64.Build.0 = Release|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x86.ActiveCfg = Release|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x86.Build.0 = Release|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x64.ActiveCfg = Release|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x64.Build.0 = Release|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x86.ActiveCfg = Release|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x86.Build.0 = Release|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x86.Deploy.0 = Release|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x64.ActiveCfg = Release|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x64.Build.0 = Release|x64
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
-		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x86.Build.0 = Release|Win32
 		{061A8A19-4757-47D9-8E19-FED8AC96EE2E}.Debug|x64.ActiveCfg = Debug|x64
 		{061A8A19-4757-47D9-8E19-FED8AC96EE2E}.Debug|x64.Build.0 = Debug|x64
 		{061A8A19-4757-47D9-8E19-FED8AC96EE2E}.Debug|x86.ActiveCfg = Debug|Win32
@@ -52,6 +35,22 @@ Global
 		{061A8A19-4757-47D9-8E19-FED8AC96EE2E}.RelWithDebInfo|x64.Build.0 = Release|x64
 		{061A8A19-4757-47D9-8E19-FED8AC96EE2E}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
 		{061A8A19-4757-47D9-8E19-FED8AC96EE2E}.RelWithDebInfo|x86.Build.0 = Release|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x64.ActiveCfg = Debug|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x64.Build.0 = Debug|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x86.ActiveCfg = Debug|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Debug|x86.Build.0 = Debug|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x64.ActiveCfg = Release|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x64.Build.0 = Release|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x86.ActiveCfg = Release|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.MinSizeRel|x86.Build.0 = Release|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x64.ActiveCfg = Release|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x64.Build.0 = Release|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x86.ActiveCfg = Release|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.Release|x86.Build.0 = Release|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x64.ActiveCfg = Release|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x64.Build.0 = Release|x64
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
