@@ -17,7 +17,7 @@ namespace itms {
     currentCenter.x = (currentBoundingRect.x + currentBoundingRect.x + currentBoundingRect.width) / 2;
     currentCenter.y = (currentBoundingRect.y + currentBoundingRect.y + currentBoundingRect.height) / 2;
 
-    // object start center point to save the starting distance from the starting point later
+	//	object start center point to save the starting distance from the starting point later
     startPoint = currentCenter;
 
     centerPositions.push_back(currentCenter);
@@ -32,9 +32,9 @@ namespace itms {
     intNumOfConsecutiveFramesWithoutAMatch = 0;
 
     age = 1;
-    totalVisibleCount = 1;
-    id = 0; // track id
-    showId = 0;
+	totalVisibleCount = 1;
+	id = 0; //track id
+	showId = 0;
     
 
     // object status information

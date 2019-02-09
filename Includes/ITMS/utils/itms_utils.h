@@ -97,7 +97,12 @@ namespace itms {
 		cv::Rect AutoBrightness_Rect=cv::Rect(1162, 808, 110, 142);// 1x, default[1162, 808, 110, 142] for darker region,
 														  // brighter region [938, 760, 124, 94]; // for a little brighter asphalt
 		char VideoPath[512];
-		char BGImagePath[512];
+		
+		char BGImagePath[512];       // background related 
+        bool bGenerateBG = true;
+		int  intNumBGRefresh = 5 * 30; // 5 seconds * frames/sec
+
+
 		double StartX = 0;
 		double EndX = 0;
 		double StartY = 0;
@@ -123,6 +128,8 @@ namespace itms {
 		float nightObjectProb_Th = 0.8;
 
 		float BlobNCC_Th = 0.5;							// blob NCC threshold < 0.5 means no BG
+
+		int maxNumOfTrackers = 100;                     // number of maximum trackers (blobs in this project), it determines the limits of show Ids and track ids
 
 		bool m_useLocalTracking = false;				// local tracking  capture and detect level
 		bool m_externalTrackerForLost = false;			// do fastDSST for lost object
@@ -389,6 +396,7 @@ namespace itms {
 	  std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold
 	  cv::Rect brightnessRoi; // brightness ROI  = conf.AutoBrightness_Rect;
 	  cv::Mat BGImage; // background image
+	  cv::Mat accmImage; // accumulated Image for background model
 	  cv::Mat road_mask;
 
 	  // 
@@ -396,6 +404,9 @@ namespace itms {
 	  cv::Mat structuringElement5x5 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
 	  cv::Mat structuringElement7x7 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7, 7));
 	  cv::Mat structuringElement15x15 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));
+
+	  cv::Mat getBGImage(void) { return BGImage; };
+	  void setBGImage(const cv::Mat& _bgImg) { BGImage = _bgImg; };
 
   };
 

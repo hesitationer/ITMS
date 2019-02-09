@@ -1902,6 +1902,8 @@ namespace itms {
 			  if (BGImage.channels() > 1)
 				  cv::cvtColor(BGImage, BGImage, cv::COLOR_BGR2GRAY);
 			  cv::resize(BGImage, BGImage,cv::Size(), _config->scaleFactor, _config->scaleFactor);
+			  // sangkny 2019. 02. 09
+			  accmImage = BGImage; // copy the background as an initialization
 			  // road_mask define
 			  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());
 			  for (int ir = 0; ir<_config->Road_ROI_Pts.size(); ir++)
@@ -1946,6 +1948,7 @@ namespace itms {
 	  }
 	  if (BGImage.empty()) {
 		  preImg.copyTo(BGImage);
+		  accmImage = BGImage; // accumulate the image for background generation
 		  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());
 		  for (int ir = 0; ir<_config->Road_ROI_Pts.size(); ir++)
 			  fillConvexPoly(road_mask, _config->Road_ROI_Pts.at(ir).data(), _config->Road_ROI_Pts.at(ir).size(), Scalar(255, 255, 255), 8);
@@ -2194,7 +2197,25 @@ namespace itms {
 	  currentFrameBlobs.clear();
 
 	  preImg = curImg.clone();           // move frame 1 up to where frame 2 is	  
+	  // generate background image
+	  if(_config->bGenerateBG && _config->intNumBGRefresh > 0){
+		  
+		  double learningRate = 1./_config->intNumBGRefresh;
+		  //pBgSub->apply(curImg, tmp, learningRate); // slower than the below method
+		  //pBgSub->getBackgroundImage(BGImage);
+		  //cv::Mat tmp;//(curImg.size(), CV_32FC1);
+		  accmImage.convertTo(accmImage, CV_32FC1);
+		  accumulateWeighted(curImg, accmImage, learningRate, road_mask);
+		  //addWeighted(curImg, learningRate, accmImage, 1.-learningRate, 0, accmImage);
+		  convertScaleAbs(accmImage, accmImage);
+		  setBGImage(accmImage);
+		  if(_config->debugShowImagesDetail){
+			  cv::imshow("generating BG", getBGImage());
+			  waitKey(1);
+		  }
+	  }
 
+	  // end generate backgroudimage 
 	  blnFirstFrame = false;
 
   }// end process

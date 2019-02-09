@@ -56,7 +56,7 @@ Config conf;
 bool loadConfig(itms::Config& _conf)
 {
 	std::string configFile = "./config/Area.xml";
-	std::string roadmapFile = "./config/roadMapPoints0.xml";
+	std::string roadmapFile = "./config/roadMapPoints.xml";
 	std::string vehicleRatioFile = "./config/vehicleRatio.xml";
 	std::vector<Point> road_roi_pts;
 	// cascade related 
@@ -101,9 +101,12 @@ bool loadConfig(itms::Config& _conf)
 		_conf.max_past_frames_autoBrightness = cvReadIntByName(fs, 0, "max_past_frames_autoBrightness", 15);
 				
 		_conf.nightBrightness_Th = cvReadIntByName(fs, 0, "nightBrightness_Th", 20);
-		_conf.nightObjectProb_Th = cvReadRealByName(fs, 0, "nightObjectProb_Th", 0.8);
+		_conf.nightObjectProb_Th = cvReadRealByName(fs, 0, "nightObjectProb_Th", 0.8);		
 
 		// detection related
+		_conf.bGenerateBG = cvReadIntByName(fs, 0, "bGenerateBG", 1);
+		_conf.intNumBGRefresh = cvReadIntByName(fs, 0, "intNumBGRefresh", 150);
+
 		_conf.ldirection = LaneDirection(cvReadIntByName(fs, 0, "ldirection", LaneDirection::LD_NORTH));
 		_conf.bgsubtype = BgSubType(cvReadIntByName(fs, 0, "bgsubtype", BgSubType::BGS_DIF));
 		_conf.use_mask = cvReadIntByName(fs, 0, "use_mask", 0);
@@ -123,6 +126,7 @@ bool loadConfig(itms::Config& _conf)
 			strcpy(_conf.BGImagePath, BGP);
 
 		// Object Tracking Related
+		_conf.maxNumOfTrackers = cvReadIntByName(fs, 0, "maxNumOfTrackers", 100);
 		_conf.minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
 		_conf.max_Center_Pts = cvReadIntByName(fs, 0, "max_Center_Pts", 150);
 		_conf.numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
@@ -335,6 +339,8 @@ int main(void) {
 	std::cout << ".... configurating ...\n";
 	loadConfig(conf);
 	std::cout << " configarion is done !!\n\n";
+
+	// construct an instance 
 	std::unique_ptr<itmsFunctions> itmsFncs;
 	itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
 	

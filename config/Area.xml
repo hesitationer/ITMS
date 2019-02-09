@@ -3,19 +3,18 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>
-<debugShowImagesDetail>0</debugShowImagesDetail>
-<debugGeneral>0</debugGeneral>
-<debugGeneralDetail>0</debugGeneralDetail>
-<debugTrace>0</debugTrace>
+<debugShowImagesDetail>1</debugShowImagesDetail>
+<debugGeneral>1</debugGeneral>
+<debugGeneralDetail>1</debugGeneralDetail>
+<debugTrace>1</debugTrace>
 <debugTime>1</debugTime>
 
-<scaleFactor>0.25</scaleFactor>                      <!-- processing image scale factor -->
+<scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor -->
 
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
 <img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
 <nightBrightness_Th> 20 </nightBrightness_Th>       <!-- day/night brightness threshold -->
 <nightObjectProb_Th> 0.8 </nightObjectProb_Th>      <!-- night time object probability threshold -->
-
 
 <AutoBrightness_x>1162</AutoBrightness_x>           <!-- auto brightness rect [1162, 808, 110, 142] -->
 <AutoBrightness_y>808</AutoBrightness_y>
@@ -24,7 +23,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
@@ -35,8 +34,6 @@
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- 오후 차량 3대 역주행   
 <VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  
 -->
-
-<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath> <!-- background image path -->
 
 <!-- Road Configuration -->
 <camera_height> 1100</camera_height>
@@ -49,7 +46,11 @@
 <EndX>1</EndX>
 <EndY>0.6</EndY>
 
-<!-- -- Detection - related : Lane Direction and etc -- -->
+<!-- -- Detection - related : BackGround Lane Direction and etc -- -->
+<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath> <!-- background image path -->
+<bGenerateBG>1</bGenerateBG>                                <!-- generated background -->
+<intNumBGRefresh> 60 </intNumBGRefresh>                    <!-- refresh the background every intNumBGRefresh -->
+
 <ldirection> 1 </ldirection>
 <bgsubtype> 0 </bgsubtype>      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
 <use_mask> 0 </use_mask>        <!-- // for template matching -->
@@ -68,6 +69,7 @@
 <!--    File Loading       -->
 
 <!--    Object Tracking related -- -->
+<maxNumOfTrackers> 100 </maxNumOfTrackers>          <!-- max number of trackers (or blobs in the project -->
 <minVisibleCount> 3 </minVisibleCount>
 <max_Center_Pts> 150 </max_Center_Pts> 
 <numberOfTracePoints> 15 </numberOfTracePoints>

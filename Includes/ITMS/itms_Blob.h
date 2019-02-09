@@ -3,8 +3,8 @@
 // Blob definition
 // developed by sangkny
 // 
-#ifndef ITMS_BLOB
-#define ITMS_BLOB
+#ifndef ITMS_BLOB_H
+#define ITMS_BLOB_H
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/highgui/highgui.hpp>
