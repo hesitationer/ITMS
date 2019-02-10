@@ -187,16 +187,16 @@ namespace itms {
 			  }
 		  }
 		  if (maxIdx != -1 && (float(maxArea) / (float)min(r1.area(), currentFrameBlobs.at(maxIdx).currentBoundingRect.area()) >= overlapRatio)) { // merge
-																																				   /*std::vector<cv::Point> _contour = currentFrameBlobs.at(maxIdx).currentContour, hull;
-																																				   for (int i = 0; i < prblob.currentContour.size(); i++)
-																																				   _contour.push_back(prblob.currentContour.at(i));	/// insert a point
-																																				   convexHull(_contour, hull);
-																																				   itms::Blob _blob(hull);
-																																				   currentFrameBlobs.at(maxIdx).currentContour.clear();
-																																				   currentFrameBlobs.at(maxIdx).currentContour = _blob.currentContour;
-																																				   currentFrameBlobs.at(maxIdx).currentBoundingRect = _blob.currentBoundingRect;
-																																				   currentFrameBlobs.at(maxIdx).centerPositions.at(currentFrameBlobs.at(maxIdx).centerPositions.size() - 1) = _blob.centerPositions.back();*/
-																																				   // car categorization is not yet included 
+			/*std::vector<cv::Point> _contour = currentFrameBlobs.at(maxIdx).currentContour, hull;
+			for (int i = 0; i < prblob.currentContour.size(); i++)
+			_contour.push_back(prblob.currentContour.at(i));	/// insert a point
+			convexHull(_contour, hull);
+			itms::Blob _blob(hull);
+			currentFrameBlobs.at(maxIdx).currentContour.clear();
+			currentFrameBlobs.at(maxIdx).currentContour = _blob.currentContour;
+			currentFrameBlobs.at(maxIdx).currentBoundingRect = _blob.currentBoundingRect;
+			currentFrameBlobs.at(maxIdx).centerPositions.at(currentFrameBlobs.at(maxIdx).centerPositions.size() - 1) = _blob.centerPositions.back();*/
+			// car categorization is not yet included 
 			  continue;
 		  }
 		  else { // add new
@@ -315,7 +315,7 @@ namespace itms {
 
 		  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
 			  if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
-																   // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
+			  // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
 				  double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
 				  totalScore -= dblDistance;
 				  totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
@@ -477,11 +477,12 @@ namespace itms {
 						  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));  // move to the newRoi center with keep the size of Boundary
 						  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
 						  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));
+						  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
 					  }
 					  else {
 						  existingBlob.centerPositions.push_back(existingBlob.centerPositions.back()); // add one point
 					  }
-					  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
+					  
 
 					  if (existingBlob.centerPositions.size() > _conf.max_Center_Pts)
 						  pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - _conf.max_Center_Pts));
@@ -860,10 +861,10 @@ namespace itms {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName) {
+  void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName, const cv::Scalar& _color) {
 	  cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
 
-	  cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
+	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
 	  cv::waitKey(1);
