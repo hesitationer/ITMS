@@ -98,7 +98,7 @@ namespace itms {
 
 	  tgtBlob.age = srcBlob.age;
 	  tgtBlob.totalVisibleCount = srcBlob.totalVisibleCount;
-	  tgtBlob.showId = srcBlob.showId;
+//	  tgtBlob.showId = srcBlob.showId;
 	  // object status information
 	  tgtBlob.oc = srcBlob.oc;
 	  tgtBlob.os = srcBlob.os;
@@ -216,14 +216,80 @@ namespace itms {
 	  // lost object tracker
 	  //size_t N = existingBlobs.size();
 	  //std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
+	  // sangkny 2019. 02. 11. NMS implementation for overlapped Blob
+	  // 0. collect information from blobs
+	  // 1. non maximum supression for Blobs
+	  //if (existingBlobs.size() > 1) {		// object # > 1
+		 // const float score_threshold = 0.5; // min threshold 
+		 // const float nms_threshold = 0.1;	// 10 % overlap 하나의 object가 너무 작으면 문제가 생긴다.
+		 // 
+		 // std::vector<float> confidences;
+		 // std::vector<cv::Rect> boxes;
+		 // std::vector<int>indices; 
+		 // // getting the information from blobs
+		 // for (size_t i = 0; i < existingBlobs.size(); i++) {
+			//  float value = 0;
+			//  // rect boxes
+			//  boxes.push_back(existingBlobs.at(i).currentBoundingRect);
+			//  if (existingBlobs.at(i).blnStillBeingTracked)
+			//	  value += 0.5;
+			//  else
+			//	  value += 0.3;
+
+			//  // scores
+			//  // age
+			//  value += (fmin(0.2, ((float)existingBlobs.at(i).centerPositions.size() / (float)_conf.max_Center_Pts))); // max 0.2
+			//  // area
+			//  if (existingBlobs.at(i).currentBoundingRect.area() > 625)  // max 0.3
+			//	  value += 0.3;
+			//  else
+			//	  value += 0.1;
+
+			//  confidences.push_back(value);
+
+		 // }
+		 // cv::dnn::NMSBoxes(boxes, confidences, score_threshold, nms_threshold, indices);
+		 // 
+		 // // remove a blob if necessary
+		 // if (boxes.size() != indices.size()) {
+			//  if (_conf.debugGeneralDetail)
+			//	  std::cout << " NMS, total: " << (boxes.size() - indices.size()) << " blob will be erased (!)(!)" << endl;
+
+			//  std::vector<Blob>::iterator exBlob = existingBlobs.begin();
+			//  size_t i = 0;
+			//  while (exBlob != existingBlobs.end()) {
+			//	  bool foundIdx = false;
+			//	  for (size_t idx = 0; idx < indices.size(); idx++) {
+			//		  if (i == indices[idx]) {
+			//			  foundIdx = true;
+			//			  break;
+
+			//		  }
+			//	  }
+			//	  if (foundIdx) {
+			//		  ++exBlob;
+			//	  }
+			//	  else { // erase 
+			//		  exBlob = existingBlobs.erase(exBlob);
+			//		  if (_conf.debugGeneralDetail) {
+			//			  cout << "Blob #: " << i << "was erased form the existingBlobs !!" << endl;
+			//		  }
+			//	  }
+			//	  i++;  // keep increase the original order index
+			//  }
+		 // }
+
+
+	  //}
 
 	  // blob iterator
 	  std::vector<Blob>::iterator existBlob = existingBlobs.begin();
 	  while (existBlob != existingBlobs.end()) {
 		  // check if a block is too old after disappeared in the screen
+		  //cv::dnn::NMSBoxes()
 		  if (existBlob->blnStillBeingTracked == false
 			  && existBlob->intNumOfConsecutiveFramesWithoutAMatch >= _conf.maxNumOfConsecutiveInvisibleCounts) {
-			  // removing a blob from the list of existingBlobs						
+			  // removing a blob from the list of existingBlobs	when it has been deserted long time or overlapped with the current active object					
 			  // overlapping test if overlapped or background, we will erase.
 			  std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
 			  int intIndexOfOverlapped = -1;
@@ -470,14 +536,17 @@ namespace itms {
 						  success = (preImg.channels() < 3) ? existingBlob.m_tracker_psr->update(srcImg3, newRoi) : existingBlob.m_tracker_psr->update(srcImg, newRoi);
 					  }
 					  // as of 2019. 01. 18, just put the new center points except for countour information	
-					  if (success) {
-						  existingBlob.centerPositions.push_back(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
+					  if (success) {						  
+						  // move a boundary and its boundingRect if necessary
 
-						  cv::Rect tmpRect = existingBlob.currentBoundingRect;
-						  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));  // move to the newRoi center with keep the size of Boundary
-						  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
-						  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));
-						  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
+						  if (existingBlob.resetBlobContourWithCenter(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)))) { // check if the center points will move or not
+							  cv::Rect tmpRect = existingBlob.currentBoundingRect;
+							  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));  // move to the newRoi center with keep the size of Boundary
+							  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
+							  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));
+							  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
+						  }
+						  existingBlob.centerPositions.push_back(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f))); // put a center anyway
 					  }
 					  else {
 						  existingBlob.centerPositions.push_back(existingBlob.centerPositions.back()); // add one point
@@ -575,14 +644,16 @@ namespace itms {
 							  prect = cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
 						  else
 							  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
-																																									 // sangkny update the center points of the existing blob which has been untracted
-						  existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));
 
-						  cv::Rect tmpRect = existingBlob.currentBoundingRect;
-						  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (prect.x + prect.width / 2.f));  // move to the newRoi center with keep the size of Boundary
-						  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
-						  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (prect.y + prect.height / 2.f));
-						  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
+						// sangkny update the center points of the existing blob which has been untracted						  
+						  if (existingBlob.resetBlobContourWithCenter(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)))){ // boundary movement first 
+							  cv::Rect tmpRect = existingBlob.currentBoundingRect;
+							  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (prect.x + prect.width / 2.f));  // move to the newRoi center with keep the size of Boundary
+							  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
+							  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (prect.y + prect.height / 2.f));
+							  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
+						  }
+						  existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));
 
 						  if (existingBlob.centerPositions.size() >_conf.max_Center_Pts)
 							  pop_front(existingBlob.centerPositions, (existingBlob.centerPositions.size() - _conf.max_Center_Pts));
@@ -763,11 +834,11 @@ namespace itms {
 		  int temp = 0;
 	  // check the size according to the distance from the starting point because NCC is already performed.
 
-	  currentFrameBlob.blnCurrentMatchFoundOrNewBlob = true;
-	  id = (id > 2048) ? 0 : ++id; // reset id according to the max number of type (int) or time (day or week)
+	  currentFrameBlob.blnCurrentMatchFoundOrNewBlob = true;	  
 	  currentFrameBlob.id = id;
 	  assert(currentFrameBlob.startPoint == currentFrameBlob.centerPositions.back()); // always true
 	  existingBlobs.push_back(currentFrameBlob);
+	  id = (id++ % 2048); // reset id according to the max number of type (int) or time (day or week)
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1878,7 +1949,7 @@ namespace itms {
   }
 
   // itmsFunctions definition
-  itmsFunctions::itmsFunctions(Config* config) {
+  itmsFunctions::itmsFunctions(Config* config){
 	  if (!config->isLoaded) {
 		  isConfigFileLoaded  = false;		  
 	  }
@@ -2080,7 +2151,7 @@ namespace itms {
 				  classifyObjectWithDistanceRatio(*_config, possibleBlob, realDistance / 100, objclass, classProb);
 				  // update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
 				  // verify the object with cascade object detection
-				  if (classProb > 0.79 /* 1.0 */) {
+				  if (classProb > 0.79 /* 1.0 */) {					  
 					  currentFrameBlobs.push_back(possibleBlob);
 				  }
 				  else if (classProb>0.5f) {
@@ -2109,7 +2180,7 @@ namespace itms {
 					  //}
 					  //else {// should not com in this loop (OC_OTHER)
 					  //	int kkk = 0;
-					  //}						
+					  //}											  
 					  currentFrameBlobs.push_back(possibleBlob);
 				  }
 
@@ -2162,8 +2233,8 @@ namespace itms {
 		  }
 	  }
 	  else {
-		  int trackId = 1;
-		  matchCurrentFrameBlobsToExistingBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, trackId);
+		  _config->trackid = _config->trackid % _config->maxTrackIds;
+		  matchCurrentFrameBlobsToExistingBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
 	  }
 	  //imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 	  if (_config->debugShowImages) {
@@ -2184,12 +2255,12 @@ namespace itms {
 
 		  if (blnAtLeastOneBlobCrossedTheLine == true) {
 			  cv::line(debugImg, crossingLine[0], crossingLine[1], SCALAR_GREEN, 2);
+			  mCarCount = (mCarCount++)%maxCarCount;
 		  }
 		  else {
 			  cv::line(debugImg, crossingLine[0], crossingLine[1], SCALAR_RED, 2);
-		  }
-		  int carcount = 1;
-		  drawCarCountOnImage(carcount, debugImg);
+		  }		  
+		  drawCarCountOnImage(mCarCount, debugImg);
 		  cv::imshow("current Image", debugImg);
 		  cv::waitKey(1);
 	  }

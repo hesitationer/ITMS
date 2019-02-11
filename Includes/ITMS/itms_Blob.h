@@ -56,6 +56,7 @@ namespace itms {
   };
 
   class Blob {      // it will be used as a track
+	  
   public:
 	  Blob(std::vector<cv::Point> _contour);
 
@@ -80,8 +81,9 @@ namespace itms {
     int intNumOfConsecutiveFramesWithoutAMatch;   // consecutiveInvisibleCount    
     int age;                                      // how many frames passed after birth
     int totalVisibleCount;                        // how many times Visible total whatever appear or disappeared
-    int id;                                       // will be given
-    int showId;                                   // display id
+	int id;                                       // track id will be given
+	//int showId;                                   // display id
+    
     // distance from starting point (0 meter(x100 centimeters))
     cv::Point startPoint; // save start center Point of the blob
 	// blob 
@@ -120,6 +122,8 @@ namespace itms {
    
 
     void predictNextPosition(void); // 
+	bool resetBlobContourWithCenter(const cv::Point2f& _newCtrPt); // reset the contour of a blob using _newCtrPt, center itself is not moved
+	bool resetBlobContourWithCenter(const cv::Point& _newCtrPt);
     cv::Point weightedPositionAverage(int bWeighted=0); // weighted centerposition average
     // numTap: # of coefficients, bWeighted: weighted or uniform (true/false)
     std::string getBlobStatus(void);

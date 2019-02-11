@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {
 
-  Blob::Blob(std::vector<cv::Point> _contour) {
+  Blob::Blob(std::vector<cv::Point> _contour){
 
     currentContour = _contour;
 
@@ -34,7 +34,7 @@ namespace itms {
     age = 1;
 	totalVisibleCount = 1;
 	id = 0; //track id
-	showId = 0;
+	//showId = 0;
     
 
     // object status information
@@ -152,24 +152,39 @@ namespace itms {
     }
 
   }
-  
+  bool Blob::resetBlobContourWithCenter(const cv::Point& _newCtrPt) { // move the center of the blob to a new center point
+	  bool bRes = false; // 
+	  cv::Point curCtrPt = centerPositions.back();	  
+	  if (curCtrPt == _newCtrPt)
+		  return bRes; // no changes
+		// move current center to a new center for contour
+	  for (size_t i = 0; i < currentContour.size(); i++)
+		  currentContour.at(i) -= (curCtrPt - _newCtrPt);
+
+	  return bRes = true;
+  }
+  bool Blob::resetBlobContourWithCenter(const cv::Point2f& _newCtrPt) { // move the center of the blob to a new center point	  	  
+	  cv::Point newCtrPt = static_cast<cv::Point>(_newCtrPt + cv::Point2f(0.5, 0.5));
+	  return resetBlobContourWithCenter(newCtrPt);
+  }
+
   void Blob::operator=(const Blob &rhBlob) {
 	  currentContour.clear();
-	  for (int i = 0; i < rhBlob.currentContour.size(); i++)
-	  	  currentContour.push_back(rhBlob.currentContour.at(i));
-	  //currentContour = rhBlob.currentContour;
+	  /*for (int i = 0; i < rhBlob.currentContour.size(); i++)
+	  	  currentContour.push_back(rhBlob.currentContour.at(i));*/
+	  currentContour = rhBlob.currentContour;
 
 	  m_points.clear();
-	  for (int i = 0; i < rhBlob.m_points.size(); i++)
-	  	  m_points.push_back(rhBlob.m_points.at(i));
-	  //m_points = rhBlob.m_points;
+	  /*for (int i = 0; i < rhBlob.m_points.size(); i++)
+	  	  m_points.push_back(rhBlob.m_points.at(i));*/
+	  m_points = rhBlob.m_points;
 	  
 	  currentBoundingRect = rhBlob.currentBoundingRect;
 
 	  centerPositions.clear();
-	  for(int i = 0; i<rhBlob.centerPositions.size();i++)
-		centerPositions.push_back(rhBlob.centerPositions.at(i)); // bug fix on 2018. 12. 17
-
+	 // for(int i = 0; i<rhBlob.centerPositions.size();i++)
+		//centerPositions.push_back(rhBlob.centerPositions.at(i)); // bug fix on 2018. 12. 17
+	  centerPositions = rhBlob.centerPositions;
 
 	  dblCurrentDiagonalSize = rhBlob.dblCurrentDiagonalSize;
 
@@ -182,7 +197,7 @@ namespace itms {
 
 	  age = rhBlob.age;
 	  totalVisibleCount = rhBlob.totalVisibleCount;
-	  showId	= rhBlob.showId;
+	  //showId	= rhBlob.showId;
 	  id		= rhBlob.id;
     // starting point
     startPoint = rhBlob.startPoint; // start in Y direction, it will initiated at adding new blob

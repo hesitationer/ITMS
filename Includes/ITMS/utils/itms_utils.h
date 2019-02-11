@@ -183,6 +183,8 @@ namespace itms {
 		// classifier						// need to check its memory alloaction
 		cv::CascadeClassifier cascade;
 		cv::HOGDescriptor hog;
+		int trackid = 0;					// tracking id: it should be controlloed in the main function.
+		int maxTrackIds = 1024;
 	};
 	
 
@@ -391,6 +393,8 @@ namespace itms {
 	  bool blnFirstFrame = true;
 	  // functions
 	  cv::Mat preImg;
+	  int mCarCount = 0;
+	  int maxCarCount = 1024;
   private:
 	  std::vector<Blob> blobs;
 	  std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold

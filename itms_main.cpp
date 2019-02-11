@@ -334,8 +334,9 @@ int main(void) {
 #endif	
 	std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
 
-	int trackId = 0;          // unique object id
-	int showId = 0;           //     
+	int trackId = conf.trackid;          // unique object id, you can set or get the track id
+	int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 
+	
 	std::cout << ".... configurating ...\n";
 	loadConfig(conf);
 	std::cout << " configarion is done !!\n\n";
@@ -343,7 +344,6 @@ int main(void) {
 	// construct an instance 
 	std::unique_ptr<itmsFunctions> itmsFncs;
 	itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
-	
 
 	cv::VideoCapture capVideo;
 
@@ -393,37 +393,10 @@ int main(void) {
 
     bool blnFirstFrame = true;
 	int m_startFrame = 0;	 // 240
-    int frameCount = m_startFrame + 1;
+    int frameCount = m_startFrame + 1;	    
 
-    // Video save start
 	capVideo.set(cv::CAP_PROP_POS_FRAMES, m_startFrame);
-    int frame_width = capVideo.get(CV_CAP_PROP_FRAME_WIDTH);
-    int frame_height = capVideo.get(CV_CAP_PROP_FRAME_HEIGHT);
-
-    time_t _tm = time(NULL);
-    struct tm * curtime = localtime(&_tm);
-    std::string yr = std::to_string(1900 + curtime->tm_year);
-    std::string mo = std::to_string(1 + curtime->tm_mon);
-    std::string da = std::to_string(curtime->tm_mday);
-    std::string hr = std::to_string(1 + curtime->tm_hour);
-    std::string mi = std::to_string(curtime->tm_min);
-    std::string se = std::to_string(curtime->tm_sec);
-
-    std::string videoFilename = "d:\\sangkny\\dataset";
-
-    videoFilename.append(yr);
-    videoFilename.append(".");
-    videoFilename.append(mo);
-    videoFilename.append(".");
-    videoFilename.append(da);
-    videoFilename.append(".");
-    videoFilename.append(hr);
-    videoFilename.append(".");
-    videoFilename.append(mi);
-    videoFilename.append(".avi");
-
-    cv::VideoWriter video(videoFilename, CV_FOURCC('D', 'I', 'V', 'X'), 30, cv::Size(frame_width, frame_height), true);
-    // Video save end   
+        
 	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
@@ -453,7 +426,7 @@ int main(void) {
         }
 
         blnFirstFrame = false;
-        frameCount++;
+        frameCount++;		
         chCheckForEscKey = cv::waitKey(1);
 		if (conf.debugTime) {
 			double t2 = (double)cvGetTickCount();
