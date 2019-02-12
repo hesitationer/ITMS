@@ -2016,7 +2016,8 @@ namespace itms {
 	  return isInitialized = true;
   }
 
-  bool itmsFunctions::process(cv::Mat& curImg) {
+  bool itmsFunctions::process(cv::Mat& curImg, ITMSResult& _itmsRes) {
+	  //_itmsRes.objRect.push_back(cv::Rect(1,1,1,1));
 	  if (!isInitialized) {
 		  cout << "itmsFunctions is not initialized (!)(!)\n";
 		  return false;

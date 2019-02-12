@@ -186,7 +186,16 @@ namespace itms {
 		int trackid = 0;					// tracking id: it should be controlloed in the main function.
 		int maxTrackIds = 1024;
 	};
-	
+	class ITMSResult {
+	public:
+		ITMSResult() {};
+		~ITMSResult(){};
+		
+		std::vector<std::pair<int, int>> objStatus; // blob, status
+		std::vector<cv::Rect> objRect; // blob rect
+		
+		void reset(void){objStatus.clear(); objRect.clear(); };
+	};
 
 	class CRegion
 	{
@@ -381,7 +390,7 @@ namespace itms {
 	  itmsFunctions() {};
 	  itmsFunctions(Config* config);
 	  bool Init(void);
-	  bool process(cv::Mat& curImg);
+	  bool process(cv::Mat& curImg, ITMSResult& _itmsRes);
 	  
 	  ~itmsFunctions() {};
 	  

@@ -36,7 +36,7 @@ using namespace std;
 using namespace itms;
 
 
-#define _sk_Memory_Leakag_Detector
+//#define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -338,13 +338,20 @@ int main(void) {
 	int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 
 	
 	std::cout << ".... configurating ...\n";
-	loadConfig(conf);
-	std::cout << " configarion is done !!\n\n";
+	if(loadConfig(conf)){
+		std::cout << " configarion is done !!\n\n";
+	}
+	else{
+		std::cout << " configuration is not finished. However, default values are used instead!! Please double check the all files and values correctly (!)(!)\n";		
+	}
 
+	// -------------------------------------- HOW TO USE THE API --------------------------------------------
 	// construct an instance 
-	std::unique_ptr<itmsFunctions> itmsFncs;
+	std::unique_ptr<itmsFunctions> itmsFncs;   // itms main class	
 	itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
-
+	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure
+	itmsres = std::make_unique<ITMSResult>();
+	// --------------------------------------------------------------------------------------------------------
 	cv::VideoCapture capVideo;
 
 	cv::Mat imgFrame1; // previous frame
@@ -404,9 +411,10 @@ int main(void) {
 
         cv::Mat imgFrame1Copy = imgFrame1.clone();
         cv::Mat imgFrame2Copy = imgFrame2.clone();
-
-		itmsFncs->process(imgFrame2); // with current Frame 
-  
+		// -------------------------------------- HOW TO USE THE API --------------------------------------------
+		itmsres->reset();
+		itmsFncs->process(imgFrame2, *itmsres); // with current Frame 
+		// -------------------------------------------------------------------------------------------------------
        // now we prepare for the next iteration
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is
 
@@ -436,7 +444,8 @@ int main(void) {
     }
 
     if (chCheckForEscKey != 27) {               // if the user did not press esc (i.e. we reached the end of the video)
-        cv::waitKey(5000);                         // hold the windows open to allow the "end of video" message to show
+        cv::waitKey(3000);                         // hold the windows open to allow the "end of video" message to show
+		cv::destroyAllWindows();
     }
     // note that if the user did press esc, we don't need to hold the windows open, we can simply let the program end which will close the windows
 #ifdef _sk_Memory_Leakag_Detector
