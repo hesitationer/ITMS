@@ -91,7 +91,7 @@ bool loadConfig(itms::Config& _conf)
 		_conf.StartY = cvReadRealByName(fs, 0, "StartY", 0);
 		_conf.EndY = cvReadRealByName(fs, 0, "EndY", 0);
 
-		_conf.scaleFactor = cvReadRealByName(fs, 0, "scaleFactor", 0.5);
+		_conf.scaleFactor = min(1.0, max(0.1, cvReadRealByName(fs, 0, "scaleFactor", 0.5))); // sangkny 2019. 02. 12 
 		_conf.isAutoBrightness = cvReadIntByName(fs, 0, "isAutoBrightness", 1);
 		_conf.AutoBrightness_Rect.x = (cvReadIntByName(fs, 0, "AutoBrightness_x", 1162 * _conf.scaleFactor))*_conf.scaleFactor;
 		_conf.AutoBrightness_Rect.y = (cvReadIntByName(fs, 0, "AutoBrightness_y", 808 * _conf.scaleFactor))*_conf.scaleFactor;

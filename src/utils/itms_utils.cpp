@@ -220,8 +220,8 @@ namespace itms {
 	  // 0. collect information from blobs
 	  // 1. non maximum supression for Blobs
 	  if (existingBlobs.size() > 1) {		// object # > 1
-		  const float score_threshold = 0.5; // min threshold 
-		  const float nms_threshold = 0.1;	// 10 % overlap 하나의 object가 너무 작으면 문제가 생긴다.
+		  const float score_threshold = 0.5;	// min threshold 
+		  const float nms_threshold = 0.02;		// 2 % overlap 하나의 object가 너무 작으면 문제가 생긴다.
 		  
 		  std::vector<float> confidences;
 		  std::vector<cv::Rect> boxes;
@@ -238,9 +238,10 @@ namespace itms {
 
 			  // scores
 			  // age
-			  value += (fmin(0.2, ((float)existingBlobs.at(i).centerPositions.size() / (float)_conf.max_Center_Pts))); // max 0.2
+			  value += (fmin(0.2, ((float)(existingBlobs.at(i).centerPositions.size()*10) / (float)_conf.max_Center_Pts))); // max 0.2
+			  //value += (fmin(0.2, ((float)existingBlobs.at(i).totalVisibleCount / (float)existingBlobs.at(i).age))); // max 0.2
 			  // area
-			  if (existingBlobs.at(i).currentBoundingRect.area() > 625)  // max 0.3
+			  if (existingBlobs.at(i).currentBoundingRect.area() > 1200*_conf.scaleFactor)  // max 0.3
 				  value += 0.3;
 			  else
 				  value += 0.1;
@@ -263,7 +264,6 @@ namespace itms {
 					  if (i == indices[idx]) {
 						  foundIdx = true;
 						  break;
-
 					  }
 				  }
 				  if (foundIdx) {
@@ -1028,8 +1028,9 @@ namespace itms {
 	  return blnAtLeastOneBlobCrossedTheLine;
   }
 
+  
   // this fucntion can detect the status of the blob and update the blob status, then the next module can erase the blob if necessary
-  bool checkIfBlobsCrossedTheBoundary(itms::Config& _conf, std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, itms::LaneDirection _laneDirection, std::vector<cv::Point>& _tboundaryPts) {
+  bool checkIfBlobsCrossedTheBoundary(itms::Config& _conf, std::vector<Blob> &blobs,/* cv::Mat &imgFrame2Copy,*/ itms::LaneDirection _laneDirection, std::vector<cv::Point>& _tboundaryPts) {
 	  bool blnAtLeastOneBlobCrossedTheBoundary = false;
 	  // boundary should be clockwise direction 
 	  assert(_tboundaryPts.size() == 4); // the Tracking boudnary should be insize the real boundary
@@ -1152,6 +1153,10 @@ namespace itms {
 	  }// while
 
 	  return blnAtLeastOneBlobCrossedTheBoundary;
+  }
+  bool checkIfPointInBoundary(const itms::Config& _conf, const cv::Point& p1, const std::vector<cv::Point> &_tboundaryPts) {
+	  //if(p1.inside())
+	  return cv::pointPolygonTest(_tboundaryPts, static_cast<cv::Point2f>(p1), false)>0; // + inside , - outside
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1684,6 +1689,19 @@ namespace itms {
   // find people in the given ROI
   void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people)
   {
+	  // sangkny 2019. 02. 12 : ration constraint actually, with/height 1/2 => 
+	  assert(rect.area() > 0);
+	  const float minMax_threshold = 0.5; // 25 % margin
+	  const float h_w_ratio = (float)rect.height / (float)rect.width;
+	  const float RefRatio = 2;			// reference ration 2 : 1
+	  if (((RefRatio - minMax_threshold) > h_w_ratio) 
+		  || (h_w_ratio > (RefRatio + minMax_threshold))) { // need to change the status of object class???? 
+		  if (_conf.debugGeneralDetail)
+			  cout << "Human detection condition is not matched in detectCascadeRoiHuman.\n  with rect : " << rect<<endl;
+
+		  return;
+	  }
+
 	  /* this function return the location of human according to the detection method
 	  1. svm based algorithm which needs more computation time
 	  2. cascade haar-like approach, which is fast but not much robust compared to SVM-based approach
@@ -1712,8 +1730,8 @@ namespace itms {
 #else
 	  int svmWidth = 64 * 1.5, svmHeight = 128 * 1.5;
 	  if (_conf.bgsubtype == BgSubType::BGS_CNT) {
-		  svmWidth = (int)((float)svmWidth * 2);
-		  svmHeight = (int)((float)svmHeight * 2);
+		  svmWidth = (int)((float)svmWidth * 2/1.5);
+		  svmHeight = (int)((float)svmHeight * 2/1.5);
 	  }
 	  vector<Rect> people;
 	  if (hogImg.cols < svmWidth) {
@@ -2129,21 +2147,23 @@ namespace itms {
 			  //  new approach according to 
 			  // 1. distance, 2. correlation within certain range
 			  std::vector<cv::Point2f> blob_ntPts;
-			  blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));
-			  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+			  blob_ntPts.push_back(Point2f(possibleBlob.centerPositions.back()));			  
 			  cv::Rect roi_rect = possibleBlob.currentBoundingRect;
-			  float blobncc = 0;
-			  if (_config->debugGeneral && _config->debugGeneralDetail) {
-				  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
-			  }
+			  float blobncc = 0;			  
 			  // bg image
 			  // currnt image
 			  // blob correlation
 			  blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask); 
 			  // backgrdoun image need to be updated periodically 
 			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
-			  if (realDistance >= 100 && realDistance <= 19900/* distance constraint */ && blobncc <= abs(_config->BlobNCC_Th)) {// check the correlation with bgground, object detection/classification
-				
+			  if (blobncc <= abs(_config->BlobNCC_Th)  
+				  && checkIfPointInBoundary(*_config, blob_ntPts.back(), _config->Boundary_ROI_Pts)
+				  /*realDistance >= 100 && realDistance <= 19900*//* distance constraint */)
+			  {// check the correlation with bgground, object detection/classification
+				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+				  if (_config->debugGeneral && _config->debugGeneralDetail) {
+					  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+				  }
 				  ObjectClass objclass;
 				  float classProb = 0.f;
 				  classifyObjectWithDistanceRatio(*_config, possibleBlob, realDistance / 100, objclass, classProb);
@@ -2235,6 +2255,9 @@ namespace itms {
 		  matchCurrentFrameBlobsToExistingBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
 	  }
 	  //imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
+
+	  bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheBoundary(*_config, blobs,/* debugImg,*/ _config->ldirection, _config->Boundary_ROI_Pts);
+
 	  if (_config->debugShowImages) {
 		  cv::Mat debugImg = curImg.clone();
 		  if (debugImg.channels() < 3)
@@ -2243,9 +2266,7 @@ namespace itms {
 			  drawAndShowContours(*_config, imgThresh.size(), blobs, "All imgBlobs");
 
 		  drawBlobInfoOnImage(*_config, blobs, debugImg);  // blob(tracked) information
-		  drawRoadRoiOnImage(_config->Road_ROI_Pts, debugImg);
-		  
-		  bool blnAtLeastOneBlobCrossedTheLine = checkIfBlobsCrossedTheBoundary(*_config, blobs, debugImg, _config->ldirection, _config->Boundary_ROI_Pts);
+		  drawRoadRoiOnImage(_config->Road_ROI_Pts, debugImg);		  
 		  
 		  std::vector<cv::Point> crossingLine;
 		  crossingLine.push_back(cv::Point(0, _config->Boundary_ROI_Pts.at(3).y));

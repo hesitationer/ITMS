@@ -3,13 +3,13 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>
-<debugShowImagesDetail>0</debugShowImagesDetail>
+<debugShowImagesDetail>1</debugShowImagesDetail>
 <debugGeneral>1</debugGeneral>
-<debugGeneralDetail>1</debugGeneralDetail>
+<debugGeneralDetail>0</debugGeneralDetail>
 <debugTrace>1</debugTrace>
 <debugTime>1</debugTime>
 
-<scaleFactor>0.25</scaleFactor>                      <!-- processing image scale factor -->
+<scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor -->
 
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
 <img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
@@ -23,10 +23,10 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>
 
 <!--
-<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
 <VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  주간 단독 보행 후 , 자동차 주행 
 <VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- 보행 2명 차량정차 실험 
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
