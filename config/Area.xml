@@ -3,13 +3,13 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>
-<debugShowImagesDetail>1</debugShowImagesDetail>
+<debugShowImagesDetail>0</debugShowImagesDetail>
 <debugGeneral>1</debugGeneral>
 <debugGeneralDetail>1</debugGeneralDetail>
 <debugTrace>1</debugTrace>
 <debugTime>1</debugTime>
 
-<scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor -->
+<scaleFactor>0.25</scaleFactor>                      <!-- processing image scale factor -->
 
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
 <img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
@@ -80,7 +80,7 @@
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                <!-- local region tracking -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>    <!-- lost object global searching ---->
-<isSubImgTracking>0</isSubImgTracking>                      <!-- loast object local searching -->
+<isSubImgTracking>1</isSubImgTracking>                      <!-- loast object local searching -->
 <HOG>1</HOG>
 <FIXEDWINDOW>1</FIXEDWINDOW>
 <MULTISCALE>1</MULTISCALE>

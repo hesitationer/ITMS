@@ -212,75 +212,73 @@ namespace itms {
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // 2019. 01. 04 -> Apply fastDSST when the existing blob was not matched by current blob
-  void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, cv::Mat& preImg, cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
+  void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
 	  // lost object tracker
 	  //size_t N = existingBlobs.size();
 	  //std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
 	  // sangkny 2019. 02. 11. NMS implementation for overlapped Blob
 	  // 0. collect information from blobs
 	  // 1. non maximum supression for Blobs
-	  //if (existingBlobs.size() > 1) {		// object # > 1
-		 // const float score_threshold = 0.5; // min threshold 
-		 // const float nms_threshold = 0.1;	// 10 % overlap 하나의 object가 너무 작으면 문제가 생긴다.
-		 // 
-		 // std::vector<float> confidences;
-		 // std::vector<cv::Rect> boxes;
-		 // std::vector<int>indices; 
-		 // // getting the information from blobs
-		 // for (size_t i = 0; i < existingBlobs.size(); i++) {
-			//  float value = 0;
-			//  // rect boxes
-			//  boxes.push_back(existingBlobs.at(i).currentBoundingRect);
-			//  if (existingBlobs.at(i).blnStillBeingTracked)
-			//	  value += 0.5;
-			//  else
-			//	  value += 0.3;
+	  if (existingBlobs.size() > 1) {		// object # > 1
+		  const float score_threshold = 0.5; // min threshold 
+		  const float nms_threshold = 0.1;	// 10 % overlap 하나의 object가 너무 작으면 문제가 생긴다.
+		  
+		  std::vector<float> confidences;
+		  std::vector<cv::Rect> boxes;
+		  std::vector<int>indices; 
+		  // getting the information from blobs
+		  for (size_t i = 0; i < existingBlobs.size(); i++) {
+			  float value = 0;
+			  // rect boxes
+			  boxes.push_back(existingBlobs.at(i).currentBoundingRect);
+			  if (existingBlobs.at(i).blnStillBeingTracked)
+				  value += 0.5;
+			  else
+				  value += 0.3;
 
-			//  // scores
-			//  // age
-			//  value += (fmin(0.2, ((float)existingBlobs.at(i).centerPositions.size() / (float)_conf.max_Center_Pts))); // max 0.2
-			//  // area
-			//  if (existingBlobs.at(i).currentBoundingRect.area() > 625)  // max 0.3
-			//	  value += 0.3;
-			//  else
-			//	  value += 0.1;
+			  // scores
+			  // age
+			  value += (fmin(0.2, ((float)existingBlobs.at(i).centerPositions.size() / (float)_conf.max_Center_Pts))); // max 0.2
+			  // area
+			  if (existingBlobs.at(i).currentBoundingRect.area() > 625)  // max 0.3
+				  value += 0.3;
+			  else
+				  value += 0.1;
 
-			//  confidences.push_back(value);
+			  confidences.push_back(value);
 
-		 // }
-		 // cv::dnn::NMSBoxes(boxes, confidences, score_threshold, nms_threshold, indices);
-		 // 
-		 // // remove a blob if necessary
-		 // if (boxes.size() != indices.size()) {
-			//  if (_conf.debugGeneralDetail)
-			//	  std::cout << " NMS, total: " << (boxes.size() - indices.size()) << " blob will be erased (!)(!)" << endl;
+		  }
+		  cv::dnn::NMSBoxes(boxes, confidences, score_threshold, nms_threshold, indices);
+		  
+		  // remove a blob if necessary
+		  if (boxes.size() != indices.size()) {
+			  if (_conf.debugGeneralDetail)
+				  std::cout << " NMS, total: " << (boxes.size() - indices.size()) << " blob will be erased (!)(!)" << endl;
 
-			//  std::vector<Blob>::iterator exBlob = existingBlobs.begin();
-			//  size_t i = 0;
-			//  while (exBlob != existingBlobs.end()) {
-			//	  bool foundIdx = false;
-			//	  for (size_t idx = 0; idx < indices.size(); idx++) {
-			//		  if (i == indices[idx]) {
-			//			  foundIdx = true;
-			//			  break;
+			  std::vector<Blob>::iterator exBlob = existingBlobs.begin();
+			  size_t i = 0;
+			  while (exBlob != existingBlobs.end()) {
+				  bool foundIdx = false;
+				  for (size_t idx = 0; idx < indices.size(); idx++) {
+					  if (i == indices[idx]) {
+						  foundIdx = true;
+						  break;
 
-			//		  }
-			//	  }
-			//	  if (foundIdx) {
-			//		  ++exBlob;
-			//	  }
-			//	  else { // erase 
-			//		  exBlob = existingBlobs.erase(exBlob);
-			//		  if (_conf.debugGeneralDetail) {
-			//			  cout << "Blob #: " << i << "was erased form the existingBlobs !!" << endl;
-			//		  }
-			//	  }
-			//	  i++;  // keep increase the original order index
-			//  }
-		 // }
-
-
-	  //}
+					  }
+				  }
+				  if (foundIdx) {
+					  ++exBlob;
+				  }
+				  else { // erase 
+					  exBlob = existingBlobs.erase(exBlob);
+					  if (_conf.debugGeneralDetail) {
+						  cout << "Blob #: " << i << "was erased form the existingBlobs !!" << endl;
+					  }
+				  }
+				  i++;  // keep increase the original order index
+			  }
+		  }
+	  } // end of if (existingBlobs.size() > 1) {		// object # > 1
 
 	  // blob iterator
 	  std::vector<Blob>::iterator existBlob = existingBlobs.begin();

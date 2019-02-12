@@ -153,15 +153,15 @@ namespace itms {
 
   }
   bool Blob::resetBlobContourWithCenter(const cv::Point& _newCtrPt) { // move the center of the blob to a new center point
-	  bool bRes = false; // 
+	  
 	  cv::Point curCtrPt = centerPositions.back();	  
 	  if (curCtrPt == _newCtrPt)
-		  return bRes; // no changes
+		  return false; // no changes
 		// move current center to a new center for contour
 	  for (size_t i = 0; i < currentContour.size(); i++)
 		  currentContour.at(i) -= (curCtrPt - _newCtrPt);
 
-	  return bRes = true;
+	  return true;
   }
   bool Blob::resetBlobContourWithCenter(const cv::Point2f& _newCtrPt) { // move the center of the blob to a new center point	  	  
 	  cv::Point newCtrPt = static_cast<cv::Point>(_newCtrPt + cv::Point2f(0.5, 0.5));
