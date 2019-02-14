@@ -53,8 +53,8 @@ typedef std::vector<CRegion> regions_t;
 // Initialize the parameters
 float confThreshold = 0.1; // Confidence threshold
 float nmsThreshold = 0.4;  // Non-maximum suppression threshold
-int inpWidthorg = 52;
-int inpHeightorg = 37;
+int inpWidthorg = 416;
+int inpHeightorg = 416;
 int inpWidth = (inpWidthorg) %32 == 0 ? inpWidthorg : inpWidthorg + (32 - (inpWidthorg %32));// 1280 / 4;  //min(416, int(1280. / 720.*64.*3.) + 1);// 160; //1920 / 2;// 416;  // Width of network's input image
 int inpHeight = (inpHeightorg) % 32 == 0 ? inpHeightorg : inpHeightorg + (32 - (inpHeightorg % 32));// 720 / 4;  //64;// 160;// 1080 / 2;// 416; // Height of network's input image
 vector<string> classes;

@@ -719,7 +719,8 @@ namespace itms {
 			  existingBlob.blnStillBeingTracked = false; /* still in the list of blobs */
 		  }
 		  // object status, class update routine starts        
-		  existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
+		  //existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
+		  existingBlob.os = getObjStatusUsingLinearRegression(existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
 		  // 벡터로 넣을지 생각해 볼 것, 그리고, regression from kalman 으로 부터 정지 등을 판단하는 것도 고려 중....
 		  // object classfication according to distance and width/height ratio, area 
 
@@ -920,6 +921,97 @@ namespace itms {
 
 	  return objectstatus;
   }
+  /////////////////////////////////////////-- Linear Regression-based Object Directiona and Speed Computation --//////////////////////////////////////////////////////////
+  // using LastMinPoints
+  ObjectStatus getObjStatusUsingLinearRegression(Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount) {
+	  ObjectStatus objectstatus = ObjectStatus::OS_NOTDETERMINED;
+	  if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
+		  return objectstatus;
+
+	  int numPositions = (int)blob.centerPositions.size();
+	  //int maxNumPosition = 5;
+	  int bweightedAvg = -1; // -1: info from the past far away, 0: false (uniform average), 1: true (weighted average)
+	  Blob tmpBlob = blob;
+	  // it will affect the speed because of const Blob declaration in parameters !!!!
+	  int deltaX;// = blob.predictedNextPosition.x - blob.centerPositions.back().x;
+	  int deltaY;// = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
+	  cv::Point wpa = tmpBlob.weightedPositionAverage(bweightedAvg);
+	  deltaX = blob.predictedNextPosition.x - wpa.x;
+	  deltaY = blob.predictedNextPosition.y - wpa.y;
+	  // get linear regression from  centers
+	  track_t kx = 0;
+	  track_t bx = 0;
+	  track_t ky = 0;
+	  track_t by = 0;
+	  int lastMinPoints = 1 * 30; // minimum Last frame numbers
+	  int trajLen = blob.centerPositions.size()- minTotalVisibleCount;
+	  trajLen = std::min(lastMinPoints, std::max(0, trajLen));
+	  get_lin_regress_params(blob.centerPositions, blob.centerPositions.size() - trajLen, blob.centerPositions.size(), kx, bx, ky, by);
+	  track_t speed = sqrt(sqr(kx * trajLen) + sqr(ky * trajLen));
+	  const track_t speedThresh = 10;
+
+	  switch (lanedirection) {
+	  case LD_NORTH:
+	  case LD_SOUTH:
+		  if (abs(deltaY) <= movingThresholdInPixels)
+			  objectstatus = OS_STOPPED;
+		  else { // moving anyway
+			  objectstatus = (lanedirection == LD_SOUTH) ? (deltaY > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaY > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+		  }
+		  break;
+
+	  case LD_EAST:
+	  case LD_WEST:
+		  if (abs(deltaX) <= movingThresholdInPixels) // 
+			  objectstatus = OS_STOPPED;
+		  else { // moving anyway
+			  objectstatus = (lanedirection == LD_EAST) ? (deltaX > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaX > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+		  }
+		  break;
+
+	  case LD_NORTHEAST:
+	  case LD_SOUTHWEST:
+		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
+			  objectstatus = OS_STOPPED;
+		  else { // moving anyway
+			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((deltaX > 0 || deltaY < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+		  }
+		  break;
+
+	  case LD_SOUTHEAST:
+	  case LD_NORTHWEST:
+		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
+			  objectstatus = OS_STOPPED;
+		  else { // moving anyway
+			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((deltaX > 0 || deltaY > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+		  }
+		  break;
+
+	  default:
+		  objectstatus = OS_NOTDETERMINED;
+		  break;
+	  }
+
+	  // update object state and return the current estimated state (redundant because we already update the os status and update again later outside the function
+	  // 2018. 10. 25
+	  // 0. current os status will be previous status after update
+	  // weight policy : current status consecutive counter, others, 1
+	  // 2018. 10. 26 -> replaced with below functions
+
+	  itms::Blob orgBlob = blob; // backup 
+	  updateBlobProperties(blob, objectstatus); // update the blob properties including the os_prob
+												//itms::ObjectStatus tmpOS = computeObjectStatusProbability(blob); // get the moving status according to the probability
+												//if (tmpOS != objectstatus) {    
+												//  objectstatus = tmpOS;
+												//  // go back to original blob and update again correctly
+												//  blob = orgBlob;
+												//  updateBlobProperties(blob, objectstatus);
+												//}
+
+
+	  return objectstatus;
+  }  
+  
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   double distanceBetweenPoints(cv::Point point1, cv::Point point2) {
 

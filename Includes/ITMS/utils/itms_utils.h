@@ -22,6 +22,7 @@ using namespace std;
 #define ITMS_DLL_EXPORT 
 #endif
 
+typedef float track_t;
 
 namespace itms {
 	// global variables ///////////////////////////////////////////////////////////////////////////////
@@ -244,7 +245,11 @@ namespace itms {
 	  struct stat buffer;
 	  return (stat(name.c_str(), &buffer) == 0);
   }
-
+    
+  //---------------------------------------------------------------------------
+  ///
+  
+  
   /// vector related
   /*  example to use the pop_front
   if (vec.size() > max_past_frames)
@@ -347,6 +352,7 @@ namespace itms {
   void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &id);
   double distanceBetweenPoints(cv::Point point1, cv::Point point2);
   ObjectStatus getObjectStatusFromBlobCenters(Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount = 3);
+  ObjectStatus getObjStatusUsingLinearRegression(Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount = 3);
   void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName, const cv::Scalar& _color=SCALAR_WHITE);
   void drawAndShowContours(itms::Config& _conf, cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
   bool checkIfBlobsCrossedTheLine(itms::Config& _conf, std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);
