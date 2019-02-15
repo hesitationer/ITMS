@@ -79,7 +79,7 @@
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                <!-- local region tracking -->
-<m_externalTrackerForLost> 0 </m_externalTrackerForLost>    <!-- lost object global searching ---->
+<m_externalTrackerForLost> 1 </m_externalTrackerForLost>    <!-- lost object global searching ---->
 <isSubImgTracking>1</isSubImgTracking>                      <!-- loast object local searching -->
 <HOG>1</HOG>
 <FIXEDWINDOW>1</FIXEDWINDOW>

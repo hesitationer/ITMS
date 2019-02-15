@@ -329,7 +329,9 @@ namespace itms {
   // function prototypes ////////////////////////////////////////////////////////////////////////////
   // utils
   // get distance in Meters from the image locations according to the predefined ROI 
-  float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &transmtx /* 3x3*/, float _laneLength = 20000, bool flagLaneDirectionTop2Bottom = false);
+  float getDistanceInMeterFromPixels(const std::vector<cv::Point2f> &srcPx, const cv::Mat &transmtx /* 3x3*/, const float _laneLength = 20000, const bool flagLaneDirectionTop2Bottom = false);
+  // convert camera coordinate to real world coordinate (not 3D)
+  cv::Point2f cvtPx2RealPx(const cv::Point2f &srcPx, const cv::Mat &transmtx /* 3x3*/);
   // srcPx: pixel location in the image
   // transmtx: H matrix
   // _laneLength: lane distance 0 to the end of roi
@@ -352,7 +354,7 @@ namespace itms {
   void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &id);
   double distanceBetweenPoints(cv::Point point1, cv::Point point2);
   ObjectStatus getObjectStatusFromBlobCenters(Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount = 3);
-  ObjectStatus getObjStatusUsingLinearRegression(Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount = 3);
+  ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount = 3);
   void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName, const cv::Scalar& _color=SCALAR_WHITE);
   void drawAndShowContours(itms::Config& _conf, cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
   bool checkIfBlobsCrossedTheLine(itms::Config& _conf, std::vector<Blob> &blobs, int &intHorizontalLinePosition, int &carCount);

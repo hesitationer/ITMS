@@ -720,7 +720,7 @@ namespace itms {
 		  }
 		  // object status, class update routine starts        
 		  //existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
-		  existingBlob.os = getObjStatusUsingLinearRegression(existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
+		  existingBlob.os = getObjStatusUsingLinearRegression(_conf, existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
 		  // 벡터로 넣을지 생각해 볼 것, 그리고, regression from kalman 으로 부터 정지 등을 판단하는 것도 고려 중....
 		  // object classfication according to distance and width/height ratio, area 
 
@@ -923,9 +923,10 @@ namespace itms {
   }
   /////////////////////////////////////////-- Linear Regression-based Object Directiona and Speed Computation --//////////////////////////////////////////////////////////
   // using LastMinPoints
-  ObjectStatus getObjStatusUsingLinearRegression(Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount) {
+  ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount) {
 	  ObjectStatus objectstatus = ObjectStatus::OS_NOTDETERMINED;
-	  if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
+	  int lastMinPoints = 1 * 30; // minimum Last frame numbers
+	  if (blob.totalVisibleCount < minTotalVisibleCount|| ((int)blob.centerPositions.size() < lastMinPoints)) // !! parameter
 		  return objectstatus;
 
 	  int numPositions = (int)blob.centerPositions.size();
@@ -943,17 +944,26 @@ namespace itms {
 	  track_t bx = 0;
 	  track_t ky = 0;
 	  track_t by = 0;
-	  int lastMinPoints = 1 * 30; // minimum Last frame numbers
-	  int trajLen = blob.centerPositions.size()- minTotalVisibleCount;
-	  trajLen = std::min(lastMinPoints, std::max(0, trajLen));
+	  
+	  int trajLen = ((int) blob.centerPositions.size() >= lastMinPoints)? lastMinPoints: (int) blob.centerPositions.size();
+	  
 	  get_lin_regress_params(blob.centerPositions, blob.centerPositions.size() - trajLen, blob.centerPositions.size(), kx, bx, ky, by);
 	  track_t speed = sqrt(sqr(kx * trajLen) + sqr(ky * trajLen));
 	  const track_t speedThresh = 10;
+	  
+	  cv::Point2f sPt = cvtPx2RealPx(static_cast<cv::Point2f>(blob.centerPositions.at(blob.centerPositions.size()-trajLen)), config.transmtxH); // starting pt
+	  cv::Point2f ePt = cvtPx2RealPx(static_cast<cv::Point2f>(blob.centerPositions.back()), config.transmtxH);                                  // end pt
+	  
+	  double dist = distanceBetweenPoints(sPt, ePt); // real distance (cm) in the ROI 
+	  float fps = 30;
+	  double realSpeedKmH = (dist * fps *3600)/(trajLen *100000); // (1 KM = 100000CM, 1 Hour = 3 Sec.)
+	  if(1 || config.debugGeneralDetail)
+		  cout<< "ID: "<< blob.id<<" , Speed (Km/h): "<< realSpeedKmH << endl;
 
 	  switch (lanedirection) {
 	  case LD_NORTH:
 	  case LD_SOUTH:
-		  if (abs(deltaY) <= movingThresholdInPixels)
+		  if (speed < speedThresh /*abs(deltaY) <= movingThresholdInPixels*/)
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_SOUTH) ? (deltaY > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaY > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -962,7 +972,7 @@ namespace itms {
 
 	  case LD_EAST:
 	  case LD_WEST:
-		  if (abs(deltaX) <= movingThresholdInPixels) // 
+		  if (speed < speedThresh /*abs(deltaX) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_EAST) ? (deltaX > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaX > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -971,7 +981,7 @@ namespace itms {
 
 	  case LD_NORTHEAST:
 	  case LD_SOUTHWEST:
-		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
+		  if (speed < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((deltaX > 0 || deltaY < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -980,7 +990,7 @@ namespace itms {
 
 	  case LD_SOUTHEAST:
 	  case LD_NORTHWEST:
-		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
+		  if (speed < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((deltaX > 0 || deltaY > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -1321,7 +1331,7 @@ namespace itms {
   }
 
   // utils
-  float getDistanceInMeterFromPixels(std::vector<cv::Point2f> &srcPx, cv::Mat &transmtx /* 3x3*/, float _laneLength, bool flagLaneDirectionTop2Bottom) {
+  float getDistanceInMeterFromPixels(const std::vector<cv::Point2f> &srcPx, const cv::Mat &transmtx /* 3x3*/, const float _laneLength, const bool flagLaneDirectionTop2Bottom) {
 	  assert(transmtx.size() == cv::Size(3, 3));
 	  std::vector<cv::Point2f> H_Px;
 	  bool flagLaneDirection = flagLaneDirectionTop2Bottom;
@@ -1332,7 +1342,16 @@ namespace itms {
 
 	  return distance;
   }
+  cv::Point2f cvtPx2RealPx(const cv::Point2f &srcPx, const cv::Mat &transmtx /* 3x3*/) {
+	  assert(transmtx.size() == cv::Size(3, 3));
+	  std::vector<cv::Point2f> _srcPx;
+	  std::vector<cv::Point2f> H_Px;  
+	  
+	  _srcPx.push_back(srcPx);
+	  cv::perspectiveTransform(_srcPx, H_Px, transmtx);
 
+	  return H_Px.back();
+  }
   float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
 	  //// template matching algorithm implementation, demo	
 	  if (0 && _conf.debugGeneralDetail) {
