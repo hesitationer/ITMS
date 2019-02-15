@@ -35,11 +35,13 @@ namespace itms {
 	totalVisibleCount = 1;
 	id = 0; //track id
 	//showId = 0;
+	speed = 0;
     
 
     // object status information
     oc = OC_OTHER;
     os = OS_NOTDETERMINED;
+	fos = OS_NOTDETERMINED;
     od = OD_ND; // lane direction will affect the result, and the lane direction will be given
 
 	// counters
@@ -168,7 +170,7 @@ namespace itms {
 	  return resetBlobContourWithCenter(newCtrPt);
   }
 
-  void Blob::operator=(const Blob &rhBlob) {
+  void Blob::operator = (const Blob &rhBlob) {
 	  currentContour.clear();
 	  /*for (int i = 0; i < rhBlob.currentContour.size(); i++)
 	  	  currentContour.push_back(rhBlob.currentContour.at(i));*/
@@ -199,12 +201,15 @@ namespace itms {
 	  totalVisibleCount = rhBlob.totalVisibleCount;
 	  //showId	= rhBlob.showId;
 	  id		= rhBlob.id;
+	  speed = rhBlob.speed;
+
     // starting point
     startPoint = rhBlob.startPoint; // start in Y direction, it will initiated at adding new blob
     
 	  // object status information
 	  oc = rhBlob.oc;
 	  os = rhBlob.os;
+	  fos = rhBlob.fos;
 	 od = rhBlob.od; // lane direction will affect the result, and the lane direction will be given
 
 					 // counters

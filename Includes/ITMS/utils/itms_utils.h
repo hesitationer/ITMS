@@ -118,6 +118,7 @@ namespace itms {
 
 														// object tracking related 
 		int minVisibleCount = 3;						// minimum survival consecutive frame for noise removal effect
+		int minConsecutiveFramesForOS = 3;				// minimum consecutive frames for object status determination
 		int max_Center_Pts = 5 * 30;					// maximum number of center points (frames), about 5 sec.
 		int numberOfTracePoints = 15;					// # of tracking tracer in debug Image
 		int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
@@ -186,16 +187,23 @@ namespace itms {
 		cv::HOGDescriptor hog;
 		int trackid = 0;					// tracking id: it should be controlloed in the main function.
 		int maxTrackIds = 1024;
+
+		// object speed limit related
+		int lastMinimumPoints = 30;			// minimum frame to determine the object speed 
+		int fps = 30;						// frames per second 
+		track_t speedLimitForstopping = 2;		// 4 km/hour for human
 	};
 	class ITMSResult {
 	public:
 		ITMSResult() {};
 		~ITMSResult(){};
 		
-		std::vector<std::pair<int, int>> objStatus; // blob, status
+		std::vector<std::pair<int, int>> objStatus; // blob id, status
+		std::vector<std::pair<int, int>> objClass; // blob id, object class;
 		std::vector<cv::Rect> objRect; // blob rect
+		std::vector<track_t> objSpeed;	// object speed
 		
-		void reset(void){objStatus.clear(); objRect.clear(); };
+		void reset(void) { objStatus.clear(); objClass.clear(); objRect.clear(); objSpeed.clear(); };
 	};
 
 	class CRegion
@@ -353,7 +361,7 @@ namespace itms {
   void addBlobToExistingBlobs(itms::Config& _conf, Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
   void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &id);
   double distanceBetweenPoints(cv::Point point1, cv::Point point2);
-  ObjectStatus getObjectStatusFromBlobCenters(Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount = 3);
+  ObjectStatus getObjectStatusFromBlobCenters(Config& config, Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount = 3);
   ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount = 3);
   void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName, const cv::Scalar& _color=SCALAR_WHITE);
   void drawAndShowContours(itms::Config& _conf, cv::Size imageSize, std::vector<Blob> blobs, std::string strImageName);
@@ -364,11 +372,11 @@ namespace itms {
   void drawBlobInfoOnImage(itms::Config& _conf, std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy);
   void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
   void drawRoadRoiOnImage(std::vector<std::vector<cv::Point>> &_roadROIPts, cv::Mat &_srcImg);
-  void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus); // update simple blob properties including os counters
+  void updateBlobProperties(const Config& _conf, itms::Blob &updateBlob, itms::ObjectStatus &curStatus, const double _speed = 0); // update simple blob properties including os counters
   ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
-
-																		  // classificy an object with distance and its size
+  																	  // classificy an object with distance and its size
   void classifyObjectWithDistanceRatio(itms::Config& _conf, Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability);
+  bool checkObjectStatus(const itms::Config& _conf, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
 
   // cascade detector related
   void detectCascadeRoi(itms::Config& _conf, cv::Mat img, cv::Rect& rect);
@@ -392,8 +400,7 @@ namespace itms {
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   
   // for API class
-  class ITMS_DLL_EXPORT itmsFunctions {
-  
+  class ITMS_DLL_EXPORT itmsFunctions {  
   public:
 	  itmsFunctions() {};
 	  itmsFunctions(Config* config);

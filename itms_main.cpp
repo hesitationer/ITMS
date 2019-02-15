@@ -36,7 +36,7 @@ using namespace std;
 using namespace itms;
 
 
-//#define _sk_Memory_Leakag_Detector
+#define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -128,11 +128,14 @@ bool loadConfig(itms::Config& _conf)
 		// Object Tracking Related
 		_conf.maxNumOfTrackers = cvReadIntByName(fs, 0, "maxNumOfTrackers", 100);
 		_conf.minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
+		_conf.minConsecutiveFramesForOS = cvReadIntByName(fs, 0, "minConsecutiveFramesForOS", 3);
 		_conf.max_Center_Pts = cvReadIntByName(fs, 0, "max_Center_Pts", 150);
 		_conf.numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
 		_conf.maxNumOfConsecutiveInFramesWithoutAMatch = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInFramesWithoutAMatch", 50);
 		_conf.maxNumOfConsecutiveInvisibleCounts = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInvisibleCounts", 100);
 		_conf.movingThresholdInPixels = cvReadIntByName(fs, 0, "movingThresholdInPixels", 0);
+
+		// Object Speed Limitation
 
 		_conf.img_dif_th = cvReadIntByName(fs, 0, "img_dif_th", 20);
 
@@ -146,6 +149,11 @@ bool loadConfig(itms::Config& _conf)
 		_conf.MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);
 		_conf.SILENT = cvReadIntByName(fs, 0, "SILENT", 0);
 		_conf.LAB = cvReadIntByName(fs, 0, "LAB", 0);
+
+		// Object Speed Limitation
+		_conf.lastMinimumPoints = cvReadIntByName(fs, 0, "lastMinimumPoints", 30);
+		_conf.fps = cvReadIntByName(fs, 0, "fps", 30);
+		_conf.speedLimitForstopping = cvReadRealByName(fs, 0, "speedLimitForstopping", 2);
 
 		cvReleaseFileStorage(&fs);
 
@@ -387,6 +395,7 @@ int main(void) {
 	if (hasFile)
 	{
 		fps = int(capVideo.get(CAP_PROP_FPS));
+		conf.fps = fps;
 		cout << "Video FPS: " << fps << endl;
 	}
 	

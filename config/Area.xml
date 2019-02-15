@@ -3,10 +3,10 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>
-<debugShowImagesDetail>0</debugShowImagesDetail>
+<debugShowImagesDetail>1</debugShowImagesDetail>
 <debugGeneral>0</debugGeneral>
 <debugGeneralDetail>0</debugGeneralDetail>
-<debugTrace>0</debugTrace>
+<debugTrace>1</debugTrace>
 <debugTime>1</debugTime>
 
 <scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor -->
@@ -23,7 +23,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
-<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -77,6 +77,13 @@
 <maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>
 <movingThresholdInPixels> 0 </movingThresholdInPixels>
 
+<!-- Object speed limit related -- -->
+<lastMinimumPoints> 30 </lastMinimumPoints>
+<fps> 30 </fps>
+<speedLimitForstopping> 2 </speedLimitForstopping>
+
+<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>
+
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                <!-- local region tracking -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>    <!-- lost object global searching ---->
@@ -86,5 +93,6 @@
 <MULTISCALE>1</MULTISCALE>
 <SILENT>0</SILENT>
 <LAB>0</LAB>
+
 
 </opencv_storage>

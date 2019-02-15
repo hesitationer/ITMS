@@ -138,6 +138,7 @@ namespace itms {
     int totalVisibleCount;                        // how many times Visible total whatever appear or disappeared
 	int id;                                       // track id will be given
 	//int showId;                                   // display id
+	double speed;								  // km/hour
     
     // distance from starting point (0 meter(x100 centimeters))
     cv::Point startPoint; // save start center Point of the blob
@@ -145,6 +146,7 @@ namespace itms {
     // blob object status information
     ObjectClass oc;	
     ObjectStatus os;
+	ObjectStatus fos; // final object status
     ObjectDirection od; // lane direction will affect the result, and the lane direction will be given
 	// counters
 	int oc_vehicle_cnter; // objectClass vehicle counter

@@ -98,7 +98,7 @@ namespace itms {
 
 	  tgtBlob.age = srcBlob.age;
 	  tgtBlob.totalVisibleCount = srcBlob.totalVisibleCount;
-//	  tgtBlob.showId = srcBlob.showId;
+//	  tgtBlob.showId = srcBlob.showId;	  
 	  // object status information
 	  tgtBlob.oc = srcBlob.oc;
 	  tgtBlob.os = srcBlob.os;
@@ -370,22 +370,26 @@ namespace itms {
 		  int intIndexOfLeastDistance = 0;
 		  //int intIndexOfHighestScore = 0;
 		  double dblLeastDistance = 100000.0;
+		  /*
 		  double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
+
 		  float allowedPercentage = 0.25; // 20%
 		  float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로 
 		  float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
 		  float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
 		  float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
+		  */
 
 		  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
 			  if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
 			  // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
 				  double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
+				  /* // sangkny 2019. 02. 15
 				  totalScore -= dblDistance;
 				  totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
 				  totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
 				  totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area()) / max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
-
+				  */
 				  if (existingBlobs[i].oc != currentFrameBlob.oc)
 					  int kkk = 0;
 
@@ -418,7 +422,7 @@ namespace itms {
 			  vector<Point2f> blobCenterPxs;
 			  blobCenterPxs.push_back(currentFrameBlob.centerPositions.back());
 			  float distance = getDistanceInMeterFromPixels(blobCenterPxs, _conf.transmtxH, _conf.lane_length, false);
-			  if (_conf.debugGeneralDetail)
+			  if (0 && _conf.debugGeneralDetail)
 				  cout << " distance: " << distance / 100 << " meters from the starting point.\n";
 			  // do the inside
 			  if (distance >= 100.00/* 1m */ && distance < 19900/*199m*/) {// between 1 meter and 199 meters
@@ -721,8 +725,7 @@ namespace itms {
 		  // object status, class update routine starts        
 		  //existingBlob.os = getObjectStatusFromBlobCenters(existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
 		  existingBlob.os = getObjStatusUsingLinearRegression(_conf, existingBlob, _conf.ldirection, _conf.movingThresholdInPixels, _conf.minVisibleCount);
-		  // 벡터로 넣을지 생각해 볼 것, 그리고, regression from kalman 으로 부터 정지 등을 판단하는 것도 고려 중....
-		  // object classfication according to distance and width/height ratio, area 
+		  // 벡터로 넣을지 생각해 볼 것, 그리고, regression from kalman 으로 부터 정지 등을 판단하는 것도 고려 중....		  
 
 		  // object status, class update routine ends
 		  blobIdx++;
@@ -734,11 +737,13 @@ namespace itms {
   void addBlobToExistingBlobs(itms::Config& _conf, Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex) {
 	  // update the status or correcte the status
 	  // here, we need to control the gradual change of object except the center point	
+	  
 	  float allowedPercentage = 1.0; // 20%
 	  float minArea = existingBlobs[intIndex].currentBoundingRect.area() *(1.0f - allowedPercentage);
 	  float MaxArea = existingBlobs[intIndex].currentBoundingRect.area() *(1.0f + allowedPercentage);
 	  float minDiagonal = existingBlobs[intIndex].dblCurrentDiagonalSize * (1.0f - allowedPercentage);
 	  float maxDiagonal = existingBlobs[intIndex].dblCurrentDiagonalSize * (1.0f + allowedPercentage);
+	  
 	  if (0 && (currentFrameBlob.currentBoundingRect.area() < minArea ||
 		  currentFrameBlob.currentBoundingRect.area() > MaxArea ||
 		  currentFrameBlob.dblCurrentDiagonalSize < minDiagonal ||
@@ -844,7 +849,7 @@ namespace itms {
   // it should inspect after predicting the next position
   // it determines the status away at most 5 frame distance from past locations
   // it shoud comes from the average but for efficiency, does come from the several past location. 
-  ObjectStatus getObjectStatusFromBlobCenters(Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount) {
+  ObjectStatus getObjectStatusFromBlobCenters(const Config& config, Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount) {
 	  ObjectStatus objectstatus = ObjectStatus::OS_NOTDETERMINED;
 	  if (blob.totalVisibleCount < minTotalVisibleCount) // !! parameter
 		  return objectstatus;
@@ -908,8 +913,8 @@ namespace itms {
 	  // weight policy : current status consecutive counter, others, 1
 	  // 2018. 10. 26 -> replaced with below functions
 
-	  itms::Blob orgBlob = blob; // backup 
-	  updateBlobProperties(blob, objectstatus); // update the blob properties including the os_prob
+	  //itms::Blob orgBlob = blob; // backup 
+	  updateBlobProperties(config, blob, objectstatus, 0.0); // update the blob properties including the os_prob
 												//itms::ObjectStatus tmpOS = computeObjectStatusProbability(blob); // get the moving status according to the probability
 												//if (tmpOS != objectstatus) {    
 												//  objectstatus = tmpOS;
@@ -925,37 +930,29 @@ namespace itms {
   // using LastMinPoints
   ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount) {
 	  ObjectStatus objectstatus = ObjectStatus::OS_NOTDETERMINED;
-	  int lastMinPoints = 1 * 30; // minimum Last frame numbers
+	  
+	  int lastMinPoints = config.lastMinimumPoints; // minimum Last frame numbers
+	  
 	  if (blob.totalVisibleCount < minTotalVisibleCount|| ((int)blob.centerPositions.size() < lastMinPoints)) // !! parameter
 		  return objectstatus;
 
-	  int numPositions = (int)blob.centerPositions.size();
-	  //int maxNumPosition = 5;
-	  int bweightedAvg = -1; // -1: info from the past far away, 0: false (uniform average), 1: true (weighted average)
-	  Blob tmpBlob = blob;
-	  // it will affect the speed because of const Blob declaration in parameters !!!!
-	  int deltaX;// = blob.predictedNextPosition.x - blob.centerPositions.back().x;
-	  int deltaY;// = blob.predictedNextPosition.y - blob.centerPositions.back().y; // have to use moving average after applying media filtering    
-	  cv::Point wpa = tmpBlob.weightedPositionAverage(bweightedAvg);
-	  deltaX = blob.predictedNextPosition.x - wpa.x;
-	  deltaY = blob.predictedNextPosition.y - wpa.y;
 	  // get linear regression from  centers
 	  track_t kx = 0;
 	  track_t bx = 0;
 	  track_t ky = 0;
 	  track_t by = 0;
 	  
-	  int trajLen = ((int) blob.centerPositions.size() >= lastMinPoints)? lastMinPoints: (int) blob.centerPositions.size();
+	  int trajLen = ((int) blob.centerPositions.size() >= lastMinPoints)? lastMinPoints : (int) blob.centerPositions.size();
 	  
 	  get_lin_regress_params(blob.centerPositions, blob.centerPositions.size() - trajLen, blob.centerPositions.size(), kx, bx, ky, by);
 	  track_t speed = sqrt(sqr(kx * trajLen) + sqr(ky * trajLen));
-	  const track_t speedThresh = 10;
+	  const track_t speedThresh = config.speedLimitForstopping;
 	  
 	  cv::Point2f sPt = cvtPx2RealPx(static_cast<cv::Point2f>(blob.centerPositions.at(blob.centerPositions.size()-trajLen)), config.transmtxH); // starting pt
 	  cv::Point2f ePt = cvtPx2RealPx(static_cast<cv::Point2f>(blob.centerPositions.back()), config.transmtxH);                                  // end pt
 	  
 	  double dist = distanceBetweenPoints(sPt, ePt); // real distance (cm) in the ROI 
-	  float fps = 30;
+	  float fps = config.fps;
 	  double realSpeedKmH = (dist * fps *3600)/(trajLen *100000); // (1 KM = 100000CM, 1 Hour = 3 Sec.)
 	  if(1 || config.debugGeneralDetail)
 		  cout<< "ID: "<< blob.id<<" , Speed (Km/h): "<< realSpeedKmH << endl;
@@ -963,37 +960,37 @@ namespace itms {
 	  switch (lanedirection) {
 	  case LD_NORTH:
 	  case LD_SOUTH:
-		  if (speed < speedThresh /*abs(deltaY) <= movingThresholdInPixels*/)
+		  if (realSpeedKmH < speedThresh /*abs(deltaY) <= movingThresholdInPixels*/)
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_SOUTH) ? (deltaY > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaY > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_SOUTH) ? (ky/*deltaY*/ > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (ky/*deltaY*/ > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
 		  }
 		  break;
 
 	  case LD_EAST:
 	  case LD_WEST:
-		  if (speed < speedThresh /*abs(deltaX) <= movingThresholdInPixels*/) // 
+		  if (realSpeedKmH < speedThresh /*abs(deltaX) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_EAST) ? (deltaX > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaX > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_EAST) ? (kx/*deltaX*/ > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (kx/*deltaX*/ > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
 		  }
 		  break;
 
 	  case LD_NORTHEAST:
 	  case LD_SOUTHWEST:
-		  if (speed < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
+		  if (realSpeedKmH < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((deltaX > 0 || deltaY < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((kx/*deltaX*/ > 0 || ky/*deltaY*/ < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((kx/*deltaX*/ > 0 || ky/*deltaY*/ <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
 		  }
 		  break;
 
 	  case LD_SOUTHEAST:
 	  case LD_NORTHWEST:
-		  if (speed < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
+		  if (realSpeedKmH < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((deltaX > 0 || deltaY > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((kx/*deltaX*/ > 0 || ky/*deltaY*/ > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((kx/*deltaX*/ > 0 || ky/*deltaY*/ >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
 		  }
 		  break;
 
@@ -1008,16 +1005,8 @@ namespace itms {
 	  // weight policy : current status consecutive counter, others, 1
 	  // 2018. 10. 26 -> replaced with below functions
 
-	  itms::Blob orgBlob = blob; // backup 
-	  updateBlobProperties(blob, objectstatus); // update the blob properties including the os_prob
-												//itms::ObjectStatus tmpOS = computeObjectStatusProbability(blob); // get the moving status according to the probability
-												//if (tmpOS != objectstatus) {    
-												//  objectstatus = tmpOS;
-												//  // go back to original blob and update again correctly
-												//  blob = orgBlob;
-												//  updateBlobProperties(blob, objectstatus);
-												//}
-
+	 // itms::Blob orgBlob = blob; // backup 
+	  updateBlobProperties(config, blob, objectstatus, realSpeedKmH); // update the blob properties including the os_prob
 
 	  return objectstatus;
   }  
@@ -1219,6 +1208,8 @@ namespace itms {
 				  }
 				  else {
 					  blob->os = OS_MOVING_BACKWARD; // it should be notified 
+					  blob->fos = OS_MOVING_BACKWARD;
+					  blob->os_pro = 1.0;				// 100% confirmed
 				  }
 
 			  }
@@ -1245,6 +1236,8 @@ namespace itms {
 					  }
 					  else { // in 
 						  blob->os = OS_MOVING_FORWARD; // check this out
+						  blob->fos = OS_MOVING_FORWARD; // 
+						  blob->os_pro = 1.0;			 // it is 100 % confirmed 	
 					  }
 
 				  }
@@ -1271,15 +1264,15 @@ namespace itms {
 			  double dblFontScale = blobs[i].dblCurrentDiagonalSize / 60.0;
 			  int intFontThickness = (int)std::round(dblFontScale * 1.0);
 			  string infostr, status;
-			  if (blobs[i].os == OS_STOPPED) {
+			  if (blobs[i].fos == OS_STOPPED) {
 				  status = " STOP";
 				  cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_BLUE, 2);
 			  }
-			  else if (blobs[i].os == OS_MOVING_FORWARD) {
+			  else if (blobs[i].fos == OS_MOVING_FORWARD) {
 				  status = " MV";
 				  cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_GREEN, 2);
 			  }
-			  else if (blobs[i].os == OS_MOVING_BACKWARD) {
+			  else if (blobs[i].fos == OS_MOVING_BACKWARD) {
 				  status = " WWR"; // wrong way on a road
 				  cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_RED, 2);
 			  }
@@ -1287,8 +1280,10 @@ namespace itms {
 				  status = " ND"; // not determined
 				  cv::rectangle(imgFrame2Copy, blobs[i].currentBoundingRect, SCALAR_YELLOW, 2);
 			  }
-
-			  infostr = std::to_string(blobs[i].id) + status + blobs[i].getBlobClass();// std::to_string(blobs[i].oc);
+			  
+			  infostr = std::to_string(blobs[i].id) + status + blobs[i].getBlobClass();
+			  if(_conf.debugShowImagesDetail)
+				infostr =  std::to_string(blobs[i].id) + status + blobs[i].getBlobClass() +" " + std::to_string(blobs[i].speed) + " km/h";
 			  cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].currentBoundingRect.tl()/*centerPositions.back()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
 			  if (_conf.debugTrace) {
 				  // draw the trace of object
@@ -1495,8 +1490,9 @@ namespace itms {
 
   // class Blob image processing blob_imp
 
-  void updateBlobProperties(itms::Blob &updateBlob, itms::ObjectStatus &curStatus) {
-	  itms::ObjectStatus prevOS = updateBlob.os;  // previous object status
+  void updateBlobProperties(const Config& _conf, itms::Blob &updateBlob, itms::ObjectStatus &curStatus, const double _speed) {
+	  itms::ObjectStatus prevOS = updateBlob.os;						// previous object status
+	  int minConsecutiveFramesForOS = _conf.minConsecutiveFramesForOS;	// minConsecutiveFrames For OS
 	  switch (curStatus) { // at this point, blob.os is the previous status !!!	  
 
 	  case OS_MOVING_FORWARD:
@@ -1505,17 +1501,17 @@ namespace itms {
 		  updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
 		  //blob.os_NumOfConsecutivemvForward_cnter = 1;
 		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
+		  updateBlob.fos = (updateBlob.os_NumOfConsecutivemvForward_cnter >= minConsecutiveFramesForOS) ? OS_MOVING_FORWARD : OS_NOTDETERMINED;
 		  break;
 
 	  case OS_STOPPED:
 		  updateBlob.os_stopped_cnter++;
 		  updateBlob.os_NumOfConsecutiveStopped_cnter = (prevOS == OS_STOPPED) ? updateBlob.os_NumOfConsecutiveStopped_cnter + 1 : 1;
-		  //blob.os_NumOfConsecutiveStopped_cnter = 1;  // reset the consecutive counter
+		  //blob.os_NumOfConsecutiveStopped_cnter = 1;		// reset the consecutive counter
 		  updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
 		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
-		  break;
-
-	  
+		  updateBlob.fos = (updateBlob.os_NumOfConsecutiveStopped_cnter >= minConsecutiveFramesForOS) ? OS_STOPPED : OS_NOTDETERMINED;
+		  break;	  
 
 	  case OS_MOVING_BACKWARD:
 		  updateBlob.os_mvBackward_cnter++;
@@ -1523,6 +1519,7 @@ namespace itms {
 		  updateBlob.os_NumOfConsecutiveStopped_cnter = 0;  // reset the consecutive counter
 		  updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
 		  //blob.os_NumOfConsecutivemvBackward_cnter = 1;
+		  updateBlob.fos = (updateBlob.os_NumOfConsecutivemvBackward_cnter >= minConsecutiveFramesForOS) ? OS_MOVING_BACKWARD : OS_NOTDETERMINED;
 		  break;
 
 	  case OS_NOTDETERMINED:
@@ -1539,6 +1536,7 @@ namespace itms {
 	  }
 	  // update the os_prob, it needs to improve
 	  updateBlob.os_pro = (float)updateBlob.totalVisibleCount / (float)max(1, updateBlob.age);
+	  updateBlob.speed = _speed;
 
   }
   itms::ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob) {
@@ -1673,8 +1671,20 @@ namespace itms {
 	  string strClass = objClassProbs.at(0).first; // class
 	  fprobability = objClassProbs.at(0).second;   // prob 
 	  if (fprobability >= fmininum_class_prob) {   // the if and its below can be replaced with (?) a:b; for speed
-		  if (strClass == "human")
-			  objClass = ObjectClass::OC_HUMAN;
+		  if (strClass == "human") {
+			  const float minMax_threshold = 0.5; // 25 % margin
+			  const float h_w_ratio = (float)srcBlob.currentBoundingRect.height / srcBlob.currentBoundingRect.width;
+			  const float RefRatio = 2;			// reference ration 2 : 1
+			  if (((RefRatio - minMax_threshold) > h_w_ratio)
+				  || (h_w_ratio > (RefRatio + minMax_threshold))) { // need to change the status of object class???? 
+				  objClass = ObjectClass::OC_OTHER;
+				  if (_conf.debugGeneralDetail)
+					  cout << "Human detection condition is not matched in detectCascadeRoiHuman.\n  with rect : " << srcBlob.currentBoundingRect << endl;				  
+			  }
+			  else {
+				  objClass = ObjectClass::OC_HUMAN;
+			  }
+		  }
 		  else
 		  {
 			  objClass = ObjectClass::OC_VEHICLE;
@@ -1687,6 +1697,21 @@ namespace itms {
 	  // update currentBlob
 	  srcBlob.oc_prob = fprobability;
 	  srcBlob.oc = objClass;
+  }
+
+  bool checkObjectStatus(const itms::Config & _conf, std::vector<Blob>& _Blobs, itms::ITMSResult & _itmsRes)
+  {   
+	  bool checkStatus = false;
+	  std::vector<Blob>::iterator curBlob = _Blobs.begin();
+	  while (curBlob != _Blobs.end()) {
+		  if (curBlob->oc == ObjectClass::OC_HUMAN ) {
+			  _itmsRes.objClass.pop_back(std::pair<int, int>(curBlob->id, 0));
+		  }
+		  else {
+		  }
+
+	  }
+	  return checkStatus;
   }
 
   void detectCascadeRoi(itms::Config& _conf, cv::Mat img, cv::Rect& rect)
