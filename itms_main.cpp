@@ -126,6 +126,8 @@ bool loadConfig(itms::Config& _conf)
 			strcpy(_conf.BGImagePath, BGP);
 
 		// Object Tracking Related
+		_conf.bNoitifyEventOnce = cvReadIntByName(fs, 0, "bNoitifyEventOnce", true);
+		_conf.bStrictObjEvent = cvReadIntByName(fs, 0, "bStrictObjEvent", true);
 		_conf.maxNumOfTrackers = cvReadIntByName(fs, 0, "maxNumOfTrackers", 100);
 		_conf.minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
 		_conf.minConsecutiveFramesForOS = cvReadIntByName(fs, 0, "minConsecutiveFramesForOS", 3);
@@ -423,6 +425,15 @@ int main(void) {
 		// -------------------------------------- HOW TO USE THE API --------------------------------------------
 		itmsres->reset();
 		itmsFncs->process(imgFrame2, *itmsres); // with current Frame 
+		// check the object events 
+		if(itmsres->objClass.size()){
+			cout<< "///////////// object events occurred /////////////\n";
+			for (size_t i = 0; i < itmsres->objClass.size(); i++) {
+				cout << "objID: "<< itmsres->objClass.at(i).first << ", class: "<< itmsres->objClass.at(i).second<<endl;
+				cout << "Status: " << itmsres->objStatus.at(i).second << endl;
+				cout << "Speed: " << itmsres->objSpeed.at(i) << endl;
+			}
+		}
 		// -------------------------------------------------------------------------------------------------------
        // now we prepare for the next iteration
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is

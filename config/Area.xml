@@ -3,10 +3,10 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>
-<debugShowImagesDetail>1</debugShowImagesDetail>
-<debugGeneral>0</debugGeneral>
+<debugShowImagesDetail>0</debugShowImagesDetail>
+<debugGeneral>1</debugGeneral>
 <debugGeneralDetail>0</debugGeneralDetail>
-<debugTrace>1</debugTrace>
+<debugTrace>0</debugTrace>
 <debugTime>1</debugTime>
 
 <scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor -->
@@ -23,7 +23,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness> 
 
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath> 
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -69,6 +69,8 @@
 <!--    File Loading       -->
 
 <!--    Object Tracking related -- -->
+<bNoitifyEventOnce> 1 </bNoitifyEventOnce>          <!-- Notify object's event once in its whole life -->
+<bStrictObjEvent> 1 </bStrictObjEvent>              <!-- Strict Object Event Determination --> 
 <maxNumOfTrackers> 100 </maxNumOfTrackers>          <!-- max number of trackers (or blobs in the project -->
 <minVisibleCount> 3 </minVisibleCount>
 <max_Center_Pts> 150 </max_Center_Pts> 

@@ -140,7 +140,7 @@ namespace itms {
 			  }
 			  // merge and erase index blob
 			  if (flagMerge) {
-				  if (_conf.debugGeneral)
+				  if (_conf.debugGeneralDetail)
 					  cout << "mergeing with " << to_string(intIndexOfLeastDistance) << " in blob" << currentBlob->centerPositions.back() << endl;
 
 				  // countour merging
@@ -954,7 +954,7 @@ namespace itms {
 	  double dist = distanceBetweenPoints(sPt, ePt); // real distance (cm) in the ROI 
 	  float fps = config.fps;
 	  double realSpeedKmH = (dist * fps *3600)/(trajLen *100000); // (1 KM = 100000CM, 1 Hour = 3 Sec.)
-	  if(1 || config.debugGeneralDetail)
+	  if(0 || config.debugGeneralDetail)
 		  cout<< "ID: "<< blob.id<<" , Speed (Km/h): "<< realSpeedKmH << endl;
 
 	  switch (lanedirection) {
@@ -1699,17 +1699,48 @@ namespace itms {
 	  srcBlob.oc = objClass;
   }
 
-  bool checkObjectStatus(const itms::Config & _conf, std::vector<Blob>& _Blobs, itms::ITMSResult & _itmsRes)
+  bool checkObjectStatus(const itms::Config & _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult & _itmsRes)
   {   
-	  bool checkStatus = false;
+	  bool checkStatus = false;	  
+
 	  std::vector<Blob>::iterator curBlob = _Blobs.begin();
 	  while (curBlob != _Blobs.end()) {
+		  if (curBlob->bNotifyMessage || (_conf.bStrictObjEvent && curBlob->fos == ObjectStatus::OS_NOTDETERMINED)) 
+		  {   // notified, then skip, if bStrictObjEvent, strict determination is conducted according to ObjectStatus
+			  ++curBlob;
+			  continue;
+		  }
 		  if (curBlob->oc == ObjectClass::OC_HUMAN ) {
-			  _itmsRes.objClass.pop_back(std::pair<int, int>(curBlob->id, 0));
+			  if(curBlob->oc_prob <= 0.99){
+				  std::vector<cv::Rect> _people;
+				  detectCascadeRoiHuman(_conf, _curImg, curBlob->currentBoundingRect,_people);
+				  if(_people.size()==0){
+					  ++curBlob;
+					  continue;
+				  }
+			  }
+			  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, ObjectClass::OC_HUMAN));
+			  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
+			  _itmsRes.objRect.push_back(curBlob->currentBoundingRect);
+			  _itmsRes.objSpeed.push_back(curBlob->speed);
+			  checkStatus = true;
+			  curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce )? true: false;
 		  }
 		  else {
+			  // WWD
+			  // STOP
+			  if (curBlob->oc!= ObjectClass::OC_OTHER &&
+			  (curBlob->fos == ObjectStatus::OS_MOVING_BACKWARD || 
+			  curBlob->fos == ObjectStatus::OS_STOPPED)) {
+				  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, curBlob->oc));
+				  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
+				  _itmsRes.objRect.push_back(curBlob->currentBoundingRect);
+				  _itmsRes.objSpeed.push_back(curBlob->speed);
+				  checkStatus = true;
+				  curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce) ? true : false;
+			  }
 		  }
-
+		  ++curBlob;
 	  }
 	  return checkStatus;
   }
@@ -1823,7 +1854,7 @@ namespace itms {
 	  }
   }
   // find people in the given ROI
-  void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people)
+  void detectCascadeRoiHuman(const itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people)
   {
 	  // sangkny 2019. 02. 12 : ration constraint actually, with/height 1/2 => 
 	  assert(rect.area() > 0);
@@ -2445,7 +2476,10 @@ namespace itms {
 
 	  // end generate backgroudimage 
 	  blnFirstFrame = false;
-
+	  if(checkObjectStatus(*_config, curImg, blobs, _itmsRes)){
+		  if(_config->debugGeneralDetail)
+			  cout<< "# of events: " << _itmsRes.objRect.size() <<" has been occurred (!)<!>" << endl;
+	  }	  
   }// end process
 
 

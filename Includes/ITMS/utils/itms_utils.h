@@ -109,7 +109,7 @@ namespace itms {
 		double StartY = 0;
 		double EndY = 0;
 
-		// raod configuration related
+		// road configuration related
 		float camera_height = 11.0 * 100;				// camera height 11 meter
 		float lane_length = 200.0 * 100;				// lane length
 		float lane2lane_width = 3.5 * 2 * 100;			// lane width
@@ -117,6 +117,8 @@ namespace itms {
 														// road points settings
 
 														// object tracking related 
+		bool bNoitifyEventOnce = true;                  // event notification flag: True -> notify once in its life, False -> Keep notifying events
+		bool bStrictObjEvent = true;                    // strictly determine the object events (serious determination, rare event and more accurate) 
 		int minVisibleCount = 3;						// minimum survival consecutive frame for noise removal effect
 		int minConsecutiveFramesForOS = 3;				// minimum consecutive frames for object status determination
 		int max_Center_Pts = 5 * 30;					// maximum number of center points (frames), about 5 sec.
@@ -376,12 +378,12 @@ namespace itms {
   ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
   																	  // classificy an object with distance and its size
   void classifyObjectWithDistanceRatio(itms::Config& _conf, Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability);
-  bool checkObjectStatus(const itms::Config& _conf, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
+  bool checkObjectStatus(const itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
 
   // cascade detector related
   void detectCascadeRoi(itms::Config& _conf, cv::Mat img, cv::Rect& rect);
   void detectCascadeRoiVehicle(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars);
-  void detectCascadeRoiHuman(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
+  void detectCascadeRoiHuman(const itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
   // cascade detector related ends
 
   //// road configuration
