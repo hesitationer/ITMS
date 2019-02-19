@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_APP", "ITMS_APP.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMSAPI", "Intelligent_Traffic_Monitoring_System.vcxproj", "{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "ITMS_Setup", "utils\ITMS_Setup\ITMS_Setup.vdproj", "{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -54,6 +56,22 @@ Global
 		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x64.Build.0 = Release|x64
 		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
 		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}.RelWithDebInfo|x86.Build.0 = Release|Win32
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Debug|x64.ActiveCfg = Debug
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Debug|x64.Build.0 = Debug
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Debug|x86.ActiveCfg = Debug
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Debug|x86.Build.0 = Debug
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.MinSizeRel|x64.ActiveCfg = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.MinSizeRel|x64.Build.0 = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.MinSizeRel|x86.ActiveCfg = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.MinSizeRel|x86.Build.0 = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Release|x64.ActiveCfg = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Release|x64.Build.0 = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Release|x86.ActiveCfg = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.Release|x86.Build.0 = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.RelWithDebInfo|x64.ActiveCfg = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.RelWithDebInfo|x64.Build.0 = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.RelWithDebInfo|x86.ActiveCfg = Release
+		{D34F94B6-5C56-41A4-9E42-A3AD96E49B37}.RelWithDebInfo|x86.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -39,12 +39,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_229ABCC419284AB8B48F39092322FD44"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_34F0AF3A339A42D284C0D0CAF9C23556"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -142,6 +136,12 @@
         "Entry"
         {
         "MsmKey" = "8:_BB897918F75D4325BB9EFE5FE04A73DF"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C12D3339241445F49BDC66A7A4B6C9CE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -266,8 +266,13 @@
                 {
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.5"
                     {
-                    "Name" = "8:Microsoft .NET Framework 4.5 (x86 and x64)"
+                    "Name" = "8:Microsoft .NET Framework 4.5(x86 및 x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.5"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x86"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x86)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x86"
                     }
                 }
             }
@@ -981,15 +986,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:ITMS_Setup"
-        "ProductCode" = "8:{982464D0-5E37-400E-8C59-A3036FF78CCD}"
-        "PackageCode" = "8:{201334F8-1E20-49D4-B4F0-65CE7A95F96F}"
+        "ProductCode" = "8:{EFEC42F2-3EFF-4FDC-8A00-C9C496AB8905}"
+        "PackageCode" = "8:{483C1566-AE3A-499C-A33A-FAC9F50B0C3D}"
         "UpgradeCode" = "8:{4585BEE5-D585-45FC-8912-5633AD3064B6}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.1"
         "Manufacturer" = "8:Default Company Name"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -1102,29 +1107,29 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_A228921E473B41A494AC4C4FBCF6C4DA"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_766599F4CA5746C995AF4FA24F9CA93F"
             {
-            "Name" = "8:ITMS (Active)"
+            "Name" = "8:Shortcut to 기본 출력 from ITMS_APP (Active)"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_229ABCC419284AB8B48F39092322FD44"
+            "Target" = "8:_C12D3339241445F49BDC66A7A4B6C9CE"
             "Folder" = "8:_0C4D6F62ADEC4381A61CA1EFDFC121E8"
             "WorkingFolder" = "8:_59A730806C8248DFA3C4E78A09FCC06D"
             "Icon" = "8:"
             "Feature" = "8:"
             }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_F31C956664EC4250B0DDD0E88564EB23"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_81C652E4A2D04B93B9F8DE06CBE45FFC"
             {
-            "Name" = "8:ITMS (Active)"
+            "Name" = "8:Shortcut to 기본 출력 from ITMS_APP (Active)"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_229ABCC419284AB8B48F39092322FD44"
+            "Target" = "8:_C12D3339241445F49BDC66A7A4B6C9CE"
             "Folder" = "8:_D35F7FFF65FD4901B77D43244187E6DA"
             "WorkingFolder" = "8:_59A730806C8248DFA3C4E78A09FCC06D"
             "Icon" = "8:"
@@ -1543,9 +1548,9 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_229ABCC419284AB8B48F39092322FD44"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C12D3339241445F49BDC66A7A4B6C9CE"
             {
-            "SourcePath" = "8:..\\..\\Release\\Intelligent_Traffic_Monitoring_System_r.exe"
+            "SourcePath" = "8:..\\..\\Release\\ITMS_APP.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_59A730806C8248DFA3C4E78A09FCC06D"
@@ -1565,7 +1570,7 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}"
+            "OutputProjectGuid" = "8:{061A8A19-4757-47D9-8E19-FED8AC96EE2E}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
