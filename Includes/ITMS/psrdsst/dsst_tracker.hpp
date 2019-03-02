@@ -73,6 +73,12 @@ in Proc. BMVC, 2014.
 #include "dsst_debug.hpp"
 #include "psr.hpp"
 
+#ifdef WIN32
+#define ITMS_DLL_EXPORT __declspec( dllexport )
+#else
+#define ITMS_DLL_EXPORT 
+#endif
+
 namespace cf_tracking
 {
     struct DsstParameters
@@ -100,10 +106,10 @@ namespace cf_tracking
         bool useFhogTranspose = false;
     };
 
-    class DsstTracker : public CfTracker
+    class ITMS_DLL_EXPORT DsstTracker : public CfTracker
     {
     public:
-        typedef float T; // set precision here double or float
+		typedef float T; // set precision here double or float
         static const int CV_TYPE = cv::DataType<T>::type;
         typedef cv::Size_<T> Size;
         typedef cv::Point_<T> Point;
@@ -112,7 +118,7 @@ namespace cf_tracking
         typedef DsstFeatureChannels<T> DFC;
         typedef mat_consts::constants<T> consts;
 
-        DsstTracker(DsstParameters paras, DsstDebug<T>* debug = 0)
+		DsstTracker(DsstParameters paras, DsstDebug<T>* debug = 0)
             : _isInitialized(false),
             _scaleEstimator(0),
             _PADDING(static_cast<T>(paras.padding)),
@@ -342,8 +348,8 @@ namespace cf_tracking
         }
 
     private:
-        DsstTracker& operator=(const DsstTracker&)
-        {}
+        DsstTracker& operator=(const DsstTracker& rhs)
+        {return *this;}
 
         bool reinit_(const cv::Mat& image, Rect& boundingBox)
         {

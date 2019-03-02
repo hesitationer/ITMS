@@ -1,41 +1,42 @@
 
-// ITMS_MFCDlg.h : 헤더 파일
+// ITMS_MFCDlg.h : header file
 //
 
 #pragma once
 #include "afxwin.h"
 
 
-// CITMS_MFCDlg 대화 상자
+// CITMS_MFCDlg dialog
 class CITMS_MFCDlg : public CDialogEx
 {
-// 생성입니다.
+// Construction
 public:
-	CITMS_MFCDlg(CWnd* pParent = NULL);	// 표준 생성자입니다.
+	CITMS_MFCDlg(CWnd* pParent = NULL);	// standard constructor
 
-// 대화 상자 데이터입니다.
+// Dialog Data
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ITMS_MFC_DIALOG };
 #endif
 
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
 
-// 구현입니다.
+// Implementation
 protected:
 	HICON m_hIcon;
 
-	// 생성된 메시지 맵 함수
+	// Generated message map functions
 	virtual BOOL OnInitDialog();
-	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
 	CStatic m_picture;
+	afx_msg void OnDestroy();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
-	/*VideoCapture *capture;
+	VideoCapture *capture;
 	Mat mat_frame;
-	CImage cimage_mfc;*/
+	CImage cimage_mfc;
 };

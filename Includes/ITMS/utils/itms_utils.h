@@ -22,6 +22,7 @@ using namespace std;
 #define ITMS_DLL_EXPORT 
 #endif
 
+
 typedef float track_t;
 
 namespace itms {
@@ -402,7 +403,7 @@ namespace itms {
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   
   // for API class
-  class ITMS_DLL_EXPORT itmsFunctions {  
+  class ITMS_DLL_EXPORT itmsFunctions {
   public:
 	  itmsFunctions() {};
 	  itmsFunctions(Config* config);

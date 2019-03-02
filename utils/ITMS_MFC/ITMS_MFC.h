@@ -1,18 +1,18 @@
 
-// ITMS_MFC.h : PROJECT_NAME 응용 프로그램에 대한 주 헤더 파일입니다.
+// ITMS_MFC.h : main header file for the PROJECT_NAME application
 //
 
 #pragma once
 
 #ifndef __AFXWIN_H__
-	#error "PCH에 대해 이 파일을 포함하기 전에 'stdafx.h'를 포함합니다."
+	#error "include 'stdafx.h' before including this file for PCH"
 #endif
 
-#include "resource.h"		// 주 기호입니다.
+#include "resource.h"		// main symbols
 
 
 // CITMS_MFCApp:
-// 이 클래스의 구현에 대해서는 ITMS_MFC.cpp을 참조하십시오.
+// See ITMS_MFC.cpp for the implementation of this class
 //
 
 class CITMS_MFCApp : public CWinApp
@@ -20,11 +20,11 @@ class CITMS_MFCApp : public CWinApp
 public:
 	CITMS_MFCApp();
 
-// 재정의입니다.
+// Overrides
 public:
 	virtual BOOL InitInstance();
 
-// 구현입니다.
+// Implementation
 
 	DECLARE_MESSAGE_MAP()
 };

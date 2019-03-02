@@ -50,8 +50,14 @@
 #define MATH_SPECTRUMS_HPP_
 
 #include <opencv2/core/core.hpp>
+// sangkny itms
+#ifdef WIN32
+#define ITMS_DLL_EXPORT __declspec( dllexport )
+#else
+#define ITMS_DLL_EXPORT 
+#endif
 
-void divSpectrums(cv::InputArray _numeratorA, cv::InputArray _denominatorB,
+void ITMS_DLL_EXPORT divSpectrums(cv::InputArray _numeratorA, cv::InputArray _denominatorB,
     cv::OutputArray _dst, int flags = 0, bool conjB = false);
 
 template <typename T>

@@ -1,68 +1,111 @@
-﻿================================================================================
-    MFC 라이브러리 : ITMS_MFC 프로젝트 개요
+================================================================================
+    MICROSOFT FOUNDATION CLASS LIBRARY : ITMS_MFC Project Overview
 ===============================================================================
 
-응용 프로그램 마법사에서 이 ITMS_MFC 응용 프로그램을 만들었습니다. 이 응용 프로그램은 MFC의 기본 사용법을 보여 줄 뿐만 아니라 응용 프로그램을 작성하기 위한 기본 구조를 제공합니다.
+The application wizard has created this ITMS_MFC application for
+you.  This application not only demonstrates the basics of using the Microsoft
+Foundation Classes but is also a starting point for writing your application.
 
-ITMS_MFC 응용 프로그램을 구성하는 각 파일에 대한
-요약 설명이 포함되어 있습니다.
+This file contains a summary of what you will find in each of the files that
+make up your ITMS_MFC application.
 
 ITMS_MFC.vcxproj
-    응용 프로그램 마법사를 사용하여 생성한 VC++ 프로젝트의 기본 프로젝트 파일입니다. 파일을 생성한 Visual C++ 버전에 대한 정보와 응용 프로그램 마법사를 사용하여 선택한 플랫폼, 구성 및 프로젝트 기능에 대한 정보가 포함되어 있습니다.
+    This is the main project file for VC++ projects generated using an application wizard.
+    It contains information about the version of Visual C++ that generated the file, and
+    information about the platforms, configurations, and project features selected with the
+    application wizard.
 
 ITMS_MFC.vcxproj.filters
-    응용 프로그램 마법사를 사용하여 생성된 VC++ 프로젝트의 필터 파일입니다. 이 파일에는 프로젝트의 파일과 필터 간의 연결 정보가 들어 있습니다. 이러한 연결은 특정 노드에서 유사한 확장명으로 그룹화된 파일을 표시하기 위해 IDE에서 사용됩니다. 예를 들어 ".cpp" 파일은 "소스 파일" 필터와 연결되어 있습니다.
+    This is the filters file for VC++ projects generated using an Application Wizard. 
+    It contains information about the assciation between the files in your project 
+    and the filters. This association is used in the IDE to show grouping of files with
+    similar extensions under a specific node (for e.g. ".cpp" files are associated with the
+    "Source Files" filter).
 
 ITMS_MFC.h
-    해당 응용 프로그램의 기본 헤더 파일입니다.
-    여기에는 resource.h를 비롯한 다른 프로젝트별 헤더가 포함되어 있으며 CITMS_MFCApp 응용 프로그램 클래스가 선언되어 있습니다.
+    This is the main header file for the application.  It includes other
+    project specific headers (including Resource.h) and declares the
+    CITMS_MFCApp application class.
 
 ITMS_MFC.cpp
-    이는 응용 프로그램 클래스 CITMS_MFCApp가 포함된 기본 응용 프로그램 소스 파일입니다.
+    This is the main application source file that contains the application
+    class CITMS_MFCApp.
 
 ITMS_MFC.rc
-    프로그램에서 사용하는 모든 Microsoft Windows 리소스의 목록입니다. 여기에는 RES 하위 디렉터리에 저장된 아이콘, 비트맵 및 커서가 포함됩니다. 이 파일은 Microsoft Visual C++에서 직접 편집할 수 있습니다. 프로젝트 리소스는 1042에 있습니다.
+    This is a listing of all of the Microsoft Windows resources that the
+    program uses.  It includes the icons, bitmaps, and cursors that are stored
+    in the RES subdirectory.  This file can be directly edited in Microsoft
+    Visual C++. Your project resources are in 1033.
 
 res\ITMS_MFC.ico
-    아이콘 파일이며, 응용 프로그램의 아이콘으로 사용됩니다. 이 아이콘은 기본 리소스 파일인 ITMS_MFC.rc에 의해 포함됩니다.
+    This is an icon file, which is used as the application's icon.  This
+    icon is included by the main resource file ITMS_MFC.rc.
 
 res\ITMS_MFC.rc2
-    이 파일에는 Microsoft Visual C++ 이외의 다른 도구에서 편집한 리소스가 포함되어 있습니다. 리소스 편집기로 편집할 수 없는 모든 리소스는 이 파일에 넣어야 합니다.
+    This file contains resources that are not edited by Microsoft
+    Visual C++. You should place all resources not editable by
+    the resource editor in this file.
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-응용 프로그램 마법사에서 대화 상자 클래스 하나를 만듭니다.
+The application wizard creates one dialog class:
 
-ITMS_MFCDlg.h, ITMS_MFCDlg.cpp - 대화 상자
-    이 파일에는 CITMS_MFCDlg 클래스가 포함됩니다. 이 클래스는 응용 프로그램의 주 대화 상자에 대한 동작을 정의합니다. 이 대화 상자 템플릿은 ITMS_MFC.rc에 있으며, Microsoft Visual C++에서 직접 편집할 수 있습니다.
-
-/////////////////////////////////////////////////////////////////////////////
-
-기타 기능:
-
-ActiveX 컨트롤
-    응용 프로그램이 Active X 컨트롤을 지원합니다.
+ITMS_MFCDlg.h, ITMS_MFCDlg.cpp - the dialog
+    These files contain your CITMS_MFCDlg class.  This class defines
+    the behavior of your application's main dialog.  The dialog's template is
+    in ITMS_MFC.rc, which can be edited in Microsoft Visual C++.
 
 /////////////////////////////////////////////////////////////////////////////
 
-기타 표준 파일:
+Help Support:
+
+hlp\ITMS_MFC.hhp
+    This file is a help project file. It contains the data needed to
+    compile the help files into a .chm file.
+
+hlp\ITMS_MFC.hhc
+    This file lists the contents of the help project.
+
+hlp\ITMS_MFC.hhk
+    This file contains an index of the help topics.
+
+hlp\afxcore.htm
+    This file contains the standard help topics for standard MFC
+    commands and screen objects. Add your own help topics to this file.
+
+makehtmlhelp.bat
+    This file is used by the build system to compile the help files.
+
+hlp\Images\*.gif
+    These are bitmap files required by the standard help file topics for
+    Microsoft Foundation Class Library standard commands.
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Other standard files:
 
 StdAfx.h, StdAfx.cpp
-    이 파일은 미리 컴파일된 헤더(PCH) 파일 ITMS_MFC.pch와 미리 컴파일된 형식(PCT) 파일 StdAfx.obj를 빌드하는 데 사용됩니다.
+    These files are used to build a precompiled header (PCH) file
+    named ITMS_MFC.pch and a precompiled types file named StdAfx.obj.
 
 Resource.h
-    새 리소스 ID를 정의하는 표준 헤더 파일입니다. Microsoft Visual C++에서 이 파일을 읽고 업데이트합니다.
+    This is the standard header file, which defines new resource IDs.
+    Microsoft Visual C++ reads and updates this file.
 
-ITMS_MFC.manifest
-	응용 프로그램 매니페스트 파일은 Windows XP에서 특정 버전의 Side-by-Side 어셈블리에 대한 응용 프로그램 종속성을 설명하는 데 사용됩니다. 로더는 이 정보를 통해 어셈블리 캐시 또는 응용 프로그램의 private에서 적절한 어셈블리를 로드합니다. 응용 프로그램 매니페스트는 응용 프로그램 실행 파일과 같은 폴더에 설치된 외부 .manifest 파일 형태로서 재배포용으로 포함되거나, 리소스 형태로 된 실행 파일에 포함될 수 있습니다.
 /////////////////////////////////////////////////////////////////////////////
 
-기타 참고:
+Other notes:
 
-응용 프로그램 마법사에서 사용하는 "TODO:"는 사용자가 추가하거나 사용자 지정해야 하는 소스 코드 부분을 나타냅니다.
+The application wizard uses "TODO:" to indicate parts of the source code you
+should add to or customize.
 
-공유된 DLL에서 MFC를 사용하는 응용 프로그램의 경우 MFC DLL을 재배포할 필요가 없습니다. 응용 프로그램에서 운영 체제의 로캘과 다른 언어를 사용하는 경우 이에 해당하는 지역화된 리소스인 mfc110XXX.DLL도 재배포해야 합니다.
-이러한 두 항목에 대한 자세한 내용은 MSDN 설명서에 있는 Visual C++ 응용 프로그램 재배포 섹션을 참조하십시오.
+If your application uses MFC in a shared DLL, you will need
+to redistribute the MFC DLLs. If your application is in a language
+other than the operating system's locale, you will also have to
+redistribute the corresponding localized resources MFC100XXX.DLL.
+For more information on both of these topics, please see the section on
+redistributing Visual C++ applications in MSDN documentation.
 
 /////////////////////////////////////////////////////////////////////////////

@@ -37,20 +37,26 @@
 #include "cv_ext.hpp"
 #include "mat_consts.hpp"
 
+#ifdef WIN32
+#define ITMS_DLL_EXPORT __declspec( dllexport )
+#else
+#define ITMS_DLL_EXPORT 
+#endif
+
 namespace cf_tracking
 {
-    void dftCcs(const cv::Mat& input, cv::Mat& out, int flags = 0);
-    void dftNoCcs(const cv::Mat& input, cv::Mat& out, int flags = 0);
-    int mod(int dividend, int divisor);
-    void depResize(const cv::Mat& source, cv::Mat& dst, const cv::Size& dsize);
+    void ITMS_DLL_EXPORT dftCcs(const cv::Mat& input, cv::Mat& out, int flags = 0);
+    void ITMS_DLL_EXPORT dftNoCcs(const cv::Mat& input, cv::Mat& out, int flags = 0);
+    int ITMS_DLL_EXPORT mod(int dividend, int divisor);
+    void ITMS_DLL_EXPORT depResize(const cv::Mat& source, cv::Mat& dst, const cv::Size& dsize);
 
-    template<typename T>
+    template<typename T> ITMS_DLL_EXPORT
     cv::Size_<T> sizeFloor(cv::Size_<T> size)
     {
         return cv::Size_<T>(floor(size.width), floor(size.height));
     }
 
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     cv::Mat numberToRowVector(int n)
     {
         cv::Mat_<T> rowVec(n, 1);
@@ -61,7 +67,7 @@ namespace cf_tracking
         return rowVec;
     }
 
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     cv::Mat numberToColVector(int n)
     {
         cv::Mat_<T> colVec(1, n);
@@ -73,7 +79,7 @@ namespace cf_tracking
     }
 
     // http://home.isr.uc.pt/~henriques/circulant/
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     T subPixelPeak(T* p)
     {
         T delta = mat_consts::constants<T>::c0_5 * (p[2] - p[0]) / (2 * p[1] - p[2] - p[0]);
@@ -85,7 +91,7 @@ namespace cf_tracking
     }
 
     // http://home.isr.uc.pt/~henriques/circulant/
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     cv::Point_<T> subPixelDelta(const cv::Mat& response, const cv::Point2i& delta)
     {
         cv::Point_<T> subDelta(static_cast<float>(delta.x), static_cast<float>(delta.y));
@@ -105,7 +111,7 @@ namespace cf_tracking
     }
 
     // http://home.isr.uc.pt/~henriques/circulant/
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     cv::Mat gaussianShapedLabels2D(T sigma, const cv::Size_<T>& size)
     {
         int width = static_cast<int>(size.width);
@@ -142,7 +148,7 @@ namespace cf_tracking
     }
 
     // http://home.isr.uc.pt/~henriques/circulant/
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     cv::Mat gaussianShapedLabelsShifted2D(T sigma, const cv::Size_<T>& size)
     {
         cv::Mat y = gaussianShapedLabels2D(sigma, size);
@@ -155,7 +161,7 @@ namespace cf_tracking
         return y;
     }
 
-    template <typename BT, typename ET>
+    template <typename BT, typename ET> ITMS_DLL_EXPORT
     cv::Mat pow(BT base_, const cv::Mat_<ET>& exponent)
     {
         cv::Mat dst = cv::Mat(exponent.rows, exponent.cols, exponent.type());
@@ -188,7 +194,7 @@ namespace cf_tracking
     }
 
     // http://en.wikipedia.org/wiki/Hann_function
-    template<typename T>
+    template<typename T> ITMS_DLL_EXPORT
     cv::Mat hanningWindow(int n)
     {
         CV_Assert(n > 0);
@@ -206,7 +212,7 @@ namespace cf_tracking
         return w;
     }
 
-    template <typename T>
+    template <typename T> ITMS_DLL_EXPORT
     void divideSpectrumsNoCcs(const cv::Mat& numerator, const cv::Mat& denominator, cv::Mat& dst)
     {
         // http://mathworld.wolfram.com/ComplexDivision.html
@@ -261,7 +267,7 @@ namespace cf_tracking
     }
 
     // http://home.isr.uc.pt/~henriques/circulant/
-    template<typename T>
+    template<typename T> ITMS_DLL_EXPORT
     bool getSubWindow(const cv::Mat& image, cv::Mat& patch, const cv::Size_<T>& size,
         const cv::Point_<T>& pos, cv::Point_<T>* posInSubWindow = 0)
     {

@@ -6,6 +6,13 @@
 #ifndef ITMS_BLOB_H
 #define ITMS_BLOB_H
 
+// sangkny itms
+#ifdef WIN32
+#define ITMS_DLL_EXPORT __declspec( dllexport )
+#else
+#define ITMS_DLL_EXPORT 
+#endif
+
 #include<opencv2/core/core.hpp>
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
@@ -110,10 +117,10 @@ namespace itms {
 	  by = det_1 * (m2 * m3_y + m1 * m4_y);
   }
 
-  class Blob {      // it will be used as a track
+  class ITMS_DLL_EXPORT Blob {      // it will be used as a track
 	  
   public:
-	  Blob(std::vector<cv::Point> _contour);
+	   Blob(std::vector<cv::Point> _contour);
 
 	  Blob(void) {};
 	  ~Blob(void);

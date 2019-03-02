@@ -1,6 +1,16 @@
 
 #include "./utils/itms_utils.h"
 
+#ifndef ITMS_DLL_EXPORT
+// sangkny itms
+#ifdef WIN32
+#define ITMS_DLL_EXPORT __declspec( dllexport )
+#else
+#define ITMS_DLL_EXPORT 
+#endif
+#endif
+
+
 namespace itms {
 	
   void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages)
@@ -2480,6 +2490,7 @@ namespace itms {
 		  if(_config->debugGeneralDetail)
 			  cout<< "# of events: " << _itmsRes.objRect.size() <<" has been occurred (!)<!>" << endl;
 	  }	  
+	  return true;
   }// end process
 
 

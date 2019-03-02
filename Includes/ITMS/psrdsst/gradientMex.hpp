@@ -47,13 +47,19 @@ TODO:
 #include "feature_channels.hpp"
 #include "wrappers.hpp"
 
-namespace piotr {
-    void fhog(float * const M, float * const O,
+#ifdef WIN32
+#define ITMS_DLL_EXPORT __declspec( dllexport )
+#else
+#define ITMS_DLL_EXPORT 
+#endif
+
+namespace  piotr {
+    void ITMS_DLL_EXPORT fhog(float * const M, float * const O,
         float * const H, int h, int w, int binSize,
         int nOrients, int softBin, float clip,
         bool calcEnergy = true);
 
-    void gradMag(float * const I, float * const M,
+    void ITMS_DLL_EXPORT gradMag(float * const I, float * const M,
         float * const O, int h, int w, int d, bool full);
 
     template<typename PRIMITIVE_TYPE>
@@ -181,9 +187,9 @@ namespace piotr {
         if (channels != 1)
             wrFree(I);
     }
-
-    template<typename PRIMITIVE_TYPE, class OUT>
-    void cvFhog(const cv::Mat& img, std::shared_ptr<OUT>& cvFeatures, int binSize, int fhogChannelsToCopy = 31)
+	
+    template<typename PRIMITIVE_TYPE, class OUT1> 
+    void cvFhog(const cv::Mat& img, std::shared_ptr<OUT1>& cvFeatures, int binSize, int fhogChannelsToCopy = 31)
     {
         const int orientations = 9;
         // ensure array is continuous
@@ -231,7 +237,7 @@ namespace piotr {
 
         // only copy the amount of the channels the user wants
         // or the amount that fits into the output array
-        int channelsToCopy = std::min(fhogChannelsToCopy, OUT::numberOfChannels());
+        int channelsToCopy = std::min(fhogChannelsToCopy, OUT1::numberOfChannels());
 
         for (int c = 0; c < channelsToCopy; ++c)
         {
@@ -258,8 +264,8 @@ namespace piotr {
         wrFree(H);
     }
 
-    template<typename PRIMITIVE_TYPE, class OUT>
-    void cvFhogT(const cv::Mat& img, std::shared_ptr<OUT>& cvFeatures, int binSize, int fhogChannelsToCopy = 31)
+    template<typename PRIMITIVE_TYPE, class OUT1> 
+    void cvFhogT(const cv::Mat& img, std::shared_ptr<OUT1>& cvFeatures, int binSize, int fhogChannelsToCopy = 31)
     {
         const int orientations = 9;
         // ensure array is continuous
@@ -308,7 +314,7 @@ namespace piotr {
 
         // only copy the amount of the channels the user wants
         // or the amount that fits into the output array
-        int channelsToCopy = std::min(fhogChannelsToCopy, OUT::numberOfChannels());
+        int channelsToCopy = std::min(fhogChannelsToCopy, OUT1::numberOfChannels());
 
         // init channels
         for (int c = 0; c < channelsToCopy; ++c)
