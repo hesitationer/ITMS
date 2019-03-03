@@ -577,7 +577,7 @@ namespace itms {
 						  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 						  cv::rectangle(tmp2, newRoi, SCALAR_MAGENTA, 2);
 						  cv::imshow("full image tracking", tmp2);
-						  cv::waitKey(1);
+						  ////cv::waitKey(1);
 					  }
 					  if (0 && _conf.debugShowImagesDetail) { // now only for full image coordinates
 						  cv::Mat debugImage = srcImg.clone(), difImg;
@@ -589,7 +589,7 @@ namespace itms {
 						  cv::rectangle(debugImage, newRoi, SCALAR_MAGENTA, 2);
 						  cv::imshow("Lost object tracking", debugImage);
 						  cv::imshow("|pre - cur| frame", difImg);
-						  cv::waitKey(1);
+						  //////cv::waitKey(1);
 					  }
 				  }
 				  else { // sub image-based approach for lost object detection, in this case, init and update need to be carried out at ontime 
@@ -687,7 +687,7 @@ namespace itms {
 									  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 							  }
 							  cv::imshow("track", tmp2);
-							  cv::waitKey(1);
+							  //////cv::waitKey(1);
 						  }
 						  if (1 && _conf.debugShowImagesDetail) { // full image debug
 							  cv::Mat tmp2 = srcImg.clone();
@@ -696,7 +696,7 @@ namespace itms {
 							  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 							  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 							  cv::imshow("full image location", tmp2);
-							  cv::waitKey(1);
+							  ////cv::waitKey(1);
 						  }
 					  }
 					  else {
@@ -1037,7 +1037,7 @@ namespace itms {
 	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
-	  cv::waitKey(1);
+	  ////cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1071,7 +1071,7 @@ namespace itms {
 	  }
 
 	  cv::imshow(strImageName, image);
-	  cv::waitKey(1);
+	  ////cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1116,7 +1116,7 @@ namespace itms {
 				  crop = imgFrame2Copy(blob.currentBoundingRect).clone();
 				  cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
 				  cv::imshow("cropImage", crop);
-				  cv::waitKey(1);
+				  //////cv::waitKey(1);
 				  cout << "blob track id: " << blob.id << " is crossing the line." << endl;
 				  cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob.age << ", " << blob.totalVisibleCount << ", " << blob.showId << ")" << endl;
 #endif
@@ -1204,7 +1204,7 @@ namespace itms {
 				  crop = imgFrame2Copy(blob->currentBoundingRect).clone();
 				  cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
 				  cv::imshow("cropImage", crop);
-				  cv::waitKey(1);
+				  //////cv::waitKey(1);
 				  cout << "blob track id: " << blob->id << " is crossing the line." << endl;
 				  cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob->age << ", " << blob->totalVisibleCount << ", " << blob->showId << ")" << endl;
 				  cout << " --> --> tbLine: This object should be eliminated -------> \n";
@@ -1232,7 +1232,7 @@ namespace itms {
 					  crop = imgFrame2Copy(blob->currentBoundingRect).clone();
 					  cv::imwrite("D:\\sangkny\\dataset\\test.png", crop);
 					  cv::imshow("cropImage", crop);
-					  cv::waitKey(1);
+					  ////cv::waitKey(1);
 					  cout << "blob track id: " << blob->id << " is crossing the line." << endl;
 					  cout << "blob infor: (Age, totalSurvivalFrames, ShowId)-(" << blob->age << ", " << blob->totalVisibleCount << ", " << blob->showId << ")" << endl;
 					  cout << " --> --> brLine: This object should be eliminated -------> \n";
@@ -1382,7 +1382,7 @@ namespace itms {
 	  if (0 && _conf.debugShowImages && _conf.debugShowImagesDetail) {
 		  imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -1814,7 +1814,7 @@ namespace itms {
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("cascade image", roiImg);
 		  imshow("hog", hogImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 
   }
@@ -1860,7 +1860,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("vehicle in detection", roiImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
   }
   // find people in the given ROI
@@ -1947,7 +1947,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("human in HOG SVM", hogImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
   }
 
@@ -2056,7 +2056,7 @@ namespace itms {
 		  for (int i = 0; i<points[1].size(); i++)
 			  circle(debugImg, points[1].at(i), 2, Scalar(0, 255, 0));
 		  imshow("calcOpticalFlowPyr", debugImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 	  size_t i = 0;
 	  for (auto track : tracks)
@@ -2135,7 +2135,7 @@ namespace itms {
 				  contours.push_back(contour);
 				  drawContours(debugImg, contours, -1, Scalar(0, 0, 255));
 				  imshow("contours_", debugImg);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 	  }
@@ -2181,7 +2181,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 	  }
@@ -2193,8 +2193,8 @@ namespace itms {
 	  return isInitialized = true;
   }
 
-  bool itmsFunctions::process(cv::Mat& curImg, ITMSResult& _itmsRes) {
-	  //_itmsRes.objRect.push_back(cv::Rect(1,1,1,1));
+  bool itmsFunctions::process(const cv::Mat& curImg1, ITMSResult& _itmsRes) {
+	  Mat curImg = curImg1.clone();
 	  if (!isInitialized) {
 		  cout << "itmsFunctions is not initialized (!)(!)\n";
 		  return false;
@@ -2226,7 +2226,7 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  waitKey(1);
+			  //waitKey(1);
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
@@ -2238,7 +2238,7 @@ namespace itms {
 			  Mat bgImage = Mat::zeros(curImg.size(), curImg.type());
 			  pBgSub->getBackgroundImage(bgImage);
 			  cv::imshow("backgroundImage", bgImage);
-			  cv::waitKey(1);
+			  //cv::waitKey(1);
 			  /*if (isWriteToFile && frameCount == 200) {
 				  string filename = conf.VideoPath;
 				  filename.append("_" + to_string(conf.scaleFactor) + "x.jpg");
@@ -2278,7 +2278,7 @@ namespace itms {
 
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  cv::imshow("imgThresh", imgThresh);
-		  cv::waitKey(1);
+		  //cv::waitKey(1);
 	  }
 
 	  for (unsigned int i = 0; i < 1; i++) {
@@ -2396,7 +2396,7 @@ namespace itms {
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");
-			  waitKey(1);
+			  //waitKey(1);
 		  }
 		  //collectPointsInBlobs(currentFrameBlobs, m_collectPoints);	// collecting points in all blobs for local tracking , please check this out
 		  //collectPointsInBlobs(blobs, m_collectPoints);	// collecting points in all blobs for local tracking 
@@ -2421,7 +2421,7 @@ namespace itms {
 	  }
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 	  if (blnFirstFrame == true) {
 		  for (auto &currentFrameBlob : currentFrameBlobs) {
@@ -2459,7 +2459,7 @@ namespace itms {
 		  }		  
 		  drawCarCountOnImage(mCarCount, debugImg);
 		  cv::imshow("current Image", debugImg);
-		  cv::waitKey(1);
+		  //////cv::waitKey(1);
 	  }
 
 	  // now we prepare for the next iteration
@@ -2480,7 +2480,7 @@ namespace itms {
 		  setBGImage(accmImage);
 		  if(_config->debugShowImagesDetail){
 			  cv::imshow("generating BG", getBGImage());
-			  waitKey(1);
+			  //waitKey(1);
 		  }
 	  }
 

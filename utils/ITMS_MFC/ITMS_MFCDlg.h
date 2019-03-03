@@ -36,7 +36,18 @@ public:
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
-	VideoCapture *capture;
-	Mat mat_frame;
-	CImage cimage_mfc;
+	VideoCapture capture;
+	//Mat mat_frame;
+	CImage cimage_mfc; // to display in MFC DC
+	// ---------------------------------------------------- HOW TO USE THE API --------------------------------------------------------------
+	Config conf; // program configuration
+	// ----------------------------------------------------------------------------------------------------------------------------------
+	// -------------------------------------- HOW TO USE THE API --------------------------------------------
+	// construct an instance 
+	std::unique_ptr<itmsFunctions> itmsFncs;   // itms main class		
+	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure	
+	// --------------------------------------------------------------------------------------------------------
+	cv::Mat imgFrame1; // previous frame
+	cv::Mat imgFrame2; // current frame
+
 };
