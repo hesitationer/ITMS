@@ -12,7 +12,7 @@
 #include <windows.h>
 #include <direct.h> // _getcwd
 #include <stdlib.h>
-#include "../../src/utils/BoxSeletor/cv_ext/init_box_selector.hpp"
+#include "utils/BoxSelector/cv_ext/init_box_selector.hpp"
 
 #define _writeXml
 

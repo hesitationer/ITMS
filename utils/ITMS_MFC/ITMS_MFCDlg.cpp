@@ -160,6 +160,7 @@ void CITMS_MFCDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	//mat_frame가 입력 이미지입니다. 
 	capture.read(imgFrame2);
+	//capture.read(imgFrame2);  // if we use this option, we need to adjust the computation of speeed in Config file
 	
 	if (imgFrame2.empty()) {		
 		EndDialog(IDOK);	// close the program or CDialog::OnTimer(nIDEvent) if you want to stay
