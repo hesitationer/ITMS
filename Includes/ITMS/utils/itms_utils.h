@@ -209,7 +209,7 @@ namespace itms {
 	inline bool loadConfig(Config& _conf)
 	{
 		std::string configFile = "./config/Area.xml";
-		std::string roadmapFile = "./config/roadMapPoints.xml";
+		std::string roadmapFile = "./config/roadMapPoints0.xml";
 		std::string vehicleRatioFile = "./config/vehicleRatio.xml";
 		std::vector<Point> road_roi_pts;
 		// cascade related 

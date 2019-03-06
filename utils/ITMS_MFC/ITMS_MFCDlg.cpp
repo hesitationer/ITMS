@@ -49,13 +49,14 @@ BOOL CITMS_MFCDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here	
 
+	// ------------- HOW TO USE THE API ---------------------------------
 	if (itms::loadConfig(conf)) {
 		std::cout << " configarion is done !!\n\n";
 	}
 	else {
 		std::cout << " configuration is not finished. However, default values are used instead!! Please double check the all files and values correctly (!)(!)\n";
 	}
-	// ------------- HOW TO USE THE API ---------------------------------
+	
 	itmsFncs = std::make_unique<itmsFunctions>(&conf); // create instance and initialize
 	itmsres = std::make_unique<ITMSResult>();
 
