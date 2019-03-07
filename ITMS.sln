@@ -25,6 +25,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_APP", "ITMS_APP.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_MFC", "utils\ITMS_MFC\ITMS_MFC.vcxproj", "{79D7E39C-FA51-4C59-BFDC-3DE2C9547B7B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_TOPESUI", "utils\ITMS_TOPESUI\TestAtms.vcxproj", "{F73A8F54-3E40-4E9E-8F79-E4E19C257094}"
+	ProjectSection(ProjectDependencies) = postProject
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D} = {930206C8-E6F6-4BDC-9F76-5A70FBABF35D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -207,6 +212,22 @@ Global
 		{79D7E39C-FA51-4C59-BFDC-3DE2C9547B7B}.RelWithDebInfo|x64.Build.0 = Release|x64
 		{79D7E39C-FA51-4C59-BFDC-3DE2C9547B7B}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
 		{79D7E39C-FA51-4C59-BFDC-3DE2C9547B7B}.RelWithDebInfo|x86.Build.0 = Release|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Debug|x64.ActiveCfg = Debug|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Debug|x64.Build.0 = Debug|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Debug|x86.ActiveCfg = Debug|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Debug|x86.Build.0 = Debug|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.MinSizeRel|x64.ActiveCfg = Release|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.MinSizeRel|x64.Build.0 = Release|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.MinSizeRel|x86.ActiveCfg = Release|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.MinSizeRel|x86.Build.0 = Release|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Release|x64.ActiveCfg = Release|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Release|x64.Build.0 = Release|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Release|x86.ActiveCfg = Release|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.Release|x86.Build.0 = Release|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.RelWithDebInfo|x64.ActiveCfg = Release|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.RelWithDebInfo|x64.Build.0 = Release|x64
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
+		{F73A8F54-3E40-4E9E-8F79-E4E19C257094}.RelWithDebInfo|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

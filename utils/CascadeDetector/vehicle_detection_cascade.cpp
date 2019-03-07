@@ -9,7 +9,9 @@ const int KEY_ESC = 27;
 //CvHaarClassifierCascade *cascade;
 cv::CascadeClassifier cascade;
 cv::HOGDescriptor hog;
-float Config::scaleFactor = .5;
+namespace Config{
+	float scaleFactor = .5;
+}
 
 void detect(Mat img);
 inline bool existFileTest(const std::string& name);

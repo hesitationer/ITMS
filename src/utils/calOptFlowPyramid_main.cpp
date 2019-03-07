@@ -6,9 +6,13 @@ using namespace std;
 const int KEY_SPACE = 32;
 const int KEY_ESC = 27;
 
+namespace Config {
+	float scaleFactor=0.5;
+};
+
 #define MAX_POINTS 16
 
-float Config::scaleFactor = .5;
+//Config::scaleFactor = .5;
 Point _pt1, _pt2;
 bool _bLeftDownAndMove = false;
 bool _bROI_Selected = false;
