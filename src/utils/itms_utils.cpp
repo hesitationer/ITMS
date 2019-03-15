@@ -2186,9 +2186,12 @@ namespace itms {
 		  }
 	  }
 	  else {
-		  if (_config->debugGeneralDetail)
+		  if (_config->debugGeneral) {
 			  cout << "Please check the background file : " << _config->BGImagePath << endl;
+			  cout << "The background will be current frame <!><!>.\n";
+		  }
 		  // alternative frame will be the previous frame at processing
+		  
 	  }
 	  return isInitialized = true;
   }
