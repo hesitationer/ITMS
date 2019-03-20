@@ -70,6 +70,7 @@ int main(void) {
 	int trackId = conf.trackid;          // unique object id, you can set or get the track id
 	int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 
 	
+	
 	std::cout << ".... configurating ...\n";
 	if(loadConfig(conf)){
 		std::cout << " configarion is done !!\n\n";
@@ -135,6 +136,8 @@ int main(void) {
     bool blnFirstFrame = true;
 	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;	    
+	int PlayInterval = 2;                // make it increase if you want to speed up !!
+	PlayInterval = std::max(1, PlayInterval);
 
 	capVideo.set(cv::CAP_PROP_POS_FRAMES, m_startFrame);
         
@@ -160,9 +163,10 @@ int main(void) {
         imgFrame1 = imgFrame2.clone();           // move frame 1 up to where frame 2 is
 
         if ((capVideo.get(CV_CAP_PROP_POS_FRAMES) + 1) < capVideo.get(CV_CAP_PROP_FRAME_COUNT)) {
-            capVideo.read(imgFrame2);
-			//frameCount++;
-			//capVideo.read(imgFrame2);
+            for(int pI=0; pI<PlayInterval;pI++)
+				capVideo.read(imgFrame2);
+			frameCount = frameCount + (PlayInterval-1);
+			
             ////resize(imgFrame2, imgFrame2, Size(), conf.scaleFactor, conf.scaleFactor);
             if (imgFrame2.empty()) {
               std::cout << "The input image is empty!! Please check the video file!!" << std::endl;
@@ -179,7 +183,7 @@ int main(void) {
         chCheckForEscKey = cv::waitKey(1);
 		if (conf.debugTime) {
 			double t2 = (double)cvGetTickCount();
-			double t3 = (t2 - t1) / (double)getTickFrequency();
+			double t3 = (t2 - t1) / (double)(getTickFrequency()*PlayInterval);
 			cout << "Processing time>>  #:" << (frameCount - 1) <<"/("<< max_frames<<")"<< " --> " << t3*1000.0<<"msec, "<< 1./t3 << "fps \n";
 		}
     }

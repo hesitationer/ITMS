@@ -111,12 +111,13 @@ int main(int argc, char **argv)
   std::string mjpgfile = "";
 
   int iWidth = 0, iHeight = 0, iChannels = 0;
+  CString m_MediaPath = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/MJPEG/20180911_160340_cam_0.mjpg";
   //CString m_MediaPath = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/20180911_161751_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/야간/야간 - 추가 - 복합 - 정지(2), 정지(3), 역주행(2), 역주행(3)/20180912_201357_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/야간/야간 - 추가 - 복합 - 정지 차로변경 - 역주행 차로변경/20180911_221801_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/전이/전이 - 전이 - 단독 - 정지 - 역주행/20180912_184308_cam_0.mjpg";// 주행, 정차, 주행 영상
   //CString m_MediaPath = "E:/Camera1/주간/주간 - 일반 - 단독 - 보행/20180911_113611_cam_0.mjpg"; // 단독 보행 후 차량이동
-  CString m_MediaPath = "E:/Camera1/주간/주간 - 추가 - 복합 - 보행자/20180912_112338_cam_0.mjpg";// 보행자 2명 차량 정차 실험
+  //CString m_MediaPath = "E:/Camera1/주간/주간 - 추가 - 복합 - 보행자/20180912_112338_cam_0.mjpg";// 보행자 2명 차량 정차 실험
   CMjpgFile* mjpgEmul = new CMjpgFile(m_MediaPath);
   iWidth = mjpgEmul->m_width;
   iHeight = mjpgEmul->m_height;
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
   // conversion end  
   VideoWriter mjpg2aviVideo;
   mjpg2aviVideo.open(strVideoName, CV_FOURCC('X', 'V', 'I', 'D'), 30, cv::Size(iWidth, iHeight), true);
-  long start_frame_number = 735;
+  long start_frame_number = 0;
   long max_frame_numbers = 1800; // end frame
   mjpgEmul->SeekFrame(start_frame_number);       
   while (mjpgEmul->GetFramePosition() <min(mjpgEmul->GetFrameLength(),max_frame_numbers) && chCheckForEscKey != 27)

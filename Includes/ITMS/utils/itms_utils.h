@@ -206,10 +206,10 @@ namespace itms {
 		track_t speedLimitForstopping = 2;		// 4 km/hour for human
 	};
 
-	inline bool loadConfig(Config& _conf)
+	inline bool ITMS_DLL_EXPORT loadConfig(Config& _conf)
 	{
 		std::string configFile = "./config/Area.xml";
-		std::string roadmapFile = "./config/roadMapPoints0.xml";
+		std::string roadmapFile = "./config/roadMapPoints.xml";
 		std::string vehicleRatioFile = "./config/vehicleRatio.xml";
 		std::vector<Point> road_roi_pts;
 		// cascade related 
@@ -274,9 +274,9 @@ namespace itms {
 			const char *VP = cvReadStringByName(fs, NULL, "VideoPath", NULL);
 			const char *BGP = cvReadStringByName(fs, NULL, "BGImagePath", NULL);
 			if (VP)
-				strcpy(_conf.VideoPath, VP);
+				strcpy_s(_conf.VideoPath, VP);
 			if (BGP)
-				strcpy(_conf.BGImagePath, BGP);
+				strcpy_s(_conf.BGImagePath, BGP);
 
 			// Object Tracking Related
 			_conf.bNoitifyEventOnce = cvReadIntByName(fs, 0, "bNoitifyEventOnce", true);
@@ -317,7 +317,7 @@ namespace itms {
 		else {
 			_conf.isLoaded = false;
 		}
-
+		_conf.Road_ROI_Pts.clear();
 		if (existFileTest(roadmapFile)) {  // try to load        
 			FileStorage fr(roadmapFile, FileStorage::READ);
 			if (fr.isOpened()) {
@@ -360,7 +360,7 @@ namespace itms {
 			}
 			// use default
 			//20180912_112338
-			// side walk1
+			// side walk1			
 			road_roi_pts.push_back(Point(932.75, 100.25)*_conf.scaleFactor);
 			road_roi_pts.push_back(Point(952.25, 106.25)*_conf.scaleFactor);
 			road_roi_pts.push_back(Point(434.75, 1055.75)*_conf.scaleFactor);
@@ -385,6 +385,7 @@ namespace itms {
 
 		// generate the boundary ROI points from Road_ROI_Pts.
 		int interval = 6; // 10 pixel
+		_conf.Boundary_ROI_Pts.clear();
 		_conf.Boundary_ROI_Pts.push_back(cv::Point(_conf.Road_ROI_Pts.at(0).at(0).x + interval, _conf.Road_ROI_Pts.at(0).at(0).y + interval));
 		_conf.Boundary_ROI_Pts.push_back(cv::Point(_conf.Road_ROI_Pts.at(2).at(1).x - interval, _conf.Road_ROI_Pts.at(2).at(1).y + interval));
 		_conf.Boundary_ROI_Pts.push_back(cv::Point(_conf.Road_ROI_Pts.at(2).at(2).x - interval, _conf.Road_ROI_Pts.at(2).at(2).y - std::min(100, 12 * interval)));

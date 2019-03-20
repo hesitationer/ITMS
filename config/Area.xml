@@ -3,10 +3,10 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
-<debugShowImagesDetail>1</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
-<debugGeneral>1</debugGeneral>                      <!-- debug flag for printing the text information --> 
-<debugGeneralDetail>1</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
-<debugTrace>1</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
+<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
+<debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
+<debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
 <debugTime>1</debugTime>                            <!-- debug flag for processing time-related information
 
 <scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
@@ -23,7 +23,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -33,6 +33,7 @@
 <VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- 트럭 야간 가다 서다    
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- 오후 차량 3대 역주행   
 <VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  
+<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- 역주행 2대 
 -->
 
 <!-- Road Configuration -->
