@@ -1,10 +1,12 @@
+// please check the correct file location
+//#include "..\..\Includes\ITMS\utils\itms_utils.h" // for exatms test
 
 #include "./utils/itms_utils.h"
 
 #ifndef ITMS_DLL_EXPORT
 // sangkny itms
 #ifdef WIN32
-#define ITMS_DLL_EXPORT __declspec( dllexport )
+#define ITMS_DLL_EXPORT __declspec(dllexport)
 #else
 #define ITMS_DLL_EXPORT 
 #endif
@@ -2141,6 +2143,11 @@ namespace itms {
 	  }
   }
 
+  int ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize)
+  {
+	  return 0;
+  }
+
   // itmsFunctions definition
   itmsFunctions::itmsFunctions(Config* config){
 	  if (!config->isLoaded) {
@@ -2496,5 +2503,89 @@ namespace itms {
 	  return true;
   }// end process
 
+
+  // ITMS API NATIVE CLASS
+  ITMSAPINativeClass::ITMSAPINativeClass()
+	  :isInitialized(false) {
+	  //Init();
+  }
+
+
+  ITMSAPINativeClass::~ITMSAPINativeClass()
+  {
+	  std::cout <<" Leaing ITMSAPI Native Class \r\n";
+  }
+  
+  int ITMSAPINativeClass::Init()
+  {
+	  int ref = -1;
+	  if (isInitialized) {
+		  std::cout << "ITMS API configuration has been already done and thus skipped !!\n";
+		  return 1;
+	  }
+
+	  std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
+
+	  int trackId = conf.trackid;          // unique object id, you can set or get the track id
+	  int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 
+
+	  std::cout << ".... configurating ...\n";
+	  if (loadConfig(conf)) {
+		  std::cout << " configuration is done !!\n\n";
+
+		  ref = 0;
+	  }
+	  else {
+		  std::cout << " configuration is not finished. However, default values are used instead!! Please double check the all files and values correctly (!)(!)\n";
+	  }
+
+
+	  // -------------------------------------- HOW TO USE THE API --------------------------------------------
+	  // construct an instance 
+	  itmsFncs = std::make_unique<itmsFunctions>(&conf); // create instance and initialize
+	  itmsres = std::make_unique<ITMSResult>();
+	  // --------------------------------------------------------------------------------------------------------
+
+	  pFrame = Mat::zeros(Size(1920, 1080), CV_8UC3);
+	  //pFrame = Mat::zeros(Size(1280, 720), CV_8UC3);
+	  isInitialized = true;
+	  return ref;
+  }
+  
+  int ITMSAPINativeClass::ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize) // reset and process Frame
+  {
+	  int ref = -1;
+
+	  if (!isInitialized)
+		  Init();
+
+	  memcpy(pFrame.data, pImage, lSize); // converting to mat 
+	  //cv::imshow("main window", pFrame);
+	  //cv::waitKey(1);
+
+
+	  itmsres->reset();
+	  itmsFncs->process(pFrame, *itmsres); // with current Frame 
+
+	  ref = 0;
+	  return ref;
+  }
+  int ITMSAPINativeClass::ResetAndProcessFrame(const cv::Mat& curImg1) // reset and process Frame
+  {
+	  int ref = -1;
+
+	  if (!isInitialized)
+	  		  Init();			  
+
+	  itmsres->reset();
+	  itmsFncs->process(curImg1, *itmsres); // with current Frame 
+
+	  ref = 0;
+	  return ref;
+  }
+  unique_ptr<itms::ITMSResult> ITMSAPINativeClass::getResult(void)
+  { 
+	  return std::move(itmsres);
+  };  
 
 } // itms namespace

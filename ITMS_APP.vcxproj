@@ -19,12 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="itms_main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="Intelligent_Traffic_Monitoring_System.vcxproj">
       <Project>{930206c8-e6f6-4bdc-9f76-5a70fbabf35d}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="itms_APINativeClass_main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{061A8A19-4757-47D9-8E19-FED8AC96EE2E}</ProjectGuid>

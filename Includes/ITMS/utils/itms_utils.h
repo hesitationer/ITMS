@@ -206,7 +206,7 @@ namespace itms {
 		track_t speedLimitForstopping = 2;		// 4 km/hour for human
 	};
 
-	inline bool ITMS_DLL_EXPORT loadConfig(Config& _conf)
+	inline bool ITMS_DLL_EXPORT __stdcall loadConfig(Config& _conf)
 	{
 		std::string configFile = "./config/Area.xml";
 		std::string roadmapFile = "./config/roadMapPoints.xml";
@@ -693,7 +693,7 @@ namespace itms {
 	  itmsFunctions() {};
 	  itmsFunctions(Config* config);
 	  bool Init(void);
-	  bool process(const cv::Mat& curImg, ITMSResult& _itmsRes);
+	  bool process(const cv::Mat& curImg1, ITMSResult& _itmsRes);
 	  
 	  ~itmsFunctions() {};
 	  
@@ -727,9 +727,30 @@ namespace itms {
 
   };
 
+  // ITMS API Native Class 
+  class ITMS_DLL_EXPORT ITMSAPINativeClass
+{
+public:
+	ITMSAPINativeClass();
+	~ITMSAPINativeClass();
+	int Init();
+	int ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize); // reset and process
+	int ResetAndProcessFrame(const cv::Mat& curImg1);
+	std::unique_ptr<ITMSResult> getResult(void);
+	std::vector<std::pair<int, int>> getObjectStatus(void);
+	std::vector<std::pair<int, int>> getObjectClass(void);
+	std::vector<cv::Rect> getObjectRect(void);
+	std::vector<track_t> getObjectSpeed(void);
+public:
+	std::unique_ptr<itmsFunctions> itmsFncs;				// itms main class	
+	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure	
+	
+	Config conf;
+	Mat pFrame;
+
+	bool isInitialized;	
+};
+
 }
-
-
-
 #endif // _ITMS_UTILS_H
 
