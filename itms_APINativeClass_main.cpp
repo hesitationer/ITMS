@@ -12,10 +12,6 @@
 #include <time.h>
 
 #include "./utils/itms_utils.h"
-// DSST
-//#include <memory> // for std::unique_ptr 
-//#include <algorithm>
-//#include "./src/fastdsst/fdssttracker.hpp"
 
 
 #define SHOW_STEPS            // un-comment or comment this line to show steps or not
@@ -109,7 +105,7 @@ int main(void) {
     bool blnFirstFrame = true;
 	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;	    
-	int PlayInterval = 2;                // make it increase if you want to speed up !!
+	int PlayInterval = 1;                // make it increase if you want to speed up !!
 	PlayInterval = std::max(1, PlayInterval);
 
 	capVideo.set(cv::CAP_PROP_POS_FRAMES, m_startFrame);
@@ -122,14 +118,14 @@ int main(void) {
 		// -------------------------------------- HOW TO USE THE API --------------------------------------------
 		
 		itmsNativeClass->ResetAndProcessFrame(imgFrame2);		
-		// check the object events 
-
-		if(itmsNativeClass->itmsres->objClass.size()){
+		// check the object events 		
+		if(itmsNativeClass->getObjectClass().size()){
 			cout<< "///////////// object events occurred /////////////\n";
-			for (size_t i = 0; i < itmsNativeClass->itmsres->objClass.size(); i++) {
-				cout << "objID: "<< itmsNativeClass->itmsres->objClass.at(i).first << ", class: "<< itmsNativeClass->itmsres->objClass.at(i).second<<endl;
-				cout << "Status: " << itmsNativeClass->itmsres->objStatus.at(i).second << endl;
-				cout << "Speed: " << itmsNativeClass->itmsres->objSpeed.at(i) << endl;
+			for (size_t i = 0; i < itmsNativeClass->getObjectClass().size(); i++) {
+				cout << "objID: "<< itmsNativeClass->getObjectClass().at(i).first << ", class: "<< itmsNativeClass->getObjectClass().at(i).second<<endl;
+				cout << "Status: " << itmsNativeClass->getObjectStatus().at(i).second << endl;
+				cout << "Speed: " << itmsNativeClass->getObjectSpeed().at(i) << endl;
+				cout << "Rect: " << itmsNativeClass->getObjectRect().at(i) << endl;
 			}
 		}
 		// -------------------------------------------------------------------------------------------------------

@@ -1,5 +1,4 @@
 // please check the correct file location
-//#include "..\..\Includes\ITMS\utils\itms_utils.h" // for exatms test
 
 #include "./utils/itms_utils.h"
 
@@ -2507,7 +2506,7 @@ namespace itms {
   // ITMS API NATIVE CLASS
   ITMSAPINativeClass::ITMSAPINativeClass()
 	  :isInitialized(false) {
-	  //Init();
+	  //Init(); // shoud not initialize here because it can not be used in CLI or C# class
   }
 
 
@@ -2524,7 +2523,7 @@ namespace itms {
 		  return 1;
 	  }
 
-	  std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
+	  std::cout << "Using OpenCV" << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << " in ITMSAPINativeClass"<<std::endl;
 
 	  int trackId = conf.trackid;          // unique object id, you can set or get the track id
 	  int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 
@@ -2583,9 +2582,26 @@ namespace itms {
 	  ref = 0;
 	  return ref;
   }
-  unique_ptr<itms::ITMSResult> ITMSAPINativeClass::getResult(void)
+  /*unique_ptr<itms::ITMSResult> ITMSAPINativeClass::getResult(void)
   { 
-	  return std::move(itmsres);
-  };  
+	  return std::move(this->itmsres);
+  }*/
+  std::vector<std::pair<int, int>> ITMSAPINativeClass::getObjectStatus(void)
+  {
+	  return (this->itmsres->objStatus);
+  }
+  std::vector<std::pair<int, int>> ITMSAPINativeClass::getObjectClass(void)
+  {
+	  return (this->itmsres->objClass);
+  }
+  std::vector<cv::Rect> ITMSAPINativeClass::getObjectRect(void)
+  {
+	  return (this->itmsres->objRect);
+  }
+  std::vector<track_t> ITMSAPINativeClass::getObjectSpeed(void)
+  {
+	  return (this->itmsres->objSpeed);
+  }
+  ;
 
 } // itms namespace

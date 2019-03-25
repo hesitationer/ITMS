@@ -73,7 +73,7 @@ int main(void) {
 	
 	std::cout << ".... configurating ...\n";
 	if(loadConfig(conf)){
-		std::cout << " configarion is done !!\n\n";
+		std::cout << " configuration is done !!\n\n";
 	}
 	else{
 		std::cout << " configuration is not finished. However, default values are used instead!! Please double check the all files and values correctly (!)(!)\n";		

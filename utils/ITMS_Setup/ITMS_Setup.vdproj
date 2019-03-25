@@ -141,12 +141,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C12D3339241445F49BDC66A7A4B6C9CE"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_CD5D3EB730AE43A38F0E584DBE1E97ED"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1115,7 +1109,7 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_C12D3339241445F49BDC66A7A4B6C9CE"
+            "Target" = "8:"
             "Folder" = "8:_0C4D6F62ADEC4381A61CA1EFDFC121E8"
             "WorkingFolder" = "8:_59A730806C8248DFA3C4E78A09FCC06D"
             "Icon" = "8:"
@@ -1129,7 +1123,7 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_C12D3339241445F49BDC66A7A4B6C9CE"
+            "Target" = "8:"
             "Folder" = "8:_D35F7FFF65FD4901B77D43244187E6DA"
             "WorkingFolder" = "8:_59A730806C8248DFA3C4E78A09FCC06D"
             "Icon" = "8:"
@@ -1548,34 +1542,6 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C12D3339241445F49BDC66A7A4B6C9CE"
-            {
-            "SourcePath" = "8:..\\..\\Debug\\ITMS_APPd.exe"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_59A730806C8248DFA3C4E78A09FCC06D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{061A8A19-4757-47D9-8E19-FED8AC96EE2E}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
         }
     }
 }

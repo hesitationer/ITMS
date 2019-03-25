@@ -736,19 +736,20 @@ public:
 	int Init();
 	int ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize); // reset and process
 	int ResetAndProcessFrame(const cv::Mat& curImg1);
-	std::unique_ptr<ITMSResult> getResult(void);
+	//std::unique_ptr<ITMSResult> getResult(void);							// it has some problem because of direct calling even with move
 	std::vector<std::pair<int, int>> getObjectStatus(void);
 	std::vector<std::pair<int, int>> getObjectClass(void);
 	std::vector<cv::Rect> getObjectRect(void);
 	std::vector<track_t> getObjectSpeed(void);
-public:
-	std::unique_ptr<itmsFunctions> itmsFncs;				// itms main class	
-	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure	
-	
+
 	Config conf;
 	Mat pFrame;
 
-	bool isInitialized;	
+	bool isInitialized;
+
+protected:
+	std::unique_ptr<itmsFunctions> itmsFncs;				// itms main class	
+	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure		
 };
 
 }
