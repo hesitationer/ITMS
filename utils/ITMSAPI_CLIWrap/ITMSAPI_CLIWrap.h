@@ -21,11 +21,14 @@ namespace ITMSAPI_CLIWrap {
 
 		int Init() { return m_pNativeClass->Init(); };
 		int ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize) { return (m_pNativeClass->ResetAndProcessFrame(iCh, pImage, lSize)); }; // reset and process
-		int ResetAndProcessFrame(const cv::Mat& curImg1) { return m_pNativeClass->ResetAndProcessFrame(curImg1); };
+		int ResetAndProcessFrame(const cv::Mat& curImg1) { return m_pNativeClass->ResetAndProcessFrame(curImg1); };		
 		
 		std::vector<std::pair<int, int>> getObjectStatus(void) {return m_pNativeClass->getObjectStatus();};
 		std::vector<std::pair<int, int>> getObjectClass(void) {	return m_pNativeClass->getObjectClass();};
 		std::vector<cv::Rect> getObjectRect(void) { return m_pNativeClass->getObjectRect(); };
 		std::vector<track_t> getObjectSpeed(void) { return m_pNativeClass->getObjectSpeed(); };
+
+		// From Here, you can define the functions to be used in C# as many as possible 		
+		int GetObjectNumber(void) { return m_pNativeClass->getObjectClass().size(); };
 	};
 }
