@@ -31,6 +31,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_APP", "ITMS_APP.vcxproj", "{061A8A19-4757-47D9-8E19-FED8AC96EE2E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ITMS_API_CLASS_APP", "ITMS_API_CLASS_APP.vcxproj", "{C798CB96-54B6-479C-87E0-0AA06D769221}"
+	ProjectSection(ProjectDependencies) = postProject
+		{930206C8-E6F6-4BDC-9F76-5A70FBABF35D} = {930206C8-E6F6-4BDC-9F76-5A70FBABF35D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

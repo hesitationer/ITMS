@@ -100,7 +100,7 @@ namespace itms {
 		// 
 
 		// main processing parameters
-		float scaleFactor = .5;
+		float scaleFactor = .15;
 		// auto brightness and apply to threshold
 		bool isAutoBrightness = true;
 		int AutoBrightness_x = 1162;
@@ -206,7 +206,7 @@ namespace itms {
 		track_t speedLimitForstopping = 2;		// 4 km/hour for human
 	};
 
-	inline bool ITMS_DLL_EXPORT __stdcall loadConfig(Config& _conf)
+	inline bool ITMS_DLL_EXPORT _stdcall loadConfig(Config& _conf)
 	{
 		std::string configFile = "./config/Area.xml";
 		std::string roadmapFile = "./config/roadMapPoints.xml";
@@ -234,6 +234,8 @@ namespace itms {
 			_conf.debugTrace = cvReadIntByName(fs, 0, "debugTrace", 0);
 			_conf.debugTime = cvReadIntByName(fs, 0, "debugTime", 1);
 
+			_conf.scaleFactor = (float)cvReadRealByName(fs, 0, "scaleFactor", 0.5); // sangkny 2019. 02. 12 
+			
 			// road configuration 		
 			_conf.camera_height = cvReadRealByName(fs, 0, "camera_height", 11 * 100);
 			_conf.lane_length = cvReadRealByName(fs, 0, "lane_length", 200 * 100);
@@ -243,8 +245,7 @@ namespace itms {
 			_conf.EndX = cvReadRealByName(fs, 0, "EndX", 0);
 			_conf.StartY = cvReadRealByName(fs, 0, "StartY", 0);
 			_conf.EndY = cvReadRealByName(fs, 0, "EndY", 0);
-
-			_conf.scaleFactor = min(1.0, max(0.1, cvReadRealByName(fs, 0, "scaleFactor", 0.5))); // sangkny 2019. 02. 12 
+			
 			_conf.isAutoBrightness = cvReadIntByName(fs, 0, "isAutoBrightness", 1);
 			_conf.AutoBrightness_Rect.x = (cvReadIntByName(fs, 0, "AutoBrightness_x", 1162 * _conf.scaleFactor))*_conf.scaleFactor;
 			_conf.AutoBrightness_Rect.y = (cvReadIntByName(fs, 0, "AutoBrightness_y", 808 * _conf.scaleFactor))*_conf.scaleFactor;

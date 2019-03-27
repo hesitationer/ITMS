@@ -32,7 +32,7 @@ namespace ITMSAPICLI_CS_Demo
             using (VideoCapture capture = new VideoCapture(filename))
             {
                 // ------------------------------------- How to use API -- 2 ------------------------------------
-                ITMSAPI_CLIWrap.ITMS_CLIWrap obj = new ITMSAPI_CLIWrap.ITMS_CLIWrap();
+                ITMS_CLIWrap obj = new ITMSAPI_CLIWrap.ITMS_CLIWrap();
                 obj.Init();
                 // ---------------------------------------------------------------------------------------------- 
 
@@ -55,7 +55,14 @@ namespace ITMSAPICLI_CS_Demo
                                 // ------------------------------- How to use API -- 3 ----------------------
                                 obj.ResetAndProcessFrame(0, image.DataPointer, image.Cols * image.Rows * image.Channels());
                                 if (obj.GetObjectNumber() > 0)
+                                {
                                     Console.WriteLine(" Event happened!!\n");
+                                    for (int i = 0; i < obj.GetObjectNumber(); i++)
+                                    {
+                                        Console.WriteLine(" Object ID:{0}, Class:{1}, Status:{2}, Speed:{3} \r \n ", obj.GetObjectIDAt(i),
+                                            obj.GetObjectClassAt(i), obj.GetObjectStatusAt(i), obj.GetObjectSpeedAt(i));
+                                    }
+                                }
                                 // --------------------------------------------------------------------------
                             }
                             if (debugShowImage)

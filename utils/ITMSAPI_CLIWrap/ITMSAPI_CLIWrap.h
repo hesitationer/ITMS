@@ -30,5 +30,29 @@ namespace ITMSAPI_CLIWrap {
 
 		// From Here, you can define the functions to be used in C# as many as possible 		
 		int GetObjectNumber(void) { return m_pNativeClass->getObjectClass().size(); };
+		int GetObjectIDAt(int nObj) { 
+			if(m_pNativeClass->getObjectClass().size()-1>=nObj) 
+				return m_pNativeClass->getObjectClass().at(nObj).first; 
+			else 
+				return 0;	
+		};
+		int GetObjectClassAt(int nObj) {
+			if (m_pNativeClass->getObjectClass().size() - 1 >= nObj)
+				return m_pNativeClass->getObjectClass().at(nObj).second;
+			else
+				return 0;
+		};
+		int GetObjectStatusAt(int nObj) {
+			if (m_pNativeClass->getObjectClass().size() - 1 >= nObj)
+				return m_pNativeClass->getObjectStatus().at(nObj).second;
+			else
+				return 0;
+		};
+		float GetObjectSpeedAt(int nObj) {
+			if (m_pNativeClass->getObjectClass().size() - 1 >= nObj)
+				return m_pNativeClass->getObjectSpeed().at(nObj);
+			else
+				return 0;
+		};
 	};
 }

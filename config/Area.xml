@@ -6,10 +6,10 @@
 <debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
 <debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
-<debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
-<debugTime>1</debugTime>                            <!-- debug flag for processing time-related information
+<debugTrace>1</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
+<debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
 
-<scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
+<scaleFactor>0.5</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
 
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
 <img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
@@ -26,14 +26,14 @@
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
-<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- ¼ø¹æÇâ Àú³á 3´ë Â÷·® ÁÖÇà
-<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  ÁÖ°£ ´Üµ¶ º¸Çà ÈÄ , ÀÚµ¿Â÷ ÁÖÇà 
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- º¸Çà 2¸í Â÷·®Á¤Â÷ ½ÇÇè 
+<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- ìˆœë°©í–¥ ì €ë… 3ëŒ€ ì°¨ëŸ‰ ì£¼í–‰
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  ì£¼ê°„ ë‹¨ë… ë³´í–‰ í›„ , ìë™ì°¨ ì£¼í–‰ 
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- ë³´í–‰ 2ëª… ì°¨ëŸ‰ì •ì°¨ ì‹¤í—˜ 
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
-<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- Æ®·° ¾ß°£ °¡´Ù ¼­´Ù    
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- ¿ÀÈÄ Â÷·® 3´ë ¿ªÁÖÇà   
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- ´Ü¼ø ¿ªÁÖÇàÀ¸·Î Àß ¾Èº¸ÀÓ  
-<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- ¿ªÁÖÇà 2´ë 
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- íŠ¸ëŸ­ ì•¼ê°„ ê°€ë‹¤ ì„œë‹¤    
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- ì˜¤í›„ ì°¨ëŸ‰ 3ëŒ€ ì—­ì£¼í–‰   
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- ë‹¨ìˆœ ì—­ì£¼í–‰ìœ¼ë¡œ ì˜ ì•ˆë³´ì„  
+<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- ì—­ì£¼í–‰ 2ëŒ€ 
 -->
 
 <!-- Road Configuration -->
@@ -48,7 +48,7 @@
 <EndY>0.6</EndY>                                                <!-- will be removed later -->
 
 <!-- -- Detection - related : BackGround Lane Direction and etc -- -->
-<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
+<BGImagePath>"config\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
 <bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
 <intNumBGRefresh> 60 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh -->
 
