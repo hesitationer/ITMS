@@ -193,7 +193,7 @@ namespace ITMS_Demo
         //
         private void button2_Click(object sender, EventArgs e)
         {
-
+            obj.Init();
         }
 
         // 이전 파일 재생
