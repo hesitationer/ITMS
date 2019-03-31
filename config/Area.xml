@@ -23,17 +23,18 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
-<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- ìˆœë°©í–¥ ì €ë… 3ëŒ€ ì°¨ëŸ‰ ì£¼í–‰
-<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  ì£¼ê°„ ë‹¨ë… ë³´í–‰ í›„ , ìë™ì°¨ ì£¼í–‰ 
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- ë³´í–‰ 2ëª… ì°¨ëŸ‰ì •ì°¨ ì‹¤í—˜ 
+<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- ¼ø¹æÇâ Àú³á 3´ë Â÷·® ÁÖÇà
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  ÁÖ°£ ´Üµ¶ º¸Çà ÈÄ , ÀÚµ¿Â÷ ÁÖÇà 
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- º¸Çà 2¸í Â÷·®Á¤Â÷ ½ÇÇè 
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
-<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- íŠ¸ëŸ­ ì•¼ê°„ ê°€ë‹¤ ì„œë‹¤    
-<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- ì˜¤í›„ ì°¨ëŸ‰ 3ëŒ€ ì—­ì£¼í–‰   
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- ë‹¨ìˆœ ì—­ì£¼í–‰ìœ¼ë¡œ ì˜ ì•ˆë³´ì„  
-<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- ì—­ì£¼í–‰ 2ëŒ€ 
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- Æ®·° ¾ß°£ °¡´Ù ¼­´Ù    
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- ¿ÀÈÄ Â÷·® 3´ë ¿ªÁÖÇà   
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- ´Ü¼ø ¿ªÁÖÇàÀ¸·Î Àß ¾Èº¸ÀÓ  
+<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- ¿ªÁÖÇà 2´ë 
+<VideoPath>"d:\\ÁÖ°£-ÀÏ¹İ-´Üµ¶-º¸Çà\\20180911_114411_cam_0.avi"</VideoPath>
 -->
 
 <!-- Road Configuration -->
@@ -50,7 +51,7 @@
 <!-- -- Detection - related : BackGround Lane Direction and etc -- -->
 <BGImagePath>"config\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
 <bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
-<intNumBGRefresh> 60 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh -->
+<intNumBGRefresh> 150 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
 
 <ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
 <bgsubtype> 0 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
@@ -85,7 +86,7 @@
 <fps> 30 </fps>                                                 <!-- frames per seconds, it is required to compute the object' speed -->
 <speedLimitForstopping> 2 </speedLimitForstopping>              <!-- speed to be determined as "STOP", Km/Hour -->
 
-<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- minimum consecutive frame for object status determination -->
+<minConsecutiveFramesForOS> 20 </minConsecutiveFramesForOS>     <!-- minimum consecutive frame for object status determination -->
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->

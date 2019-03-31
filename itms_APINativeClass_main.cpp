@@ -101,7 +101,8 @@ int main(void) {
 
 
     char chCheckForEscKey = 0;
-
+	bool bsaveEventFile = true;
+	float fscaleFractor = 0.5;
     bool blnFirstFrame = true;
 	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;	    
@@ -121,11 +122,37 @@ int main(void) {
 		// check the object events 		
 		if(itmsNativeClass->getObjectClass().size()){
 			cout<< "///////////// object events occurred /////////////\n";
+			cv::Mat debugImg = imgFrame2.clone();
 			for (size_t i = 0; i < itmsNativeClass->getObjectClass().size(); i++) {
 				cout << "objID: "<< itmsNativeClass->getObjectClass().at(i).first << ", class: "<< itmsNativeClass->getObjectClass().at(i).second<<endl;
 				cout << "Status: " << itmsNativeClass->getObjectStatus().at(i).second << endl;
 				cout << "Speed: " << itmsNativeClass->getObjectSpeed().at(i) << endl;
 				cout << "Rect: " << itmsNativeClass->getObjectRect().at(i) << endl;
+				if (bsaveEventFile) {					
+					int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
+					double dblFontScale = 2; //max(1., blobs[i].dblCurrentDiagonalSize / 60.0);
+					int intFontThickness = (int)std::round(dblFontScale * 1.0);
+					cv::Rect d_rect = itmsNativeClass->getObjectRect().at(i);
+					d_rect.x = float(d_rect.x)/fscaleFractor;
+					d_rect.y = float(d_rect.y)/fscaleFractor;
+					d_rect.width = float(d_rect.width)/fscaleFractor;
+					d_rect.height = float(d_rect.height)/fscaleFractor;
+
+					string infostr;
+					infostr.clear();
+					infostr = "id:"+ std::to_string(itmsNativeClass->getObjectClass().at(i).first) + ", class:" + std::to_string(itmsNativeClass->getObjectClass().at(i).second)
+						+", status:" + std::to_string(itmsNativeClass->getObjectStatus().at(i).second)+", speed:"+std::to_string(itmsNativeClass->getObjectSpeed().at(i));
+					
+					cv::putText(debugImg, infostr/*std::to_string(blobs[i].id)*/, cv::Point(10, 60)/*d_rect.tl()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
+					cv::rectangle(debugImg, d_rect, SCALAR_BLUE, 2);
+					cv::imshow("detected event", debugImg);
+					cv::waitKey(1);
+				}
+			}
+			if(bsaveEventFile){
+				string saveFileName = itmsNativeClass->conf.VideoPath;
+				saveFileName.append("-" +std::to_string(frameCount) +"_.jpg");
+				cv::imwrite(saveFileName, debugImg);
 			}
 		}
 		// -------------------------------------------------------------------------------------------------------
@@ -154,7 +181,7 @@ int main(void) {
 		if (itmsNativeClass->conf.debugTime) {
 			double t2 = (double)cvGetTickCount();
 			double t3 = (t2 - t1) / (double)(getTickFrequency()*PlayInterval);
-			cout << "Processing time>>  #:" << (frameCount - 1) <<"/("<< max_frames<<")"<< " --> " << t3*1000.0<<"msec, "<< 1./t3 << "fps \n";
+			cout << "Processing time>>  #:" << (frameCount - 1) <<"/("<< max_frames<<")"<< " --> " << t3*1000.0<<"msec, "<< 1./t3 << "fps \n";			
 		}
     }
 

@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   std::string mjpgfile = "";
 
   int iWidth = 0, iHeight = 0, iChannels = 0;
-  CString m_MediaPath = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/MJPEG/20180911_160340_cam_0.mjpg";
+  CString m_MediaPath = "D:/주간-일반-단독-보행/20180911_114511_cam_0.mjpg";
   //CString m_MediaPath = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/20180911_161751_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/야간/야간 - 추가 - 복합 - 정지(2), 정지(3), 역주행(2), 역주행(3)/20180912_201357_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/야간/야간 - 추가 - 복합 - 정지 차로변경 - 역주행 차로변경/20180911_221801_cam_0.mjpg";

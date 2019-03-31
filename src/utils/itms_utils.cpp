@@ -137,7 +137,8 @@ namespace itms {
 		  }
 
 		  // check the conditions
-		  if (dblLeastDistance < currentBlob->dblCurrentDiagonalSize*1.25/*should be car size */) {
+		  float realThreshold = 1.25; // according to real coordinate
+		  if (dblLeastDistance < ((float)currentBlob->dblCurrentDiagonalSize)*realThreshold/*should be car size */) {
 			  cv::Rect cFBrect = currentFrameBlobs[intIndexOfLeastDistance].currentBoundingRect;
 			  Point cB = currentBlob->centerPositions.back();
 			  bool flagMerge = false;
@@ -1272,7 +1273,7 @@ namespace itms {
 
 		  if (blobs[i].blnStillBeingTracked == true && blobs[i].totalVisibleCount >1) {
 			  int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
-			  double dblFontScale = blobs[i].dblCurrentDiagonalSize / 60.0;
+			  double dblFontScale = max(1., blobs[i].dblCurrentDiagonalSize / 60.0);
 			  int intFontThickness = (int)std::round(dblFontScale * 1.0);
 			  string infostr, status;
 			  if (blobs[i].fos == OS_STOPPED) {
@@ -1358,7 +1359,7 @@ namespace itms {
 
 	  return H_Px.back();
   }
-  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
+  float itmsFunctions::getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
 	  //// template matching algorithm implementation, demo	
 	  if (0 && _conf.debugGeneralDetail) {
 		  string ty = type2str(bgimg.type());
@@ -1710,7 +1711,7 @@ namespace itms {
 	  srcBlob.oc = objClass;
   }
 
-  bool checkObjectStatus(const itms::Config & _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult & _itmsRes)
+  bool itmsFunctions::checkObjectStatus(itms::Config & _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult & _itmsRes)
   {   
 	  bool checkStatus = false;	  
 
@@ -1724,11 +1725,19 @@ namespace itms {
 		  if (curBlob->oc == ObjectClass::OC_HUMAN ) {
 			  if(curBlob->oc_prob <= 0.99){
 				  std::vector<cv::Rect> _people;
-				  detectCascadeRoiHuman(_conf, _curImg, curBlob->currentBoundingRect,_people);
+				  detectCascadeRoiHuman(_conf, _curImg, curBlob->currentBoundingRect,_people); // sangkny 20190331 check the human with original sized image 
 				  if(_people.size()==0){
 					  ++curBlob;
 					  continue;
 				  }
+			  }
+			  else if(curBlob->totalVisibleCount<10){ // check if the given the object has enough visible counts
+				  std::cout<<"The visible count is not enough : "<< curBlob->totalVisibleCount <<std::endl;
+				  ++curBlob;
+				  continue;
+			  }
+			  else{
+				  ; // do nothing
 			  }
 			  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, ObjectClass::OC_HUMAN));
 			  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
@@ -1741,8 +1750,32 @@ namespace itms {
 			  // WWD
 			  // STOP
 			  if (curBlob->oc!= ObjectClass::OC_OTHER &&
-			  (curBlob->fos == ObjectStatus::OS_MOVING_BACKWARD || 
+			  ((curBlob->fos == ObjectStatus::OS_MOVING_BACKWARD && curBlob->speed >= _conf.speedLimitForstopping) || 
 			  curBlob->fos == ObjectStatus::OS_STOPPED)) {
+			  // sangkny 20190331 check NCC when stopped 
+			  if(curBlob->fos == ObjectStatus::OS_STOPPED){
+				  cv::Rect roi_rect = curBlob->currentBoundingRect;
+				  roi_rect = expandRect(roi_rect, 8,8,BGImage.cols, BGImage.rows);
+				  float blobncc = 0;
+				  // bg image
+				  // currnt image
+				  // blob correlation
+				  cv::imshow("NCC Bg", BGImage(roi_rect));
+				  cv::imshow("NCC Target", _curImg(roi_rect));
+				  cv::waitKey(1);
+				  blobncc = getNCC(_conf, BGImage(roi_rect), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
+				  // backgrdoun image need to be updated periodically 
+				  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
+				  if (abs(blobncc) > _config->BlobNCC_Th) // background
+				  {
+					  if(_conf.debugGeneralDetail)
+						  std::cout<< " Stop and NCC is not satisfiend !!!!!!!!!!!!!!" << std::endl;
+					  
+					  ++curBlob;
+					  continue;
+				  }
+					  
+			  }
 				  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, curBlob->oc));
 				  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
 				  _itmsRes.objRect.push_back(curBlob->currentBoundingRect);
@@ -2174,6 +2207,7 @@ namespace itms {
 				  cv::cvtColor(BGImage, BGImage, cv::COLOR_BGR2GRAY);
 			  cv::resize(BGImage, BGImage,cv::Size(), _config->scaleFactor, _config->scaleFactor);
 			  // sangkny 2019. 02. 09
+			  cv::GaussianBlur(BGImage, BGImage, cv::Size(5, 5), 0);
 			  accmImage = BGImage; // copy the background as an initialization
 			  // road_mask define
 			  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());
@@ -2204,6 +2238,7 @@ namespace itms {
 
   bool itmsFunctions::process(const cv::Mat& curImg1, ITMSResult& _itmsRes) {
 	  Mat curImg = curImg1.clone();
+	  this->orgImage = curImg1.clone();
 	  if (!isInitialized) {
 		  cout << "itmsFunctions is not initialized (!)(!)\n";
 		  return false;
@@ -2385,8 +2420,9 @@ namespace itms {
 					  //}
 					  //else {// should not com in this loop (OC_OTHER)
 					  //	int kkk = 0;
-					  //}											  
-					  currentFrameBlobs.push_back(possibleBlob);
+					  //}				
+					  if(objclass != ObjectClass::OC_OTHER) // sankgny 2019. 03. 30
+						  currentFrameBlobs.push_back(possibleBlob);
 				  }
 
 			  }
@@ -2478,12 +2514,13 @@ namespace itms {
 	  // generate background image
 	  if(_config->bGenerateBG && _config->intNumBGRefresh > 0){
 		  
-		  double learningRate = 1./_config->intNumBGRefresh;
+		  double learningRate = (double)1./(double)(_config->intNumBGRefresh);
 		  //pBgSub->apply(curImg, tmp, learningRate); // slower than the below method
 		  //pBgSub->getBackgroundImage(BGImage);
 		  //cv::Mat tmp;//(curImg.size(), CV_32FC1);
 		  accmImage.convertTo(accmImage, CV_32FC1);
 		  accumulateWeighted(curImg, accmImage, learningRate, road_mask);
+		  //accumulateWeighted(curImg, accmImage, learningRate);
 		  //addWeighted(curImg, learningRate, accmImage, 1.-learningRate, 0, accmImage);
 		  convertScaleAbs(accmImage, accmImage);
 		  setBGImage(accmImage);

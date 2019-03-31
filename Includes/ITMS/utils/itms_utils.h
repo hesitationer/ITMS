@@ -635,7 +635,7 @@ namespace itms {
   // flagLaneDirectionTop2Bottom : true -> image coord direction is same with distance measure direction, false: opposite
 
   // getNCC gets NCC value between background image and a foreground image
-  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
+  //float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
 
   // type2srt returns the type of cv::Mat
   string type2str(int type); // get Math type()
@@ -665,7 +665,7 @@ namespace itms {
   ObjectStatus computeObjectStatusProbability(const itms::Blob &srcBlob); // compute probability and returns object status 
   																	  // classificy an object with distance and its size
   void classifyObjectWithDistanceRatio(itms::Config& _conf, Blob &srcBlob, float distFromZero/* distance from the starting point*/, ObjectClass & objClass, float& fprobability);
-  bool checkObjectStatus(const itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
+  //bool checkObjectStatus(const itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
 
   // cascade detector related
   void detectCascadeRoi(itms::Config& _conf, cv::Mat img, cv::Rect& rect);
@@ -716,6 +716,7 @@ namespace itms {
 	  cv::Mat BGImage; // background image
 	  cv::Mat accmImage; // accumulated Image for background model
 	  cv::Mat road_mask;
+	  cv::Mat orgImage; // original image of current image
 
 	  // 
 	  cv::Mat structuringElement3x3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
@@ -725,6 +726,8 @@ namespace itms {
 
 	  cv::Mat getBGImage(void) { return BGImage; };
 	  void setBGImage(const cv::Mat& _bgImg) { BGImage = _bgImg; };
+	  bool checkObjectStatus(itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
+	  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
 
   };
 
