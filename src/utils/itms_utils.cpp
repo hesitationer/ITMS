@@ -2201,7 +2201,7 @@ namespace itms {
 	  m_collectPoints = _config->m_useLocalTracking;
 	  blnFirstFrame = true;
 	  if (existFileTest(_config->BGImagePath)) {
-		  BGImage = cv::imread(_config->BGImagePath);
+		  BGImage = cv::imread(_config->BGImagePath);		  
 		  if (!BGImage.empty()) {
 			  if (BGImage.channels() > 1)
 				  cv::cvtColor(BGImage, BGImage, cv::COLOR_BGR2GRAY);
@@ -2274,10 +2274,10 @@ namespace itms {
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
-	  cv::Mat imgDifference;
-	  cv::Mat imgThresh;
+	  cv::Mat imgDifference, imgDifferenceBg;
+	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
-		  pBgSub->apply(curImg, imgDifference);
+		  pBgSub->apply(curImg, imgDifference,1./(double)(_config->intNumBGRefresh));
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  Mat bgImage = Mat::zeros(curImg.size(), curImg.type());
 			  pBgSub->getBackgroundImage(bgImage);
@@ -2292,20 +2292,18 @@ namespace itms {
 		  }
 	  }
 	  else {
-		  cv::absdiff(preImg, curImg, imgDifference);
+		  cv::absdiff(preImg, curImg, imgDifference);	  		  
+		  //std::cout <<" File BG type: " << type2str(BGImage.type()) << endl; // ==> 8UC1
+		  cv::absdiff(BGImage, curImg, imgDifferenceBg);
+			
 	  }
-	  if (!road_mask.empty()) {
-		  cv::bitwise_and(road_mask, imgDifference, imgDifference);
-	  }
-
 	  // if needs to adjust img_dif_th
 	  if (_config->isAutoBrightness) {
 		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
 		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
 		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness) // the size of vector is max_past_frames
-			pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
-			//  pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
-			  
+			  pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
+			//pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
 		  pastBrightnessLevels.push_back(cvRound(roiMean));
 		  // adj function for adjusting image difference thresholding
 		  int newTh = weightFnc(pastBrightnessLevels);
@@ -2318,11 +2316,35 @@ namespace itms {
 		  }
 
 	  }
-	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);
 
+	  if (!road_mask.empty()) {
+		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
+		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
+		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+			  cv::imshow("rmask& imgdiff", imgDifference);
+			  cv::imshow("rmask& imgdiffBg", imgDifferenceBg);
+			  cv::waitKey(1);
+		  }
+
+		  float roi_bg_mean = mean(BGImage(brightnessRoi))[0];
+		  float roi_Mean = mean(curImg(brightnessRoi))[0];
+		  float roi_brightness_difference = abs(roi_bg_mean - roi_Mean);
+		  if (_config->debugGeneralDetail) {
+			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
+		  }
+		  //cv::threshold(imgDifferenceBg, imgThreshBg, roi_brightness_difference + _config->img_dif_th, 255.0, CV_THRESH_BINARY);
+		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*8./4. + 40/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);
+		  
+	  }
+
+	  
+	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);	  
+	  cv::imshow("imgThresh before", imgThresh);
+	  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  cv::imshow("imgThresh", imgThresh);
-		  //cv::waitKey(1);
+		  cv::imshow("imgThreshBg", imgThreshBg);
+		  cv::waitKey(1);
 	  }
 
 	  for (unsigned int i = 0; i < 1; i++) {
@@ -2437,7 +2459,7 @@ namespace itms {
 	  // blobs are in the ROI because of ROI map
 	  // 남북 이동시는 가로가 세로보다 커야 한다.
 	  //     
-	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
+	  //mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");

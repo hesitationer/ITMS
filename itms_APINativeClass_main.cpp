@@ -143,7 +143,7 @@ int main(void) {
 					infostr = "id:"+ std::to_string(itmsNativeClass->getObjectClass().at(i).first) + ", class:" + std::to_string(itmsNativeClass->getObjectClass().at(i).second)
 						+", status:" + std::to_string(itmsNativeClass->getObjectStatus().at(i).second)+", speed:"+std::to_string(itmsNativeClass->getObjectSpeed().at(i));
 					
-					cv::putText(debugImg, infostr/*std::to_string(blobs[i].id)*/, cv::Point(10, 60)/*d_rect.tl()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
+					cv::putText(debugImg, infostr/*std::to_string(blobs[i].id)*/, cv::Point(10, 60*(i+1))/*d_rect.tl()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
 					cv::rectangle(debugImg, d_rect, SCALAR_BLUE, 2);
 					cv::imshow("detected event", debugImg);
 					cv::waitKey(1);
