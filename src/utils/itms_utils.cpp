@@ -1732,12 +1732,31 @@ namespace itms {
 				  }
 			  }
 			  else if(curBlob->totalVisibleCount<10){ // check if the given the object has enough visible counts
-				  std::cout<<"The visible count is not enough : "<< curBlob->totalVisibleCount <<std::endl;
+				  if(_conf.debugGeneralDetail)
+					  std::cout << "The visible count is not enough : " << curBlob->totalVisibleCount << std::endl;
 				  ++curBlob;
 				  continue;
 			  }
 			  else{
 				  ; // do nothing
+			  }
+			  // only human confirm the its class with ML-based approach
+			  std::vector<cv::Rect> _people;
+			  cv:Rect _roi_rect = curBlob->currentBoundingRect;
+			  _roi_rect.x = (float)curBlob->currentBoundingRect.x/_config->scaleFactor;
+			  _roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
+			  _roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
+			  _roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
+			  expandRect(_roi_rect, 0, 0, orgImage.cols,orgImage.rows);
+
+			  detectCascadeRoiHuman(_conf, orgImage, _roi_rect, _people); // sangkny 20190331 check the human with original sized image 
+			  if (_people.size() == 0) {
+				  curBlob->oc =itms::ObjectClass::OC_OTHER;
+				  if(_conf.debugShowImagesDetail)
+					  std::cout<< "Final numan confirmation is not satisfied !!! in detectCascadeRoiHuman id:"<< std::to_string(curBlob->id) << endl;
+
+				  ++curBlob;
+				  continue;
 			  }
 			  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, ObjectClass::OC_HUMAN));
 			  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
@@ -2321,8 +2340,10 @@ namespace itms {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-			  cv::imshow("rmask& imgdiff", imgDifference);
+			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);
+			  /*cv::imshow("rmask& imgdiff", imgDifference);
 			  cv::imshow("rmask& imgdiffBg", imgDifferenceBg);
+			  */
 			  cv::waitKey(1);
 		  }
 
@@ -2333,7 +2354,7 @@ namespace itms {
 			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
 		  }
 		  //cv::threshold(imgDifferenceBg, imgThreshBg, roi_brightness_difference + _config->img_dif_th, 255.0, CV_THRESH_BINARY);
-		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*8./4. + 40/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);
+		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 10/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);
 		  
 	  }
 
@@ -2342,8 +2363,9 @@ namespace itms {
 	  cv::imshow("imgThresh before", imgThresh);
 	  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  cv::imshow("imgThresh", imgThresh);
-		  cv::imshow("imgThreshBg", imgThreshBg);
+		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);
+		  /*cv::imshow("imgThresh", imgThresh);
+		  cv::imshow("imgThreshBg", imgThreshBg);*/
 		  cv::waitKey(1);
 	  }
 
