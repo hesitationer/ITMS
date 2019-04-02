@@ -1747,7 +1747,7 @@ namespace itms {
 			  _roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
 			  _roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
 			  _roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
-			  expandRect(_roi_rect, 0, 0, orgImage.cols,orgImage.rows);
+			  expandRect(_roi_rect, 8, 8, orgImage.cols,orgImage.rows);
 
 			  detectCascadeRoiHuman(_conf, orgImage, _roi_rect, _people); // sangkny 20190331 check the human with original sized image 
 			  if (_people.size() == 0) {
@@ -1773,18 +1773,23 @@ namespace itms {
 			  curBlob->fos == ObjectStatus::OS_STOPPED)) {
 			  // sangkny 20190331 check NCC when stopped 
 			  if(curBlob->fos == ObjectStatus::OS_STOPPED){
+				  std::vector<cv::Point2f> blob_ntPts;
+				  blob_ntPts.push_back(Point2f(curBlob->centerPositions.back()));
+				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
 				  cv::Rect roi_rect = curBlob->currentBoundingRect;
-				  roi_rect = expandRect(roi_rect, 8,8,BGImage.cols, BGImage.rows);
-				  float blobncc = 0;
-				  // bg image
-				  // currnt image
-				  // blob correlation
-				  cv::imshow("NCC Bg", BGImage(roi_rect));
-				  cv::imshow("NCC Target", _curImg(roi_rect));
-				  cv::waitKey(1);
-				  blobncc = getNCC(_conf, BGImage(roi_rect), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
-				  // backgrdoun image need to be updated periodically 
-				  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
+				  if (realDistance/100.f > 100.f) {
+					  roi_rect = expandRect(roi_rect, 18, 18, BGImage.cols, BGImage.rows);
+				  }
+				  else {
+					  roi_rect = expandRect(roi_rect, 4, 4, BGImage.cols, BGImage.rows);
+				  }
+
+				  // blob correlation debug
+				  if (_config->debugShowImagesDetail) {					  
+					  itms::imshowBeforeAndAfter(BGImage(roi_rect), _curImg(roi_rect), "NCC BG / Target", 2);
+					  cv::waitKey(1);
+				  }
+				  float blobncc = getNCC(_conf, BGImage(roi_rect), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);				  
 				  if (abs(blobncc) > _config->BlobNCC_Th) // background
 				  {
 					  if(_conf.debugGeneralDetail)
@@ -1793,6 +1798,23 @@ namespace itms {
 					  ++curBlob;
 					  continue;
 				  }
+				  //std::vector<cv::Rect> _cars; 
+			   //   cv::Rect _roi_rect = curBlob->currentBoundingRect;
+				  //
+				  //_roi_rect.x = (float)curBlob->currentBoundingRect.x / _config->scaleFactor;
+				  //_roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
+				  //_roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
+				  //_roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
+				  //expandRect(_roi_rect, 8, 8, orgImage.cols, orgImage.rows);
+
+				  //detectCascadeRoiVehicle(_conf, orgImage, _roi_rect, _cars); // sangkny 20190331 check the human with original sized image 
+				  //if (_cars.size() == 0) {
+					 // //curBlob->oc = itms::ObjectClass::OC_OTHER;
+					 // if (_conf.debugShowImagesDetail)
+						//  std::cout << "Final vehicle confirmation is not satisfied !!! in detectCascadeRoiVehicle id:" << std::to_string(curBlob->id) << endl;
+					 // ++curBlob;
+					 // continue;
+				  //}
 					  
 			  }
 				  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, curBlob->oc));
@@ -2309,6 +2331,7 @@ namespace itms {
 				  std::cout << " background image has been generated (!!)\n";
 			  }*/
 		  }
+		  cv::absdiff(BGImage, curImg, imgDifferenceBg);
 	  }
 	  else {
 		  cv::absdiff(preImg, curImg, imgDifference);	  		  
@@ -2361,7 +2384,7 @@ namespace itms {
 	  
 	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);	  
 	  cv::imshow("imgThresh before", imgThresh);
-	  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  //cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);
 		  /*cv::imshow("imgThresh", imgThresh);
@@ -2372,10 +2395,29 @@ namespace itms {
 	  for (unsigned int i = 0; i < 1; i++) {
 		  if (_config->bgsubtype == BgSubType::BGS_CNT)
 			  cv::erode(imgThresh, imgThresh, structuringElement3x3);
-		  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-		  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-		  if (_config->bgsubtype == BgSubType::BGS_DIF)
-			  cv::erode(imgThresh, imgThresh, structuringElement5x5);
+		  if (_config->scaleFactor > 0.75) {
+			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
+			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
+		  }
+		  else if (_config->scaleFactor > 0.5) {
+			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
+			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+		  }
+		  else {
+			  cv::dilate(imgThresh, imgThresh, structuringElement7x7);
+			  cv::dilate(imgThresh, imgThresh, structuringElement7x7);
+		  }
+		  if (_config->bgsubtype == BgSubType::BGS_DIF) {
+			  if (_config->scaleFactor > 0.75) {
+				  cv::erode(imgThresh, imgThresh, structuringElement3x3);
+			  }
+			  else if (_config->scaleFactor > 0.5) {
+				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
+			  }
+			  else {
+				  cv::erode(imgThresh, imgThresh, structuringElement7x7);
+			  }
+		  }
 	  }
 
 	  cv::Mat imgThreshCopy = imgThresh.clone();
@@ -2481,7 +2523,7 @@ namespace itms {
 	  // blobs are in the ROI because of ROI map
 	  // 남북 이동시는 가로가 세로보다 커야 한다.
 	  //     
-	  //mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
+	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");

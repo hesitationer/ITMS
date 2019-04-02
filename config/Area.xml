@@ -23,7 +23,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -51,7 +51,7 @@
 <!-- -- Detection - related : BackGround Lane Direction and etc -- -->
 <BGImagePath>"config\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
 <bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
-<intNumBGRefresh> 60 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
+<intNumBGRefresh> 200 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
 
 <ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
 <bgsubtype> 0 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
