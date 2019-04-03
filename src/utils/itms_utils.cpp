@@ -880,7 +880,7 @@ namespace itms {
 	  switch (lanedirection) {	  
 	  case LD_NORTH:
 	  case LD_SOUTH:
-		  if (abs(deltaY) <= movingThresholdInPixels)
+		  if (abs(deltaY) <= movingThresholdInPixels || (blob.speed <= config.speedLimitForstopping))
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_SOUTH) ? (deltaY > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaY > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -889,7 +889,7 @@ namespace itms {
 
 	  case LD_EAST:
 	  case LD_WEST:
-		  if (abs(deltaX) <= movingThresholdInPixels) // 
+		  if (abs(deltaX) <= movingThresholdInPixels || (blob.speed <= config.speedLimitForstopping)) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_EAST) ? (deltaX > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (deltaX > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -898,7 +898,7 @@ namespace itms {
 
 	  case LD_NORTHEAST:
 	  case LD_SOUTHWEST:
-		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
+		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels || (blob.speed <= config.speedLimitForstopping)) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((deltaX > 0 || deltaY < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -907,7 +907,7 @@ namespace itms {
 
 	  case LD_SOUTHEAST:
 	  case LD_NORTHWEST:
-		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels) // 
+		  if (abs(deltaX) + abs(deltaY) <= movingThresholdInPixels || (blob.speed <= config.speedLimitForstopping)) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
 			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((deltaX > 0 || deltaY > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((deltaX > 0 || deltaY >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
@@ -968,14 +968,14 @@ namespace itms {
 	  double realSpeedKmH = (dist * fps *3600)/(trajLen *100000); // (1 KM = 100000CM, 1 Hour = 3 Sec.)
 	  if(0 || config.debugGeneralDetail)
 		  cout<< "ID: "<< blob.id<<" , Speed (Km/h): "<< realSpeedKmH << endl;
-
+	  //itms::ObjectStatus preOS = blob.os;
 	  switch (lanedirection) {
 	  case LD_NORTH:
 	  case LD_SOUTH:
 		  if (realSpeedKmH < speedThresh /*abs(deltaY) <= movingThresholdInPixels*/)
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_SOUTH) ? (ky/*deltaY*/ > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (ky/*deltaY*/ > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_SOUTH) ? (ky/*deltaY*/ > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (ky/*deltaY*/ > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);			  
 		  }
 		  break;
 
@@ -984,7 +984,7 @@ namespace itms {
 		  if (realSpeedKmH < speedThresh /*abs(deltaX) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_EAST) ? (kx/*deltaX*/ > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (kx/*deltaX*/ > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_EAST) ? (kx/*deltaX*/ > 0 ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : (kx/*deltaX*/ > 0 ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);			  
 		  }
 		  break;
 
@@ -993,7 +993,7 @@ namespace itms {
 		  if (realSpeedKmH < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((kx/*deltaX*/ > 0 || ky/*deltaY*/ < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((kx/*deltaX*/ > 0 || ky/*deltaY*/ <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_NORTHEAST) ? ((kx/*deltaX*/ > 0 || ky/*deltaY*/ < 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((kx/*deltaX*/ > 0 || ky/*deltaY*/ <0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);			  
 		  }
 		  break;
 
@@ -1002,7 +1002,7 @@ namespace itms {
 		  if (realSpeedKmH < speedThresh /*abs(deltaX) + abs(deltaY) <= movingThresholdInPixels*/) // 
 			  objectstatus = OS_STOPPED;
 		  else { // moving anyway
-			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((kx/*deltaX*/ > 0 || ky/*deltaY*/ > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((kx/*deltaX*/ > 0 || ky/*deltaY*/ >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);
+			  objectstatus = (lanedirection == LD_SOUTHEAST) ? ((kx/*deltaX*/ > 0 || ky/*deltaY*/ > 0) ? OS_MOVING_FORWARD : OS_MOVING_BACKWARD) : ((kx/*deltaX*/ > 0 || ky/*deltaY*/ >0) ? OS_MOVING_BACKWARD : OS_MOVING_FORWARD);			  
 		  }
 		  break;
 
@@ -1722,42 +1722,56 @@ namespace itms {
 			  ++curBlob;
 			  continue;
 		  }
-		  if (curBlob->oc == ObjectClass::OC_HUMAN ) {
-			  if(curBlob->oc_prob <= 0.99){
+		  if (curBlob->oc == ObjectClass::OC_HUMAN ) { // 무조건 찾는다.
+
+			  if(1 || curBlob->oc_prob <= 0.99){
 				  std::vector<cv::Rect> _people;
 				  detectCascadeRoiHuman(_conf, _curImg, curBlob->currentBoundingRect,_people); // sangkny 20190331 check the human with original sized image 
 				  if(_people.size()==0){
-					  ++curBlob;
-					  continue;
+					   //한번 더 원래 이미지로
+					   _people.clear();
+					   cv::Rect _roi_rect = curBlob->currentBoundingRect; //상대좌표가 들어와야 한다.
+					   _roi_rect.x = (float)curBlob->currentBoundingRect.x/_config->scaleFactor;
+					   _roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
+					   _roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
+					   _roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
+					   _roi_rect = expandRect(_roi_rect, 8, 8, orgImage.cols,orgImage.rows);
+
+					   detectCascadeRoiHuman(_conf, orgImage, _roi_rect, _people); // sangkny 20190331 check the human with original sized image 
+					   if (_people.size() == 0) {
+						   curBlob->oc = itms::ObjectClass::OC_OTHER;
+						   ++curBlob;
+						   continue;
+					   }
 				  }
 			  }
-			  else if(curBlob->totalVisibleCount<10){ // check if the given the object has enough visible counts
+			  if(curBlob->totalVisibleCount<10){ // check if the given the object has enough visible counts
 				  if(_conf.debugGeneralDetail)
 					  std::cout << "The visible count is not enough : " << curBlob->totalVisibleCount << std::endl;
 				  ++curBlob;
 				  continue;
 			  }
-			  else{
-				  ; // do nothing
-			  }
-			  // only human confirm the its class with ML-based approach
-			  std::vector<cv::Rect> _people;
-			  cv:Rect _roi_rect = curBlob->currentBoundingRect;
-			  _roi_rect.x = (float)curBlob->currentBoundingRect.x/_config->scaleFactor;
-			  _roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
-			  _roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
-			  _roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
-			  expandRect(_roi_rect, 8, 8, orgImage.cols,orgImage.rows);
+			  //else{
+			//	  ; // do nothing
+			 // }
+			  //// only human confirm the its class with ML-based approach
+			  //std::vector<cv::Rect> _people;
+			  //cv::Rect _roi_rect = curBlob->currentBoundingRect; //상대좌표가 들어와야 한다.
+			  //_roi_rect.x = (float)curBlob->currentBoundingRect.x/_config->scaleFactor;
+			  //_roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
+			  //_roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
+			  //_roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
+			  //expandRect(_roi_rect, 8, 8, orgImage.cols,orgImage.rows);
 
-			  detectCascadeRoiHuman(_conf, orgImage, _roi_rect, _people); // sangkny 20190331 check the human with original sized image 
-			  if (_people.size() == 0) {
-				  curBlob->oc =itms::ObjectClass::OC_OTHER;
-				  if(_conf.debugShowImagesDetail)
-					  std::cout<< "Final numan confirmation is not satisfied !!! in detectCascadeRoiHuman id:"<< std::to_string(curBlob->id) << endl;
+			  //detectCascadeRoiHuman(_conf, orgImage, _roi_rect, _people); // sangkny 20190331 check the human with original sized image 
+			  //if (_people.size() == 0) {
+				 // curBlob->oc =itms::ObjectClass::OC_OTHER;
+				 // if(_conf.debugShowImagesDetail)
+					//  std::cout<< "Final numan confirmation is not satisfied !!! in detectCascadeRoiHuman id:"<< std::to_string(curBlob->id) << endl;
 
-				  ++curBlob;
-				  continue;
-			  }
+				 // ++curBlob;
+				 // continue;
+			  //}
 			  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, ObjectClass::OC_HUMAN));
 			  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
 			  _itmsRes.objRect.push_back(curBlob->currentBoundingRect);
@@ -1776,24 +1790,31 @@ namespace itms {
 				  std::vector<cv::Point2f> blob_ntPts;
 				  blob_ntPts.push_back(Point2f(curBlob->centerPositions.back()));
 				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
-				  cv::Rect roi_rect = curBlob->currentBoundingRect;
+				  cv::Rect roi_rect= curBlob->currentBoundingRect;
+				  
 				  if (realDistance/100.f > 100.f) {
 					  roi_rect = expandRect(roi_rect, 18, 18, BGImage.cols, BGImage.rows);
 				  }
 				  else {
 					  roi_rect = expandRect(roi_rect, 4, 4, BGImage.cols, BGImage.rows);
 				  }
-
+				  cv::Rect roi_rect_Ex = expandRect(roi_rect, 2, 2, BGImage.cols, BGImage.rows);
 				  // blob correlation debug
 				  if (_config->debugShowImagesDetail) {					  
-					  itms::imshowBeforeAndAfter(BGImage(roi_rect), _curImg(roi_rect), "NCC BG / Target", 2);
+					  if (roi_rect_Ex.area() == roi_rect.area()) {
+						  itms::imshowBeforeAndAfter(BGImage(roi_rect_Ex), _curImg(roi_rect), "NCC BG / Target", 2);
+					  }
+					  else {
+						  cv::imshow("NCC BG", BGImage(roi_rect_Ex));
+						  cv::imshow("NCC Target", _curImg(roi_rect));
+					  }
 					  cv::waitKey(1);
 				  }
-				  float blobncc = getNCC(_conf, BGImage(roi_rect), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);				  
+				  float blobncc = getNCC(_conf, BGImage(roi_rect_Ex), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
 				  if (abs(blobncc) > _config->BlobNCC_Th) // background
 				  {
 					  if(_conf.debugGeneralDetail)
-						  std::cout<< " Stop and NCC is not satisfiend !!!!!!!!!!!!!!" << std::endl;
+						  std::cout<< " Stop and NCC is not satisfiend !!!!!!!!!!!!!!: "<< (blobncc)<< std::endl;
 					  
 					  ++curBlob;
 					  continue;
@@ -1815,6 +1836,15 @@ namespace itms {
 					 // ++curBlob;
 					 // continue;
 				  //}
+
+				  if (_conf.debugShowImagesDetail) {
+					  cv::Mat debugImg = _curImg.clone();
+					  if (debugImg.channels() < 3)
+						  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
+					  cv::rectangle(debugImg, roi_rect_Ex, Scalar(0, 0, 255), 3);
+					  cv::imshow("Stopped Object", debugImg);
+					  cv::waitKey(1);
+				  }
 					  
 			  }
 				  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, curBlob->oc));
@@ -1823,6 +1853,7 @@ namespace itms {
 				  _itmsRes.objSpeed.push_back(curBlob->speed);
 				  checkStatus = true;
 				  curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce) ? true : false;
+				  
 			  }
 		  }
 		  ++curBlob;
@@ -2368,7 +2399,7 @@ namespace itms {
 			  /*cv::imshow("rmask& imgdiff", imgDifference);
 			  cv::imshow("rmask& imgdiffBg", imgDifferenceBg);
 			  */
-			  cv::waitKey(1);
+			  //cv::waitKey(1);
 		  }
 
 		  float roi_bg_mean = mean(BGImage(brightnessRoi))[0];
@@ -2377,19 +2408,22 @@ namespace itms {
 		  if (_config->debugGeneralDetail) {
 			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
 		  }
-		  cv::threshold(imgDifferenceBg, imgThreshBg, 40, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
-		  //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);
-		  
+		  //cv::threshold(imgDifferenceBg, imgThreshBg, 40, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
+		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
 	  }
-
+	  	  
+	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);	  	  
 	  
-	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);	  
-	  cv::imshow("imgThresh before", imgThresh);
-	  //cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  // sangkny 2019/04/03 DIFF dilation and AND and OR operation
+	  cv::Mat imgThreshDil;
+	  cv::dilate(imgThresh, imgThreshDil, structuringElement5x5);
+	  cv::bitwise_and(imgThreshDil, imgThreshBg, imgThreshDil);
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {		  
+		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);		  
+	  }
+	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);
-		  /*cv::imshow("imgThresh", imgThresh);
-		  cv::imshow("imgThreshBg", imgThreshBg);*/
+		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg/ imgThresh", 2);
 		  cv::waitKey(1);
 	  }
 
@@ -2419,7 +2453,7 @@ namespace itms {
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 		  }
-	  }
+	  }	  
 
 	  cv::Mat imgThreshCopy = imgThresh.clone();
 
@@ -2524,7 +2558,7 @@ namespace itms {
 	  // blobs are in the ROI because of ROI map
 	  // 남북 이동시는 가로가 세로보다 커야 한다.
 	  //     
-	  //mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
+	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");
@@ -2603,19 +2637,23 @@ namespace itms {
 		  
 		  double learningRate = (double)1./(double)(_config->intNumBGRefresh);
 		  Mat curTmp = curImg.clone();
-		  curTmp.convertTo(curTmp, CV_32FC1);
-		  accmImage.convertTo(accmImage, CV_32FC1);
-
-		  pBgSub->apply(curTmp, accmImage, 0.1/*learningRate*/); // slower than the below method
-		  
-		  //pBgSub->getBackgroundImage(BGImage);
+		  //cout << "accType before apply: " + type2str(accmImage.type()) << endl;
+		  //curTmp.convertTo(curTmp, CV_8UC1);
+		  //accmImage.convertTo(accmImage, CV_8UC1);
+		  //itms::imshowBeforeAndAfter(curTmp, accmImage, "cur/ acc image", 2);
+		  //pBgSub->apply(curTmp, accmImage, learningRate); // slower than the below method, accmImage will be the difference between bgimage and current image
+		  //cout << "accType after apply: " + type2str(accmImage.type()) << endl;
+		  //waitKey(1);
+		  //pBgSub->getBackgroundImage(accmImage);
 		  //cv::Mat tmp;//(curImg.size(), CV_32FC1);
+		  //curTmp.convertTo(curTmp, CV_32FC1);
 		  //accmImage.convertTo(accmImage, CV_32FC1);
-		  //accumulateWeighted(curImg, accmImage, learningRate, road_mask);// 같은 타입으로 컨버전 필요
+		  //accumulateWeighted(curTmp, accmImage, learningRate, road_mask);// 같은 타입으로 컨버전 필요
 		  
-		  //addWeighted(curImg, learningRate, accmImage, 1.-learningRate, 0, accmImage); // 같은 타입으로 컨버전 없어도 됨..
+		  addWeighted(curImg, learningRate, accmImage, 1.-learningRate, 0, accmImage); // 같은 타입으로 컨버전 없어도 됨..
 		  //convertScaleAbs(accmImage, accmImage);
-		  accmImage.convertTo(accmImage, CV_8UC1);
+		  //accmImage.convertTo(accmImage, CV_8UC1);
+		  //convertScaleAbs(accmImage, accmImage,255.0);
 		  
 		  setBGImage(accmImage);
 		  if(_config->debugShowImagesDetail){

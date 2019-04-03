@@ -104,7 +104,7 @@ int main(void) {
 	bool bsaveEventFile = true;
 	float fscaleFractor = 0.5;
     bool blnFirstFrame = true;
-	int m_startFrame = 100;	 // 240
+	int m_startFrame = 240;	 // 240
     int frameCount = m_startFrame + 1;	    
 	int PlayInterval = 1;                // make it increase if you want to speed up !!
 	PlayInterval = std::max(1, PlayInterval);
@@ -130,7 +130,7 @@ int main(void) {
 				cout << "Rect: " << itmsNativeClass->getObjectRect().at(i) << endl;
 				if (bsaveEventFile) {					
 					int intFontFace = CV_FONT_HERSHEY_SIMPLEX;
-					double dblFontScale = 2; //max(1., blobs[i].dblCurrentDiagonalSize / 60.0);
+					double dblFontScale = 2.; //max(1., blobs[i].dblCurrentDiagonalSize / 60.0);
 					int intFontThickness = (int)std::round(dblFontScale * 1.0);
 					cv::Rect d_rect = itmsNativeClass->getObjectRect().at(i);
 					d_rect.x = float(d_rect.x)/fscaleFractor;
