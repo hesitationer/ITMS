@@ -2361,6 +2361,7 @@ namespace itms {
 
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
+		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3);
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);
@@ -2376,8 +2377,8 @@ namespace itms {
 		  if (_config->debugGeneralDetail) {
 			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
 		  }
-		  //cv::threshold(imgDifferenceBg, imgThreshBg, roi_brightness_difference + _config->img_dif_th, 255.0, CV_THRESH_BINARY);
-		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 10/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);
+		  cv::threshold(imgDifferenceBg, imgThreshBg, 40, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
+		  //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);
 		  
 	  }
 
@@ -2404,8 +2405,8 @@ namespace itms {
 			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 		  }
 		  else {
-			  cv::dilate(imgThresh, imgThresh, structuringElement7x7);
-			  cv::dilate(imgThresh, imgThresh, structuringElement7x7);
+			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 		  }
 		  if (_config->bgsubtype == BgSubType::BGS_DIF) {
 			  if (_config->scaleFactor > 0.75) {
@@ -2415,7 +2416,7 @@ namespace itms {
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 			  else {
-				  cv::erode(imgThresh, imgThresh, structuringElement7x7);
+				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 		  }
 	  }
@@ -2523,7 +2524,7 @@ namespace itms {
 	  // blobs are in the ROI because of ROI map
 	  // 남북 이동시는 가로가 세로보다 커야 한다.
 	  //     
-	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
+	  //mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");
@@ -2601,14 +2602,21 @@ namespace itms {
 	  if(_config->bGenerateBG && _config->intNumBGRefresh > 0){
 		  
 		  double learningRate = (double)1./(double)(_config->intNumBGRefresh);
-		  //pBgSub->apply(curImg, tmp, learningRate); // slower than the below method
+		  Mat curTmp = curImg.clone();
+		  curTmp.convertTo(curTmp, CV_32FC1);
+		  accmImage.convertTo(accmImage, CV_32FC1);
+
+		  pBgSub->apply(curTmp, accmImage, 0.1/*learningRate*/); // slower than the below method
+		  
 		  //pBgSub->getBackgroundImage(BGImage);
 		  //cv::Mat tmp;//(curImg.size(), CV_32FC1);
-		  accmImage.convertTo(accmImage, CV_32FC1);
-		  accumulateWeighted(curImg, accmImage, learningRate, road_mask);
-		  //accumulateWeighted(curImg, accmImage, learningRate);
-		  //addWeighted(curImg, learningRate, accmImage, 1.-learningRate, 0, accmImage);
-		  convertScaleAbs(accmImage, accmImage);
+		  //accmImage.convertTo(accmImage, CV_32FC1);
+		  //accumulateWeighted(curImg, accmImage, learningRate, road_mask);// 같은 타입으로 컨버전 필요
+		  
+		  //addWeighted(curImg, learningRate, accmImage, 1.-learningRate, 0, accmImage); // 같은 타입으로 컨버전 없어도 됨..
+		  //convertScaleAbs(accmImage, accmImage);
+		  accmImage.convertTo(accmImage, CV_8UC1);
+		  
 		  setBGImage(accmImage);
 		  if(_config->debugShowImagesDetail){
 			  cv::imshow("generating BG", getBGImage());
