@@ -2392,7 +2392,8 @@ namespace itms {
 
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
-		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3);
+		  //cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404
+		  cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);
@@ -2411,15 +2412,18 @@ namespace itms {
 		  //cv::threshold(imgDifferenceBg, imgThreshBg, 40, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
 		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
 	  }
-	  	  
-	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th, 255.0, CV_THRESH_BINARY);	  	  
+
+	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th+13/*-3*/, 255.0, CV_THRESH_BINARY);	  	  
 	  
 	  // sangkny 2019/04/03 DIFF dilation and AND and OR operation
-	  cv::Mat imgThreshDil;
+	  cv::Mat imgThreshDil, imgThresh_2;
+	  cv::threshold(imgDifference, imgThresh_2, (double)(_config->img_dif_th)/2.0, 255.0, CV_THRESH_BINARY);
 	  cv::dilate(imgThresh, imgThreshDil, structuringElement5x5);
 	  cv::bitwise_and(imgThreshDil, imgThreshBg, imgThreshDil);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {		  
+		  itms::imshowBeforeAndAfter(imgThresh, imgThresh_2, " imgThresh/ imgThresh_2", 2);
 		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);		  
+
 	  }
 	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
