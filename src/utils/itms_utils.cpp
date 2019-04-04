@@ -2681,7 +2681,7 @@ namespace itms {
 			  // currnt image
 			  // blob correlation
 			  blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask); 
-			  // backgrdoun image need to be updated periodically 
+			  // background image need to be updated periodically 
 			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
 			  if (blobncc <= abs(_config->BlobNCC_Th)  
 				  && checkIfPointInBoundary(*_config, blob_ntPts.back(), _config->Boundary_ROI_Pts)
@@ -2876,7 +2876,7 @@ namespace itms {
 		  return 1;
 	  }
 
-	  std::cout << "Using OpenCV" << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << " in ITMSAPINativeClass"<<std::endl;
+	  std::cout << "Using OpenCV" << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << " in ITMSAPINativeClass. "<<std::endl;
 
 	  int trackId = conf.trackid;          // unique object id, you can set or get the track id
 	  int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 

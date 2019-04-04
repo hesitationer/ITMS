@@ -85,13 +85,13 @@
 <lastMinimumPoints> 10 </lastMinimumPoints>                     <!--  20 the last minimum center points of the object to determine its speed using Linear Regression  -->
 <fps> 30 </fps>                                                 <!-- frames per seconds, it is required to compute the object' speed -->
 <speedLimitForstopping> 5 </speedLimitForstopping>              <!-- 2 speed to be determined as "STOP", Km/Hour -->
-
 <minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
 <isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
+<isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
 <HOG>1</HOG>                                                    <!-- HOG feature flag, the proposed Tracker-related parameters -->
 <FIXEDWINDOW>1</FIXEDWINDOW>                                    <!-- flag for fixed window-size -->
 <MULTISCALE>1</MULTISCALE>                                      <!-- flag for multi scale approach -->
