@@ -514,7 +514,7 @@ namespace itms {
 				  existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
 																		// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
 				  cv::Rect newRoi, m_predictionRect;
-				  int expandY = 5;
+				  int expandY = 2;
 				  float heightRatio = (float)(existingBlob.currentBoundingRect.height + expandY) / (existingBlob.currentBoundingRect.height);
 				  int expandX = max(0, cvRound((float)(existingBlob.currentBoundingRect.width)*heightRatio - existingBlob.currentBoundingRect.width));
 				  cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
@@ -556,9 +556,11 @@ namespace itms {
 						  if (existingBlob.resetBlobContourWithCenter(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)))) { // check if the center points will move or not
 							  cv::Rect tmpRect = existingBlob.currentBoundingRect;
 							  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (newRoi.x + newRoi.width / 2.f));  // move to the newRoi center with keep the size of Boundary
+							  existingBlob.currentBoundingRect.width = newRoi.width;													  // sangkny 20190404
 							  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
 							  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (newRoi.y + newRoi.height / 2.f));
-							  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
+							  existingBlob.currentBoundingRect.height = newRoi.height;														// sangkny 20190404
+							  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);				
 						  }
 						  existingBlob.centerPositions.push_back(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f))); // put a center anyway
 					  }
@@ -597,7 +599,7 @@ namespace itms {
 				  else { // sub image-based approach for lost object detection, in this case, init and update need to be carried out at ontime 
 					  m_predictionRect = expRect;//existingBlob.currentBoundingRect;//expRect;			
 												 // partial local tracking using FDSST 2019. 01. 17
-					  cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // small subImage selection, I need to check if we can reduce more
+					  cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // origin: max small subImage selection, I need to check if we can reduce more
 					  bool success = false;
 					  if (roiSize.width > srcImg.cols)
 					  {
@@ -654,17 +656,39 @@ namespace itms {
 						  } // else is not required because if updateAt is successful, the new location after update is same							
 
 						  cv::Rect prect;
-						  if (success)
+						  if (success) {
 							  prect = cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
-						  else
-							  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
 
-						// sangkny update the center points of the existing blob which has been untracted						  
-						  if (existingBlob.resetBlobContourWithCenter(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)))){ // boundary movement first 
+							 // blob search  //sangkny 2019/04/04 	 // function getBlobUnderRect(...)
+							  if (0/* option */) {
+								  std::vector<cv::Point> predContour;
+								  cv::Rect _relative_rect;
+								  predContour = getBlobUnderRect(_conf, srcImg, prect, existingBlob);
+								  double area = existingBlob.currentBoundingRect.area();
+								  if (boundingRect(predContour).area() >= (int)(area/2.) && (boundingRect(predContour).area() <= (int)(2.*area))) { // orig. works good 1/4 < x < 4 times
+									  _relative_rect = cv::boundingRect(predContour);
+									  prect.x += _relative_rect.x;
+									  prect.y += _relative_rect.x;
+									  prect.width = _relative_rect.width;
+									  prect.height = _relative_rect.height;
+									  //existingBlob.currentContour = predContour; // 
+
+								  }
+							  }
+
+						  }
+						  else {
+							  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
+						  }
+						// sangkny update the center points of the existing blob which has been untracted						  					
+
+						  if (existingBlob.resetBlobContourWithCenter(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)))){ // boundary movement first 							  
 							  cv::Rect tmpRect = existingBlob.currentBoundingRect;
 							  existingBlob.currentBoundingRect.x -= (tmpRect.x + tmpRect.width / 2.f - (prect.x + prect.width / 2.f));  // move to the newRoi center with keep the size of Boundary
+							  existingBlob.currentBoundingRect.width = prect.width;														// sangkny 20190404
 							  Clamp(existingBlob.currentBoundingRect.x, existingBlob.currentBoundingRect.width, srcImg.cols);
 							  existingBlob.currentBoundingRect.y -= (tmpRect.y + tmpRect.height / 2.f - (prect.y + prect.height / 2.f));
+							  existingBlob.currentBoundingRect.height = prect.height;													// sangkny 20190404
 							  Clamp(existingBlob.currentBoundingRect.y, existingBlob.currentBoundingRect.height, srcImg.rows);
 						  }
 						  existingBlob.centerPositions.push_back(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)));
@@ -941,7 +965,7 @@ namespace itms {
   /////////////////////////////////////////-- Linear Regression-based Object Directiona and Speed Computation --//////////////////////////////////////////////////////////
   // using LastMinPoints
   ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount) {
-	  ObjectStatus objectstatus = ObjectStatus::OS_NOTDETERMINED;
+	  ObjectStatus objectstatus = ObjectStatus::OS_NOTDETERMINED;	  
 	  
 	  int lastMinPoints = config.lastMinimumPoints; // minimum Last frame numbers
 	  
@@ -1504,7 +1528,30 @@ namespace itms {
 
   void updateBlobProperties(const Config& _conf, itms::Blob &updateBlob, itms::ObjectStatus &curStatus, const double _speed) {
 	  itms::ObjectStatus prevOS = updateBlob.os;						// previous object status
-	  int minConsecutiveFramesForOS = _conf.minConsecutiveFramesForOS;	// minConsecutiveFrames For OS
+
+// -------------- previous status 
+	int os_nt_center = updateBlob.os_notdetermined_cnter;
+	int os_numCSStoppted_center =updateBlob.os_NumOfConsecutiveStopped_cnter;  
+	int os_numCSForward_center = updateBlob.os_NumOfConsecutivemvForward_cnter;
+// ------------------------------
+
+	  int minConsecutiveFramesForOS = _conf.minConsecutiveFramesForOS;	// minConsecutiveFrames For OS // sangkny 20190404 according to the distance of the object
+
+	  std::vector<cv::Point2f> blob_ntPts;
+	  blob_ntPts.push_back(Point2f(updateBlob.centerPositions.back()));
+	  if ((_conf.scaleFactor < 0.75)&&(updateBlob.oc != ObjectClass::OC_HUMAN) && (prevOS == OS_STOPPED || prevOS == OS_MOVING_BACKWARD)) {
+		  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _conf.transmtxH, _conf.lane_length, false);
+		  if (realDistance / 100 >= 150.)
+			  minConsecutiveFramesForOS *= 2;
+		  else if (realDistance / 100 >= 100.) {
+			  minConsecutiveFramesForOS = (int) ((float)minConsecutiveFramesForOS * 1.5);
+		  }
+		  else if (realDistance / 100 >= 75) {
+			  minConsecutiveFramesForOS = (int)((float)minConsecutiveFramesForOS * 1.25);
+		  }
+	  }
+
+
 	  switch (curStatus) { // at this point, blob.os is the previous status !!!	  
 
 	  case OS_MOVING_FORWARD:
@@ -1523,6 +1570,9 @@ namespace itms {
 		  updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
 		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
 		  updateBlob.fos = (updateBlob.os_NumOfConsecutiveStopped_cnter >= minConsecutiveFramesForOS) ? OS_STOPPED : OS_NOTDETERMINED;
+		  if (updateBlob.oc != OC_HUMAN && updateBlob.fos == OS_STOPPED) {
+			  updateBlob.startPoint = updateBlob.centerPositions.back(); // sangkny 20190404 reset the stop position to determine the WWR
+		  }
 		  break;	  
 
 	  case OS_MOVING_BACKWARD:
@@ -1532,6 +1582,18 @@ namespace itms {
 		  updateBlob.os_NumOfConsecutivemvForward_cnter = 0;
 		  //blob.os_NumOfConsecutivemvBackward_cnter = 1;
 		  updateBlob.fos = (updateBlob.os_NumOfConsecutivemvBackward_cnter >= minConsecutiveFramesForOS) ? OS_MOVING_BACKWARD : OS_NOTDETERMINED;
+		  if ((updateBlob.oc != OC_HUMAN) && updateBlob.fos == OS_MOVING_BACKWARD) { // vehicle only
+			  if (!doubleCheckBackwardMoving(_conf, updateBlob)) { // restore the previous settings
+				  updateBlob.fos = OS_NOTDETERMINED;
+				  updateBlob.os_mvBackward_cnter--;
+				  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0; // reset 
+				  updateBlob.os_NumOfConsecutiveStopped_cnter = os_numCSStoppted_center;  
+				  updateBlob.os_NumOfConsecutivemvForward_cnter = os_numCSForward_center;
+				  updateBlob.os_notdetermined_cnter += 1;				  
+			  }
+
+		  }
+
 		  break;
 
 	  case OS_NOTDETERMINED:
@@ -1717,8 +1779,12 @@ namespace itms {
 
 	  std::vector<Blob>::iterator curBlob = _Blobs.begin();
 	  while (curBlob != _Blobs.end()) {
-		  if (curBlob->bNotifyMessage || (_conf.bStrictObjEvent && curBlob->fos == ObjectStatus::OS_NOTDETERMINED)) 
+		  std::vector<cv::Point2f> blob_ntPts;
+		  blob_ntPts.push_back(Point2f(curBlob->centerPositions.back()));
+		  
+		  if (curBlob->bNotifyMessage || (_conf.bStrictObjEvent && curBlob->fos == ObjectStatus::OS_NOTDETERMINED) || (!checkIfPointInBoundary(_conf, blob_ntPts.back(), _conf.Boundary_ROI_Pts)))
 		  {   // notified, then skip, if bStrictObjEvent, strict determination is conducted according to ObjectStatus
+			  // sangkny 20190404
 			  ++curBlob;
 			  continue;
 		  }
@@ -1808,7 +1874,7 @@ namespace itms {
 						  cv::imshow("NCC BG", BGImage(roi_rect_Ex));
 						  cv::imshow("NCC Target", _curImg(roi_rect));
 					  }
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 				  float blobncc = getNCC(_conf, BGImage(roi_rect_Ex), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
 				  if (abs(blobncc) > _config->BlobNCC_Th) // background
@@ -1843,7 +1909,7 @@ namespace itms {
 						  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
 					  cv::rectangle(debugImg, roi_rect_Ex, Scalar(0, 0, 255), 3);
 					  cv::imshow("Stopped Object", debugImg);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 					  
 			  }
@@ -2252,6 +2318,120 @@ namespace itms {
 	  return 0;
   }
 
+  std::vector<cv::Point> getBlobUnderRect(const Config &_conf, const cv::Mat& _curImg, const cv::Rect& _prect, const itms::Blob& _curBlob) {
+	  // it will do when it is not human
+	  std::vector<cv::Point> _contour;
+	  if (_curBlob.oc == itms::ObjectClass::OC_HUMAN)
+		  return _contour;
+
+	  bool bdebug = true;
+	  
+	  cv::Mat roi_Img = _curImg(_prect);
+	  cv::Mat roi_Thresh;
+
+	  //adaptiveThreshold(roi_Img, roi_Thresh, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 7, 3);
+	  cv::Canny(roi_Img, roi_Thresh, 50, 150);
+	  if (bdebug && _conf.debugShowImagesDetail) {
+		  imshowBeforeAndAfter(roi_Img, roi_Thresh, "traker roi image/ threshold", 2);		  
+	  }
+
+	  std::vector<std::vector<cv::Point> > contours;
+
+	  /*Mat element = getStructuringElement(1,
+		  Size(2 + 1, 2 + 1),
+		  Point(1, 1));
+	  dilate(roi_Thresh, roi_Thresh, element);*/ // because the current image has been blurred in the preprocessing 
+
+	  cv::findContours(roi_Thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+	  if (bdebug && _conf.debugShowImages && _conf.debugShowImagesDetail) {
+		  drawAndShowContours(roi_Thresh.size(), contours, "roi_imgContours");
+	  }
+
+	  std::vector<std::vector<cv::Point> > convexHulls(contours.size());
+
+	  // get the biggest one
+	  double largest_area = 0;
+	  int  largest_index =0;
+	  for (unsigned int i = 0; i < contours.size(); i++) {
+		  cv::convexHull(contours[i], convexHulls[i]);
+		  double area = cv::boundingRect(convexHulls[i]).area();
+		  if (area > largest_area) {
+			  largest_area = area;
+			  largest_index = i;			  
+		  }
+	  }
+
+	  if (bdebug && _conf.debugShowImages && _conf.debugShowImagesDetail) {
+		  drawAndShowContours(roi_Thresh.size(), convexHulls, "roi_imgConvexHulls");
+		  if (_conf.debugGeneralDetail && contours.size()) {			  
+				  std::cout << "largest index: " << largest_index << endl;
+				  std::cout << "largest area: " << largest_area << endl;			  
+		  }
+	  }
+
+	  /*std::vector<Blob> _currentBlobs;
+
+	  
+	  for (auto &convexHull : convexHulls) {
+		  Blob possibleBlob(convexHull);
+
+		  if (possibleBlob.currentBoundingRect.area() >= _curBlob.currentBoundingRect.area()) {
+			  _currentBlobs.push_back(possibleBlob);
+		  }
+	  }*/
+	  if (contours.size()) {
+		  _contour = contours[largest_index];	  
+	  }	  
+	  return _contour;
+  }
+
+  bool doubleCheckBackwardMoving(const Config & _conf, itms::Blob & _curBlob)
+  {	
+	  // check the condition with the starting points
+	  bool bbackwardcondition = false;
+	  switch (_conf.ldirection) {
+	  case LD_NORTH:
+		  if (_curBlob.centerPositions.back().y > _curBlob.startPoint.y)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_SOUTH:
+		  if (_curBlob.centerPositions.back().y < _curBlob.startPoint.y)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_EAST:
+		  if (_curBlob.centerPositions.back().x < _curBlob.startPoint.x)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_WEST:
+		  if (_curBlob.centerPositions.back().x > _curBlob.startPoint.x)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_NORTHEAST:
+		  if (_curBlob.centerPositions.back().y > _curBlob.startPoint.y || _curBlob.centerPositions.back().x < _curBlob.startPoint.x)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_SOUTHWEST:
+		  if (_curBlob.centerPositions.back().y < _curBlob.startPoint.y || _curBlob.centerPositions.back().x > _curBlob.startPoint.x)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_SOUTHEAST:
+		  if (_curBlob.centerPositions.back().y < _curBlob.startPoint.y || _curBlob.centerPositions.back().x < _curBlob.startPoint.x)
+			  bbackwardcondition = true;
+		  break;
+	  case LD_NORTHWEST:
+		  if (_curBlob.centerPositions.back().y > _curBlob.startPoint.y || _curBlob.centerPositions.back().x > _curBlob.startPoint.x)
+			  bbackwardcondition = true;
+		  break;
+
+	  default:
+		  bbackwardcondition = false;
+		  break;
+	  }
+	  return bbackwardcondition;
+  }
+  
+  
   // itmsFunctions definition
   itmsFunctions::itmsFunctions(Config* config){
 	  if (!config->isLoaded) {
@@ -2413,7 +2593,7 @@ namespace itms {
 		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
 	  }
 
-	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th+13/*-3*/, 255.0, CV_THRESH_BINARY);	  	  
+	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY);	  	  
 	  
 	  // sangkny 2019/04/03 DIFF dilation and AND and OR operation
 	  cv::Mat imgThreshDil, imgThresh_2;
@@ -2428,7 +2608,7 @@ namespace itms {
 	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg/ imgThresh", 2);
-		  cv::waitKey(1);
+		 // cv::waitKey(1);
 	  }
 
 	  for (unsigned int i = 0; i < 1; i++) {

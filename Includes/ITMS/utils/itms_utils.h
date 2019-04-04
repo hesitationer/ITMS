@@ -685,6 +685,11 @@ namespace itms {
 																			// get predicted blobs from the existing blobs
   void predictBlobs(itms::Config& _conf, std::vector<Blob>& tracks/* existing blobs */, cv::UMat prevFrame, cv::UMat curFrame, std::vector<Blob>& predBlobs);
 
+  std::vector<cv::Point> getBlobUnderRect(const Config &_conf, const cv::Mat& _curImg, const cv::Rect& _prect, const itms::Blob& _curBlob);  // sangkny 20190404
+  // get the new blob information including contour and etc under the new rect on the given image
+  bool doubleCheckBackwardMoving(const Config& _conf, itms::Blob& _curBlob);
+
+
   // sangkny FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   

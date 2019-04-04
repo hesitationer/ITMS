@@ -23,7 +23,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -82,11 +82,11 @@
 <movingThresholdInPixels> 0 </movingThresholdInPixels>          <!-- stop object determination threshold, now it is not used, instead the following parameters are used for this purpose -->
 
 <!-- Object speed limit related -- -->
-<lastMinimumPoints> 10 </lastMinimumPoints>                     <!-- the last minimum center points of the object to determine its speed using Linear Regression  -->
+<lastMinimumPoints> 10 </lastMinimumPoints>                     <!--  20 the last minimum center points of the object to determine its speed using Linear Regression  -->
 <fps> 30 </fps>                                                 <!-- frames per seconds, it is required to compute the object' speed -->
-<speedLimitForstopping> 5 </speedLimitForstopping>              <!-- speed to be determined as "STOP", Km/Hour -->
+<speedLimitForstopping> 5 </speedLimitForstopping>              <!-- 2 speed to be determined as "STOP", Km/Hour -->
 
-<minConsecutiveFramesForOS> 5 </minConsecutiveFramesForOS>     <!-- minimum consecutive frame for object status determination -->
+<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
