@@ -91,12 +91,14 @@ namespace itms {
 	public:
 
 		// debug parameters
-		bool debugShowImages = true;
-		bool debugShowImagesDetail = true;
-		bool debugGeneral = true;
-		bool debugGeneralDetail = true;
-		bool debugTrace = true;
-		bool debugTime = true;
+		bool debugShowImages = false;
+		bool debugShowImagesDetail = false;
+		bool debugGeneral = false;
+		bool debugGeneralDetail = false;
+		bool debugTrace = false;
+		bool debugTime = false;
+
+		bool debugSpecial = false;
 		// 
 
 		// main processing parameters
@@ -135,6 +137,7 @@ namespace itms {
 		int numberOfTracePoints = 15;					// # of tracking tracer in debug Image
 		int maxNumOfConsecutiveInFramesWithoutAMatch = 50; // it is used for track update
 		int maxNumOfConsecutiveInvisibleCounts = 100;	// for removing disappeared objects from the screen
+		int minDistanceForBackwardMoving = 1000;		// minimum distance for determining correct backward moving of the object
 		int movingThresholdInPixels = 0;				// motion threshold in pixels affected by Config::scaleFactor, average point를 이용해야 함..
 		int img_dif_th = 15;							// BGS_DIF biranry threshold (10~30) at day through night, 
 														// Day/Night and Object Probability
@@ -148,9 +151,12 @@ namespace itms {
 		bool m_useLocalTracking = false;				// local tracking  capture and detect level
 		bool m_externalTrackerForLost = false;			// do fastDSST for lost object
 		bool isSubImgTracking = false;					// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
-		bool isCorrectTrackerBlob = false;              // correct blob property from tracker's correction
-		bool useTrackerMatching = false;                // option: use tracker to match a block to the existing blobs
-														// define FAST DSST
+		bool isCorrectTrackerBlob = false;              // correct blob property from tracker's correction, it has to do more works in globall tracking....
+		bool useTrackerMatching = false;                // option: use tracker to match a block to the existing blobs, it can be used to verify same object matching !!
+		float useTrackerMatchingThres = 0.75;			// use TrackerMatching Threshold 
+		float useTrackerAllowedPercentage = 0.25;		// overlapped region percentage against prediected region
+
+		// define FAST DSST
 		bool HOG = true;
 		bool FIXEDWINDOW = true;
 		bool MULTISCALE = true;
@@ -235,6 +241,7 @@ namespace itms {
 			_conf.debugGeneralDetail = cvReadIntByName(fs, 0, "debugGeneralDetail", 0);
 			_conf.debugTrace = cvReadIntByName(fs, 0, "debugTrace", 0);
 			_conf.debugTime = cvReadIntByName(fs, 0, "debugTime", 1);
+			_conf.debugSpecial = cvReadIntByName(fs, 0, "debugSpecial", 0);
 
 			_conf.scaleFactor = (float)cvReadRealByName(fs, 0, "scaleFactor", 0.5); // sangkny 2019. 02. 12 
 			
@@ -291,6 +298,7 @@ namespace itms {
 			_conf.numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
 			_conf.maxNumOfConsecutiveInFramesWithoutAMatch = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInFramesWithoutAMatch", 50);
 			_conf.maxNumOfConsecutiveInvisibleCounts = cvReadIntByName(fs, 0, "maxNumOfConsecutiveInvisibleCounts", 100);
+			_conf.minDistanceForBackwardMoving = cvReadIntByName(fs, 0, "minDistanceForBackwardMoving", 1000);
 			_conf.movingThresholdInPixels = cvReadIntByName(fs, 0, "movingThresholdInPixels", 0);
 
 			// Object Speed Limitation
@@ -304,6 +312,8 @@ namespace itms {
 			_conf.isSubImgTracking = cvReadIntByName(fs, 0, "isSubImgTracking", 0);
 			_conf.isCorrectTrackerBlob = cvReadIntByName(fs, 0, "isCorrectTrackerBlob", 0);
 			_conf.useTrackerMatching = cvReadIntByName(fs, 0, "useTrackerMatching", 0);
+			_conf.useTrackerMatchingThres = cvReadRealByName(fs, 0, "useTrackerMatchingThres", 0.75);
+			_conf.useTrackerAllowedPercentage = cvReadRealByName(fs, 0, "useTrackerAllowedPercentage", 0.25);
 			_conf.HOG = cvReadIntByName(fs, 0, "HOG", 1);
 			_conf.FIXEDWINDOW = cvReadIntByName(fs, 0, "FIXEDWINDOW", 1);
 			_conf.MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);
@@ -539,7 +549,7 @@ namespace itms {
 
 	////// simple functions 
 
-  void imshowBeforeAndAfter(cv::Mat &before, cv::Mat &after, std::string windowtitle, int gabbetweenimages);
+  void imshowBeforeAndAfter(cv::Mat &before_, cv::Mat &after_, std::string windowtitle, int gabbetweenimages);
   Rect expandRect(Rect original, int expandXPixels, int expandYPixels, int maxX, int maxY); // 
   Rect maxSqRect(Rect& original, int maxX, int maxY); // make squre with max length
   Rect maxSqExpandRect(Rect& original, float floatScalefactor, int maxX, int maxY); // combine both above with scalefactor
@@ -639,7 +649,7 @@ namespace itms {
   // flagLaneDirectionTop2Bottom : true -> image coord direction is same with distance measure direction, false: opposite
 
   // getNCC gets NCC value between background image and a foreground image
-  //float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
+  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
 
   // type2srt returns the type of cv::Mat
   string type2str(int type); // get Math type()
@@ -737,7 +747,7 @@ namespace itms {
 	  void setBGImage(const cv::Mat& _bgImg) { BGImage = _bgImg; };
 	  bool checkObjectStatus(itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
 	  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
-
+	  bool trackCurBlobFromPrevBlob(itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, const itms::Blob& _ref, cv::Rect& _new_rect);
   };
 
   // ITMS API Native Class 

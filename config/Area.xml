@@ -3,11 +3,12 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
-<debugShowImagesDetail>1</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
-<debugGeneral>1</debugGeneral>                      <!-- debug flag for printing the text information --> 
-<debugGeneralDetail>1</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
+<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
+<debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
 <debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
 <debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
+<debugSpecial>0</debugSpecial>                      <!-- debug flag for improving purpose only -->
 
 <scaleFactor>0.5</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
 
@@ -23,7 +24,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_114311_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -34,7 +35,7 @@
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- 오후 차량 3대 역주행   
 <VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  X
 <VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- 역주행 2대 
-<VideoPath>"d:\\주간-일반-단독-보행\\20180911_114511_cam_0.avi"</VideoPath>
+<VideoPath>"d:\\주간-일반-단독-보행\\20180911_114311_cam_0.avi"</VideoPath>
 -->
 
 <!-- Road Configuration -->
@@ -79,20 +80,25 @@
 <numberOfTracePoints> 15 </numberOfTracePoints>                 <!-- number of trace points, disply purpose only -->
 <maxNumOfConsecutiveInFramesWithoutAMatch> 50 </maxNumOfConsecutiveInFramesWithoutAMatch>   <!-- max number of consecutive frames without matching to be inactive or beTracking = false -->
 <maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>              <!-- max number of invisible frames, after this number, the object will be erased if the conditions are satisfied -->
+<minDistanceForBackwardMoving> 1000 </minDistanceForBackwardMoving>                         <!-- minimum distance for determining the right backward moving --      -->
+
 <movingThresholdInPixels> 0 </movingThresholdInPixels>          <!-- stop object determination threshold, now it is not used, instead the following parameters are used for this purpose -->
 
 <!-- Object speed limit related -- -->
-<lastMinimumPoints> 10 </lastMinimumPoints>                     <!--  20 the last minimum center points of the object to determine its speed using Linear Regression  -->
+<lastMinimumPoints> 15 </lastMinimumPoints>                     <!--  20 the last minimum center points of the object to determine its speed using Linear Regression  -->
 <fps> 30 </fps>                                                 <!-- frames per seconds, it is required to compute the object' speed -->
 <speedLimitForstopping> 5 </speedLimitForstopping>              <!-- 2 speed to be determined as "STOP", Km/Hour -->
-<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
+<minConsecutiveFramesForOS> 6 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
 <isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
-<useTrackerMatching>0</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
+<useTrackerMatching>1</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
+<useTrackerMatchingThres>0.75</useTrackerMatchingThres>         <!-- Tracker matching threshold for different object determination  -->
+<useTrackerAllowedPercentage>0.25</useTrackerAllowedPercentage> <!-- Overlapped region percentage compared with Predicted Tracker's rect --> 
+
 <HOG>1</HOG>                                                    <!-- HOG feature flag, the proposed Tracker-related parameters -->
 <FIXEDWINDOW>1</FIXEDWINDOW>                                    <!-- flag for fixed window-size -->
 <MULTISCALE>1</MULTISCALE>                                      <!-- flag for multi scale approach -->
