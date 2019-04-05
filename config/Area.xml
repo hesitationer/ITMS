@@ -92,6 +92,7 @@
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
 <isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
+<useTrackerMatching>0</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
 <HOG>1</HOG>                                                    <!-- HOG feature flag, the proposed Tracker-related parameters -->
 <FIXEDWINDOW>1</FIXEDWINDOW>                                    <!-- flag for fixed window-size -->
 <MULTISCALE>1</MULTISCALE>                                      <!-- flag for multi scale approach -->

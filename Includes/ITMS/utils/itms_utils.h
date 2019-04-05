@@ -148,7 +148,8 @@ namespace itms {
 		bool m_useLocalTracking = false;				// local tracking  capture and detect level
 		bool m_externalTrackerForLost = false;			// do fastDSST for lost object
 		bool isSubImgTracking = false;					// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
-		bool isCorrectTrackerBlob = false;
+		bool isCorrectTrackerBlob = false;              // correct blob property from tracker's correction
+		bool useTrackerMatching = false;                // option: use tracker to match a block to the existing blobs
 														// define FAST DSST
 		bool HOG = true;
 		bool FIXEDWINDOW = true;
@@ -302,7 +303,7 @@ namespace itms {
 			_conf.m_externalTrackerForLost = cvReadIntByName(fs, 0, "m_externalTrackerForLost", 0);
 			_conf.isSubImgTracking = cvReadIntByName(fs, 0, "isSubImgTracking", 0);
 			_conf.isCorrectTrackerBlob = cvReadIntByName(fs, 0, "isCorrectTrackerBlob", 0);
-
+			_conf.useTrackerMatching = cvReadIntByName(fs, 0, "useTrackerMatching", 0);
 			_conf.HOG = cvReadIntByName(fs, 0, "HOG", 1);
 			_conf.FIXEDWINDOW = cvReadIntByName(fs, 0, "FIXEDWINDOW", 1);
 			_conf.MULTISCALE = cvReadIntByName(fs, 0, "MULTISCALE", 1);

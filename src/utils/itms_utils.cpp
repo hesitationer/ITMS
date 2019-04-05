@@ -224,6 +224,7 @@ namespace itms {
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // 2019. 01. 04 -> Apply fastDSST when the existing blob was not matched by current blob
+  // 2019. 04. 05 -> Apply fastDSST at the searching stage for matching blobs, otherwise it can cross the different objects
   void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
 	  // lost object tracker
 	  //size_t N = existingBlobs.size();
@@ -292,6 +293,7 @@ namespace itms {
 		  }
 	  } // end of if (existingBlobs.size() > 1) {		// object # > 1
 
+	  // --------------------------------- eliminate overlapped area --------------------------------------------
 	  // blob iterator
 	  std::vector<Blob>::iterator existBlob = existingBlobs.begin();
 	  while (existBlob != existingBlobs.end()) {
@@ -372,7 +374,8 @@ namespace itms {
 		existingBlob.blnCurrentMatchFoundOrNewBlob = false;
 		existingBlob.predictNextPosition();
 		}*/
-
+		// --------------------------------------------------------------------------------------------------------------------
+		// ---------------------------------------- candidate search part -------------------------------------------------------
 		// candidate search only with distances between centers of currentFrameBlobs and existing blobs.
 		// add more property including area and h/w ratio
 		// serch around the nearest neighbor blob for tracking 
