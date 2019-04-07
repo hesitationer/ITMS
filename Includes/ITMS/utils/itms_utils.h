@@ -702,7 +702,7 @@ namespace itms {
   std::vector<cv::Point> getBlobUnderRect(const Config &_conf, const cv::Mat& _curImg, const cv::Rect& _prect, const itms::Blob& _curBlob);  // sangkny 20190404
   // get the new blob information including contour and etc under the new rect on the given image
   bool doubleCheckBackwardMoving(const Config& _conf, itms::Blob& _curBlob);
-
+  bool trackNewLocationFromPrevBlob(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);
 
   // sangkny FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -746,8 +746,7 @@ namespace itms {
 	  cv::Mat getBGImage(void) { return BGImage; };
 	  void setBGImage(const cv::Mat& _bgImg) { BGImage = _bgImg; };
 	  bool checkObjectStatus(itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
-	  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);
-	  bool trackCurBlobFromPrevBlob(itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, const itms::Blob& _ref, cv::Rect& _new_rect);
+	  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);	  
   };
 
   // ITMS API Native Class 

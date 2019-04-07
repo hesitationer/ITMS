@@ -218,7 +218,7 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 	imagesFromBlob(blob, Blobs);
 	for (int ii = 0; ii < Blobs.size(); ii++) {
 		imshow(format("blob image: %d", ii), Blobs[ii]);
-		waitKey(1);
+		//waitKey(1);
 	}
 	//Sets the input to the network
 	net.setInput(blob);

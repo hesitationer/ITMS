@@ -2,7 +2,7 @@
 <opencv_storage>
 <!-- debuging parameters: -->
 
-<debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
+<debugShowImages>0</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
 <debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
 <debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
@@ -24,7 +24,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_114311_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -91,9 +91,11 @@
 <minConsecutiveFramesForOS> 6 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
 
 <BlobNCC_Th> 0.5 </BlobNCC_Th>
+
+<!-- Object Tracking ---------------------------- -->
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
-<isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
+<isSubImgTracking>0</isSubImgTracking>                          <!-- loast object local searching flag -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
 <useTrackerMatching>1</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
 <useTrackerMatchingThres>0.75</useTrackerMatchingThres>         <!-- Tracker matching threshold for different object determination  -->
