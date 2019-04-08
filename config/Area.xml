@@ -2,7 +2,7 @@
 <opencv_storage>
 <!-- debuging parameters: -->
 
-<debugShowImages>0</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
+<debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
 <debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
 <debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
