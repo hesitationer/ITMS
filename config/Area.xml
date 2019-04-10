@@ -3,10 +3,10 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
-<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
-<debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
-<debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
-<debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
+<debugShowImagesDetail>1</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugGeneral>1</debugGeneral>                      <!-- debug flag for printing the text information --> 
+<debugGeneralDetail>1</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
+<debugTrace>1</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
 <debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
 <debugSpecial>1</debugSpecial>                      <!-- debug flag for improving purpose only -->
 
@@ -95,7 +95,7 @@
 <!-- Object Tracking ---------------------------- -->
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
-<isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
+<isSubImgTracking>0</isSubImgTracking>                          <!-- loast object local searching flag -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
 <useTrackerMatching>1</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
 <useTrackerMatchingThres>0.75</useTrackerMatchingThres>         <!-- Tracker matching threshold for different object determination  -->

@@ -1025,6 +1025,24 @@ namespace itms {
 		  }
 	  } // end of if (existingBlobs.size() > 1) {		// object # > 1
 
+	  auto Clamp = [](int& v, int& size, int hi) -> bool
+	  {
+		  if (size < 2)
+		  {
+			  size = 2;
+		  }
+		  if (v < 0)
+		  {
+			  v = 0;
+			  return true;
+		  }
+		  else if (v + size > hi - 1)
+		  {
+			  v = hi - 1 - size;
+			  return true;
+		  }
+		  return false;
+	  };
 		// --------------------------------- eliminate overlapped area --------------------------------------------
 		// blob iterator
 	  std::vector<Blob>::iterator existBlob = existingBlobs.begin();
@@ -1035,8 +1053,7 @@ namespace itms {
 			  // removing a blob from the list of existingBlobs	when it has been deserted long time or overlapped with the current active object					
 			  // overlapping test if overlapped or background, we will erase.
 			  std::vector<pair<int, int>> overlappedBobPair; // first:blob index, second:overlapped type
-			  int intIndexOfOverlapped = -1;
-			  double dblLeastDistance = 100000.0;
+			  
 			  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
 				  int intSect = InterSectionRect(existBlob->currentBoundingRect, existingBlobs[i].currentBoundingRect);
 
@@ -1091,18 +1108,35 @@ namespace itms {
 				  }
 			  }
 		  }
-		  else {
+		  else { // if (existBlob->blnStillBeingTracked == true ) 
 			  // tracking algorithm should be inserted here
 			  // 
-			  existBlob->blnCurrentMatchFoundOrNewBlob = false;
-			  existBlob->predictNextPosition();
+			  //existBlob->blnCurrentMatchFoundOrNewBlob = false;
+			  //existBlob->predictNextPosition();
 			  cv::Rect newRoi;
 			  bool bSuccess = false;
-
 			  bSuccess = trackNewLocationFromPrevBlob(_conf, preImg, srcImg, *existBlob, newRoi, 2);		
-			  if (!bSuccess)
-				  int kkk = 0;
+			  if (bSuccess ) {
+				  existBlob->blnCurrentMatchFoundOrNewBlob = true;
+				  existBlob->blnStillBeingTracked = true;
+				  // update the center				  
+				  //if (existBlob->resetBlobContourWithCenter(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)))) {
+					  existBlob->currentBoundingRect = newRoi;					  
+					  Clamp(existBlob->currentBoundingRect.x, existBlob->currentBoundingRect.width, srcImg.cols);					  
+					  Clamp(existBlob->currentBoundingRect.y, existBlob->currentBoundingRect.height, srcImg.rows);
+					  //existBlob->centerPositions.push_back(cv::Point(cvRound(newRoi.x + newRoi.width / 2.f), cvRound(newRoi.y + newRoi.height / 2.f)));
+					  existBlob->centerPositions.push_back(cv::Point(cvRound(existBlob->currentBoundingRect.x + existBlob->currentBoundingRect.width / 2.f), cvRound(existBlob->currentBoundingRect.y + existBlob->currentBoundingRect.height / 2.f)));
+				  //}				  
+			  }
+			  else {  // tracking fail or centerposition is same as before
+				  existBlob->blnCurrentMatchFoundOrNewBlob = false;
+				  //existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // put one center point for lost object // 뒤에서 한다. 
 				  
+			  }		
+			  if (existBlob->centerPositions.size() > _conf.max_Center_Pts)
+				  pop_front(existBlob->centerPositions, existBlob->centerPositions.size() - _conf.max_Center_Pts);
+			  existBlob->predictNextPosition(); // common both the above condition
+
 			++existBlob;
 		  }
 	  } // end while ( existingBlob != existingBlobs.end())
@@ -1111,210 +1145,74 @@ namespace itms {
 		existingBlob.predictNextPosition();
 		}*/
 
-	  auto Clamp = [](int& v, int& size, int hi) -> bool
-	  {
-		  if (size < 2)
-		  {
-			  size = 2;
-		  }
-		  if (v < 0)
-		  {
-			  v = 0;
-			  return true;
-		  }
-		  else if (v + size > hi - 1)
-		  {
-			  v = hi - 1 - size;
-			  return true;
-		  }
-		  return false;
-	  };
+	  // eliminate the current blob which has been tracked from the previous mother blobs
+	  
+	  int ii = 0;
+	  for(unsigned int i = 0; i<existingBlobs.size(); i++) {
+		  cv::Rect exBlob_rect = existingBlobs[i].currentBoundingRect;
+		  std::vector<Blob>::iterator _curBlob = currentFrameBlobs.begin();
+		  while (_curBlob !=currentFrameBlobs.end()) {
+			  cv::Rect curBlob_rect = _curBlob->currentBoundingRect;
+			  cv::Rect intRect = (curBlob_rect & exBlob_rect);
+			  if (_conf.debugSpecial) {				  
+				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(exBlob_rect), "curBlob / existing Blob rect", 2);
+				  std::cout << " Area ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / exBlob_rect.area() << endl;
+				  cv::waitKey(1);
+			  }
+			  float allowedPct = 0.5;// _conf.useTrackerAllowedPercentage;
+			  float areaRatio;
+			  areaRatio = (float)intRect.area() / (float)exBlob_rect.area();
 
+			  if ((areaRatio > (1 - allowedPct)) && (areaRatio <= (1 + allowedPct))) { // 1/2 
+				  // eliminate the current blob because it has been already tracked and updated using tracking-based approach
+				  _curBlob = currentFrameBlobs.erase(_curBlob);
+				  if (_conf.debugGeneralDetail) {
+					  cout << "cur Blob #: " << ii << " was erased form current Frame Blobs !! <<tracking-based>>" << endl;
+				  }				  
+			  }
+			  else
+				  ++_curBlob;
+
+		  }		  
+		  ii++;
+	  }// while end for (curBlob)
+	  
 	  // --------------------------------------------------------------------------------------------------------------------
-	  // ---------------------------------------- candidate search part -------------------------------------------------------
-	  // candidate search only with distances between centers of currentFrameBlobs and existing blobs.
-	  // add more property including area and h/w ratio
-	  // search around the nearest neighbor blob for tracking 
-	  // for searching larger area with more accuracy, we need to increase the search range (CurrentDiagonalSize) or to particle filter
-	  // with data, kalman or other tracking will be more accurate
-	  // 2019. 04. 05, option: applying tracker-based matching option to match blobs
+	  // 
 	  // --------------------------------------------------------------------------------------------------------------------------------
-	  for (auto &currentFrameBlob : currentFrameBlobs) {
+	  for (auto &currentFrameBlob : currentFrameBlobs) { // then add new all the rest of current frame blobs
 		  int intIndexOfLeastDistance = -1;
 		  //int intIndexOfHighestScore = 0;
 		  double dblLeastDistance = 100000.0;
-		  /*
-		  double totalScore = 100.0, cutTotalScore = 20.0, maxTotalScore = 0.0;
+		  
 
-		  float allowedPercentage = 0.25; // 20%
-		  float minArea = currentFrameBlob.currentBoundingRect.width *(1.0f - allowedPercentage); // 편차가 너무 크므로
-		  float MaxArea = currentFrameBlob.currentBoundingRect.width *(1.0f + allowedPercentage); // width 와 height로 구성
-		  float minDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f - allowedPercentage); // huMoment를 이용하는 방법 모색
-		  float maxDiagonal = currentFrameBlob.currentBoundingRect.height * (1.0f + allowedPercentage);
-		  */
+		  //for (unsigned int i = 0; i < existingBlobs.size(); i++) {
+			 // if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
+				//												   // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
+				//  double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
+				//  
+				//  if (existingBlobs[i].oc != currentFrameBlob.oc)
+				//	  int kkk = 0;
 
-		  for (unsigned int i = 0; i < existingBlobs.size(); i++) {
-			  if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
-																   // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
-				  double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
-				  /* // sangkny 2019. 02. 15
-				  totalScore -= dblDistance;
-				  totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
-				  totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
-				  totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area()) / max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
-				  */
-				  if (existingBlobs[i].oc != currentFrameBlob.oc)
-					  int kkk = 0;
-
-				  if (dblDistance < dblLeastDistance && (existingBlobs[i].oc == currentFrameBlob.oc || existingBlobs[i].oc == OC_OTHER || currentFrameBlob.oc == OC_OTHER)) {
-					  dblLeastDistance = dblDistance;
-					  intIndexOfLeastDistance = i;
-				  }
-				  /*if (maxTotalScore < totalScore) {
-				  maxTotalScore = totalScore;
-				  intIndexOfHighestScore = i;
-				  dblLeastDistance = dblDistance;
-				  }*/
-			  }
-			  else { // existingBlobs[i].bInStillBeingTracked == false;
-					 /* do something for unassinged tracks */
-				  int temp = 0; // no meaning 
-			  }
-		  }
+				//  if (dblDistance < dblLeastDistance && (existingBlobs[i].oc == currentFrameBlob.oc || existingBlobs[i].oc == OC_OTHER || currentFrameBlob.oc == OC_OTHER)) {
+				//	  dblLeastDistance = dblDistance;
+				//	  intIndexOfLeastDistance = i;
+				//  }
+				//  
+			 // }
+			 // else { // existingBlobs[i].bInStillBeingTracked == false;
+				//	 /* do something for unassinged tracks */
+				//  int temp = 0; // no meaning 
+			 // }
+		  //}
 
 
 		  // ----------------- matching with tracker ------------------------------
 		  // -------------------------------------------------
 		  bool buseTrackerMatchingFlag = true;
-		  if (0 && /*_conf.m_externalTrackerForLost && */_conf.useTrackerMatching
-			  && (intIndexOfLeastDistance != -1)
-			  && (0 || (existingBlobs[intIndexOfLeastDistance].oc == itms::ObjectClass::OC_VEHICLE)/* || (existingBlobs[intIndexOfLeastDistance].oc == itms::ObjectClass::OC_HUMAN && currentFrameBlob.oc != itms::ObjectClass::OC_HUMAN)*/)
-			  /* 과거 차 이거나 || (과거 사람이고 && 현재 사람이 아닐경우)에 다시 판단 */
-			  && (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize)) {
-
-			  //blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
-			  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect, exBlob_rect = existingBlobs[intIndexOfLeastDistance].currentBoundingRect;
-			  // size adjustment for template matching
-			  float maxwidth = max(curBlob_rect.width, exBlob_rect.width);
-			  float maxheight = max(curBlob_rect.height, exBlob_rect.height);
-			  curBlob_rect.width = maxwidth;
-			  curBlob_rect.height = maxheight;
-			  exBlob_rect.width = maxwidth;
-			  exBlob_rect.height = maxheight;
-
-			  double blobNCC = getNCC(_conf, preImg(exBlob_rect), srcImg(curBlob_rect), cv::Mat(), _conf.match_method, _conf.use_mask);
-			  if (_conf.debugSpecial) {
-				  /*cv::imshow("cur blob", srcImg(curBlob_rect));
-				  cv::imshow("pre blob", preImg(exBlob_rect));*/
-				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), preImg(exBlob_rect), " cur / pre blobs", 1);
-				  //cv::waitKey(1);
-			  }
-			  if (blobNCC < _conf.BlobNCC_Th)
-				  buseTrackerMatchingFlag = false;
-		  }
-		  float fareaRatio = _conf.useTrackerMatchingThres;
-		  if (0 && /*_conf.m_externalTrackerForLost && */ _conf.useTrackerMatching && (intIndexOfLeastDistance != -1)
-			  && (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize)
-			  && ((float)existingBlobs[intIndexOfLeastDistance].currentBoundingRect.area() / (float)currentFrameBlob.currentBoundingRect.area() < (1 - fareaRatio) ||
-			  (float)existingBlobs[intIndexOfLeastDistance].currentBoundingRect.area() / (float)currentFrameBlob.currentBoundingRect.area() > (1 + fareaRatio)
-				  )
-			  ) {
-			  // tracker-based approach 
-			  cv::Rect newRoi, m_predictionRect;
-			  int expandY = 0;
-			  float heightRatio = (float)(existingBlobs[intIndexOfLeastDistance].currentBoundingRect.height + expandY) / (existingBlobs[intIndexOfLeastDistance].currentBoundingRect.height);
-			  int expandX = max(0, cvRound((float)(existingBlobs[intIndexOfLeastDistance].currentBoundingRect.width)*heightRatio - existingBlobs[intIndexOfLeastDistance].currentBoundingRect.width));
-			  cv::Rect expRect = expandRect(existingBlobs[intIndexOfLeastDistance].currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
-
-			  m_predictionRect = expRect;//existingBlob.currentBoundingRect;//expRect;			
-										 // partial local tracking using FDSST 2019. 01. 17
-			  cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // origin: max small subImage selection, I need to check if we can reduce more
-			  bool success = false;
-			  if (roiSize.width > srcImg.cols)
-			  {
-				  roiSize.width = srcImg.cols;
-			  }
-			  if (roiSize.height > srcImg.rows)
-			  {
-				  roiSize.height = srcImg.rows;
-			  }
-			  cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
-			  cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
-			  Clamp(roiRect.x, roiRect.width, srcImg.cols);
-			  Clamp(roiRect.y, roiRect.height, srcImg.rows);
-
-			  cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height);
-			  // relative subImage coordinates
-			  if (!existingBlobs[intIndexOfLeastDistance].m_tracker_psr || existingBlobs[intIndexOfLeastDistance].m_tracker_psr.empty()) {
-				  existingBlobs[intIndexOfLeastDistance].CreateExternalTracker();
-			  }
-		  cv:Rect2d newsubRoi = lastRect;  // local window rect
-			  if (lastRect.x >= 0 &&
-				  lastRect.y >= 0 &&
-				  lastRect.x + lastRect.width < roiRect.width &&
-				  lastRect.y + lastRect.height < roiRect.height &&
-				  lastRect.area() > 0) {
-				  cv::Mat preImg3, srcImg3;
-				  if (preImg.channels() < 3) {
-					  cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
-					  cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);
-				  }
-
-				  if (!existingBlobs[intIndexOfLeastDistance].m_tracker_initialized) {
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
-					  existingBlobs[intIndexOfLeastDistance].m_tracker_initialized = true; // ??????????????						
-				  }
-				  else {
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->updateAt(cv::Mat(srcImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->updateAt(cv::Mat(srcImg, roiRect), newsubRoi);
-				  }
-
-				  // update position and update the current frame because we not do this sometime if necessary						
-				  if (!success) { // lastRect is not new, and old one is used								
-					  newsubRoi = lastRect;
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
-
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->update(cv::Mat(srcImg, roiRect), newsubRoi);
-				  } // else is not required because if updateAt is successful, the new location after update is same							
-					// 요기까지 functiondd을 하나 만들면 되겠네...
-				  cv::Rect prect;
-				  if (success) {
-					  prect = cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
-				  }
-				  else {
-					  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
-				  }
-				  // verify the location which cover both locations
-				  //cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect, exBlob_rect = existingBlobs[intIndexOfLeastDistance].currentBoundingRect;
-				  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect;
-				  cv::Rect intRect = (curBlob_rect & prect);
-				  if (_conf.debugSpecial) {
-					  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(prect), "curBlob / predicted Blob rect", 2);
-					  std::cout << " Area ratio : intRect/prect area ratio --> " << (float)intRect.area() / prect.area() << endl;
-					  //cv::waitKey(1);
-				  }
-				  float allowedPct = _conf.useTrackerAllowedPercentage;
-				  float areaRatio;
-
-				  areaRatio = (float)intRect.area() / (float)prect.area();
-
-				  if (!success || (areaRatio < (1 - allowedPct)) || (areaRatio >(1 + allowedPct))) { // 1/2 
-					  buseTrackerMatchingFlag = false;
-				  }
-			  }
-		  }
-		  // ----------------- matching with tracker ends -------------------------
-		  // --------------------------------------------------
-
-
-		  if (buseTrackerMatchingFlag && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize) { // 충분히 클수록 좋다. // 그리고, option 선택... 
+		 
+		  
+		  if (0 && buseTrackerMatchingFlag && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize) { // 충분히 클수록 좋다. // 그리고, option 선택... 
 			  addBlobToExistingBlobs(_conf, currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
 
 			  //  if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
@@ -2199,14 +2097,16 @@ namespace itms {
 				  cv::cvtColor(_srcImg, srcImg3, CV_GRAY2BGR);
 			  }
 			  newRoi = expRect;
-			  if (!_ref.m_tracker_initialized) {		// do it only once																
+			  if (!_ref.m_tracker_initialized) {		// do it only once																				  
 				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->reinit(preImg3, newRoi) : _ref.m_tracker_psr->reinit(_preImg, newRoi);
 				  _ref.m_tracker_initialized = true;
 			  }
 			  else
-				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->updateAt(srcImg3, newRoi) : _ref.m_tracker_psr->updateAt(_srcImg, newRoi);			  
+				  //success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->updateAt(srcImg3, newRoi) : _ref.m_tracker_psr->updateAt(_srcImg, newRoi);			  				  
+				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->update(srcImg3, newRoi) : _ref.m_tracker_psr->update(_srcImg, newRoi);
 
-			  if (!success) {
+			  if (!success) { // retry with new rect 
+				  // need to verify if the given object is not continous, the following code enforces the following the algorithm
 				  newRoi = expRect;
 				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->reinit(preImg3, newRoi) : _ref.m_tracker_psr->reinit(_preImg, newRoi);
 				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->update(srcImg3, newRoi) : _ref.m_tracker_psr->update(_srcImg, newRoi);
