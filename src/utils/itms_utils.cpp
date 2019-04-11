@@ -139,11 +139,15 @@ namespace itms {
 	  while (currentBlob != currentFrameBlobs.end()) {
 		  int intIndexOfLeastDistance = -1;
 		  double dblLeastDistance = 100000.0;
-		  for (unsigned int i = 0; i < currentFrameBlobs.size(); i++) {
+		  cv::Point2f sPt = cvtPx2RealPx(static_cast<cv::Point2f>(currentBlob->centerPositions.back()), _conf.transmtxH); // starting pt
 
+		  for (unsigned int i = 0; i < currentFrameBlobs.size(); i++) {			  
+			  cv::Point2f ePt = cvtPx2RealPx(static_cast<cv::Point2f>(currentFrameBlobs[i].centerPositions.back()), _conf.transmtxH);                                  // end pt
+			  double realdist = distanceBetweenPoints(sPt, ePt); // real distance (cm) in the ROI 
+			  
 			  double dblDistance = distanceBetweenPoints(currentBlob->centerPositions.back(), currentFrameBlobs[i].centerPositions.back());
 
-			  if (dblDistance > 1/* same object */ && dblDistance < dblLeastDistance) { // center locations should be in the range
+			  if (realdist < 500/* 5 meters */ && dblDistance > 1/* same object */ && dblDistance < dblLeastDistance) { // center locations should be in the range
 				  dblLeastDistance = dblDistance;
 				  intIndexOfLeastDistance = i;
 			  }
@@ -244,7 +248,7 @@ namespace itms {
   // 2019. 01. 04 -> Apply fastDSST when the existing blob was not matched by current blob
   // 2019. 04. 05 -> Apply fastDSST at the searching stage for matching blobs, otherwise it can cross the different objects
   // 2019. 04. 08 -> fastDSST-based Approach => matchExistingBlobsToCurrentFrameBlobs 
-  void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
+  void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, const cv::Mat& orgImg, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
 	  // lost object tracker
 	  //size_t N = existingBlobs.size();
 	  //std::vector<int> assignment(N, -1); // if the blob is matched then it will has 1 value. However, we can make the value the matched index in current Frame
@@ -595,9 +599,32 @@ namespace itms {
 		  }
 		  // ----------------- matching with tracker ends -------------------------
 		  // --------------------------------------------------
+		  // hit test // sangkny 2019/04/10
+		  bool bhittest = false;
+		  cv::Rect hit_rect;
+		  if (intIndexOfLeastDistance != -1) {
+			  bool success = trackNewLocationFromPrevBlob(_conf, preImg, srcImg, existingBlobs[intIndexOfLeastDistance], hit_rect, 2);
+			  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect;
+			  cv::Rect intRect = (curBlob_rect & hit_rect);
+			  if (_conf.debugGeneralDetail) {
+				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(hit_rect), "curBlob / existing Blob rect", 2);
+				  std::cout << "\n\n\r Hit Test ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / hit_rect.area() << endl;
+				  cv::waitKey(1);
+			  }
+			  float allowedPct = 0.75;// _conf.useTrackerAllowedPercentage;
+			  float areaRatio;
+			  areaRatio = (float)intRect.area() / (float)hit_rect.area();
 
+			  if ((areaRatio > (1 - allowedPct)) && (areaRatio <= (1 + allowedPct))) { // 1/2 
+				  bhittest = true;
+				  if (_conf.debugGeneralDetail) {
+					  cout << ">>>>>>>>>>>>>>> The current blob: id -> " << currentFrameBlob.id << " was passed in HitTest" << endl;
+				  }			  
+			  }
 
-		  if (buseTrackerMatchingFlag && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize) { // 충분히 클수록 좋다. // 그리고, option 선택... 
+		  }
+
+		  if (buseTrackerMatchingFlag && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize && bhittest) { // 충분히 클수록 좋다. // 그리고, option 선택... 
 			  addBlobToExistingBlobs(_conf, currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
 
 			  //  if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
@@ -643,6 +670,21 @@ namespace itms {
 						  detectCascadeRoiHuman(_conf, srcImg, expRect, people);
 						  if (people.size())
 							  currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+						  else if (distance >= 100 && _conf.scaleFactor< 1.0) {
+								  //한번 더 원래 이미지로
+								  people.clear();
+								  cv::Rect _roi_rect = currentFrameBlob.currentBoundingRect; //상대좌표가 들어와야 한다.
+								  _roi_rect.x = (float)currentFrameBlob.currentBoundingRect.x / _conf.scaleFactor;
+								  _roi_rect.y = (float)currentFrameBlob.currentBoundingRect.y / _conf.scaleFactor;
+								  _roi_rect.width = (float)currentFrameBlob.currentBoundingRect.width / _conf.scaleFactor;
+								  _roi_rect.height = (float)currentFrameBlob.currentBoundingRect.height / _conf.scaleFactor;
+								  _roi_rect = expandRect(_roi_rect, 8, 8, orgImg.cols, orgImg.rows);
+
+								  detectCascadeRoiHuman(_conf, orgImg, _roi_rect, people); // sangkny 20190331 check the human with original sized image 
+								  if (people.size())
+									currentFrameBlob.oc_prob = 1.0;								  							  
+						  
+						  }
 						  else if (_conf.img_dif_th >= _conf.nightBrightness_Th &&/* at night */ classProb >= _conf.nightObjectProb_Th) // at daytime, need to classify using cascade classifier, otherwise, at night, we put the candidate
 							  ;		// put this contour as it is 
 						  else
@@ -1115,7 +1157,7 @@ namespace itms {
 			  //existBlob->predictNextPosition();
 			  cv::Rect newRoi;
 			  bool bSuccess = false;
-			  bSuccess = trackNewLocationFromPrevBlob(_conf, preImg, srcImg, *existBlob, newRoi, 2);		
+			  bSuccess = trackNewLocation(_conf, preImg, srcImg, *existBlob, newRoi, 2);		
 			  if (bSuccess ) {
 				  existBlob->blnCurrentMatchFoundOrNewBlob = true;
 				  existBlob->blnStillBeingTracked = true;
@@ -1129,7 +1171,7 @@ namespace itms {
 				  //}				  
 			  }
 			  else {  // tracking fail or centerposition is same as before
-				  existBlob->blnCurrentMatchFoundOrNewBlob = false;
+				  existBlob->blnCurrentMatchFoundOrNewBlob = false;				  
 				  //existBlob->centerPositions.push_back(existBlob->centerPositions.back()); // put one center point for lost object // 뒤에서 한다. 
 				  
 			  }		
@@ -1167,7 +1209,7 @@ namespace itms {
 				  // eliminate the current blob because it has been already tracked and updated using tracking-based approach
 				  _curBlob = currentFrameBlobs.erase(_curBlob);
 				  if (_conf.debugGeneralDetail) {
-					  cout << "cur Blob #: " << ii << " was erased form current Frame Blobs !! <<tracking-based>>" << endl;
+					  cout << "\n cur Blob #: " << ii << " was erased form current Frame Blobs !! <<tracking-based>> -------------------->" << endl;
 				  }				  
 			  }
 			  else
@@ -1302,7 +1344,7 @@ namespace itms {
 												 
 					  cv::Rect newRoi;
 
-					  successTracking = itms::trackNewLocationFromPrevBlob(_conf, preImg, srcImg, existingBlob, newRoi, expandY);
+					  successTracking = itms::trackNewLocation(_conf, preImg, srcImg, existingBlob, newRoi, expandY);
 					  if (successTracking) {
 						  // move a boundary and its boundingRect if necessary
 
@@ -1333,7 +1375,7 @@ namespace itms {
 						 // sangkny update the center points of the existing blob which has been untracted	
 					  cv::Rect prect;//=existingBlob.currentBoundingRect;
 
-					  successTracking = itms::trackNewLocationFromPrevBlob(_conf, preImg, srcImg, existingBlob, prect, expandY);
+					  successTracking = itms::trackNewLocation(_conf, preImg, srcImg, existingBlob, prect, expandY);
 
 					  if (successTracking && existingBlob.resetBlobContourWithCenter(cv::Point(cvRound(prect.x + prect.width / 2.f), cvRound(prect.y + prect.height / 2.f)))) { // boundary movement first 							  
 						  cv::Rect tmpRect = existingBlob.currentBoundingRect;
@@ -2101,9 +2143,10 @@ namespace itms {
 				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->reinit(preImg3, newRoi) : _ref.m_tracker_psr->reinit(_preImg, newRoi);
 				  _ref.m_tracker_initialized = true;
 			  }
-			  else
-				  //success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->updateAt(srcImg3, newRoi) : _ref.m_tracker_psr->updateAt(_srcImg, newRoi);			  				  
-				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->update(srcImg3, newRoi) : _ref.m_tracker_psr->update(_srcImg, newRoi);
+			  else {
+				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->updateAt(srcImg3, newRoi) : _ref.m_tracker_psr->updateAt(_srcImg, newRoi);
+				  //success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->update(srcImg3, newRoi) : _ref.m_tracker_psr->update(_srcImg, newRoi);
+			  }
 
 			  if (!success) { // retry with new rect 
 				  // need to verify if the given object is not continous, the following code enforces the following the algorithm
@@ -2232,7 +2275,169 @@ namespace itms {
 
 	  return success;
   }
+  bool trackNewLocation(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY) {
 
+	  bool bexternalTrackerForLost = _conf.m_externalTrackerForLost;  // does use an external tracker?
+	  bool bisSubImgTracking = _conf.isSubImgTracking;                // is it subImgTracking (local tracker) ? 
+	  bool success = false;
+
+	  if (bexternalTrackerForLost/*_conf.m_externalTrackerForLost*/) {
+		  // main routine -- common part for global and local region-based tracker 
+		  cv::Rect newRoi, m_predictionRect;
+		  int expandY = _expandY;
+		  float heightRatio = (float)(_ref.currentBoundingRect.height + expandY) / (float)(_ref.currentBoundingRect.height);
+		  int expandX = max(0, cvRound((float)(_ref.currentBoundingRect.width)*heightRatio - _ref.currentBoundingRect.width));
+		  cv::Rect expRect = expandRect(_ref.currentBoundingRect, expandX, expandY, _preImg.cols, _preImg.rows);
+
+		  m_predictionRect = expRect;//existingBlob.currentBoundingRect;//expRect;			
+
+		  if (!_ref.m_tracker_psr || _ref.m_tracker_psr.empty()) {
+			  _ref.CreateExternalTracker();
+		  }
+		  if (!bisSubImgTracking) { // global approach
+			  cv::Mat preImg3, srcImg3;
+			  if (_preImg.channels() < 3) {
+				  cv::cvtColor(_preImg, preImg3, CV_GRAY2BGR);
+				  cv::cvtColor(_srcImg, srcImg3, CV_GRAY2BGR);
+			  }
+			  newRoi = expRect;
+			  if (!_ref.m_tracker_initialized) {		// do it only once																				  
+				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->reinit(preImg3, newRoi) : _ref.m_tracker_psr->reinit(_preImg, newRoi);
+				  _ref.m_tracker_initialized = true;
+			  }
+			  else {
+				  //success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->updateAt(srcImg3, newRoi) : _ref.m_tracker_psr->updateAt(_srcImg, newRoi);
+				  success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->update(srcImg3, newRoi) : _ref.m_tracker_psr->update(_srcImg, newRoi);
+			  }
+
+			  //if (!success) { // retry with new rect 
+					//		  // need to verify if the given object is not continous, the following code enforces the following the algorithm
+				 // newRoi = expRect;
+				 // success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->reinit(preImg3, newRoi) : _ref.m_tracker_psr->reinit(_preImg, newRoi);
+				 // success = (_preImg.channels() < 3) ? _ref.m_tracker_psr->update(srcImg3, newRoi) : _ref.m_tracker_psr->update(_srcImg, newRoi);
+			  //}
+
+			  _new_rect = (success) ? newRoi : expRect;
+			  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
+				  cv::Mat tmp2 = _srcImg.clone();
+				  cv::Rect prect = _new_rect;
+
+				  if (tmp2.channels() < 3)
+					  cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+				  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
+				  if (success)
+					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
+				  else
+					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
+				  cv::imshow("Full Image Tracking Global location", tmp2);
+				  cv::waitKey(1);
+			  }
+
+		  }
+		  else {
+			  // partial local tracking using FDSST 2019. 01. 17
+			  cv::Size roiSize(max(2 * m_predictionRect.width, _srcImg.cols / 8), std::max(2 * m_predictionRect.height, _srcImg.rows / 8)); // origin: max small subImage selection, I need to check if we can reduce more
+
+			  if (roiSize.width > _srcImg.cols)
+			  {
+				  roiSize.width = _srcImg.cols;
+			  }
+			  if (roiSize.height > _srcImg.rows)
+			  {
+				  roiSize.height = _srcImg.rows;
+			  }
+			  cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
+			  cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
+			  Clamp(roiRect.x, roiRect.width, _srcImg.cols);
+			  Clamp(roiRect.y, roiRect.height, _srcImg.rows);
+
+			  cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height);
+			  // relative subImage coordinates
+
+			  cv::Rect2d newsubRoi = lastRect;  // local window rect
+			  if (lastRect.x >= 0 &&
+				  lastRect.y >= 0 &&
+				  lastRect.x + lastRect.width < roiRect.width &&
+				  lastRect.y + lastRect.height < roiRect.height &&
+				  lastRect.area() > 0) {
+				  cv::Mat preImg3, srcImg3;
+				  if (_preImg.channels() < 3) {
+					  cv::cvtColor(_preImg, preImg3, CV_GRAY2BGR);
+					  cv::cvtColor(_srcImg, srcImg3, CV_GRAY2BGR);
+				  }
+
+				  if (!_ref.m_tracker_initialized) {
+					  success = (_preImg.channels() < 3) ?
+						  _ref.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
+						  _ref.m_tracker_psr->reinit(cv::Mat(_preImg, roiRect), newsubRoi);
+					  _ref.m_tracker_initialized = true; // ??????????????						
+				  }
+				  else {
+					  success = (_preImg.channels() < 3) ?
+						  _ref.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
+						  _ref.m_tracker_psr->update(cv::Mat(_srcImg, roiRect), newsubRoi); // it is different from newLocationFromprevBlob
+				  }
+
+				  // update position and update the current frame because we not do this sometime if necessary						
+				  //if (!success) { // lastRect is not new, and old one is used								
+					 // newsubRoi = lastRect;
+					 // success = (_preImg.channels() < 3) ?
+						//  _ref.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
+						//  _ref.m_tracker_psr->reinit(cv::Mat(_preImg, roiRect), newsubRoi);
+
+					 // success = (_preImg.channels() < 3) ?
+						//  _ref.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
+						//  _ref.m_tracker_psr->update(cv::Mat(_srcImg, roiRect), newsubRoi);
+				  //} // else is not required because if updateAt is successful, the new location after update is same							
+
+				  cv::Rect prect;
+				  if (success) {
+					  prect = cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 			  
+				  }
+				  else {
+					  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); //  keep the old one			  
+				  }
+				  _new_rect = prect;
+
+				  if (_conf.debugShowImages && _conf.debugSpecial) { // local image debug
+					  cv::Mat tmp2 = cv::Mat(_srcImg, roiRect).clone();
+					  if (tmp2.channels() < 3)
+						  cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+					  cv::rectangle(tmp2, lastRect, SCALAR_CYAN, 1);
+					  cv::rectangle(tmp2, newsubRoi, SCALAR_MAGENTA, 2);
+					  if (!success) {
+						  cv::Point_<double> tl = newsubRoi.tl();
+						  cv::Point_<double> br = newsubRoi.br();
+
+						  line(tmp2, tl, br, Scalar(0, 0, 255));
+						  line(tmp2, cv::Point_<double>(tl.x, br.y),
+							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
+					  }
+					  cv::imshow("track", tmp2);
+					  cv::waitKey(1);
+				  }
+				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
+					  cv::Mat tmp2 = _srcImg.clone();
+					  if (tmp2.channels() < 3)
+						  cvtColor(tmp2, tmp2, CV_GRAY2BGR);
+					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
+					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
+					  cv::imshow("Full Image Tracking location", tmp2);
+					  cv::waitKey(1);
+				  }
+
+			  }
+		  }
+	  }
+	  else {
+		  if (_ref.m_tracker_psr || !_ref.m_tracker_psr.empty()) {
+			  _ref.m_tracker_psr.release();
+			  _ref.m_tracker_initialized = false;
+		  }
+	  }
+
+	  return success;
+  }
 
   float itmsFunctions::getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
 	  //// template matching algorithm implementation, demo	
@@ -3635,8 +3840,8 @@ namespace itms {
 	  }
 	  else {
 		  _config->trackid = _config->trackid % _config->maxTrackIds;
-		  //matchCurrentFrameBlobsToExistingBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
-		  matchExistingBlobsToCurrentFrameBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
+		  matchCurrentFrameBlobsToExistingBlobs(*_config, orgImage, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
+		  //matchExistingBlobsToCurrentFrameBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
 	  }
 	  //imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 
