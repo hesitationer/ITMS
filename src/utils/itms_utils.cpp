@@ -609,7 +609,7 @@ namespace itms {
 			  if (_conf.debugGeneralDetail) {
 				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(hit_rect), "curBlob / existing Blob rect", 2);
 				  std::cout << "\n\n\r Hit Test ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / hit_rect.area() << endl;
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 			  float allowedPct = 0.75;// _conf.useTrackerAllowedPercentage;
 			  float areaRatio;
@@ -1196,10 +1196,10 @@ namespace itms {
 		  while (_curBlob !=currentFrameBlobs.end()) {
 			  cv::Rect curBlob_rect = _curBlob->currentBoundingRect;
 			  cv::Rect intRect = (curBlob_rect & exBlob_rect);
-			  if (_conf.debugSpecial) {				  
+			  if (_conf.debugGeneral && _conf.debugGeneralDetail) {				  
 				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(exBlob_rect), "curBlob / existing Blob rect", 2);
 				  std::cout << " Area ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / exBlob_rect.area() << endl;
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 			  float allowedPct = 0.5;// _conf.useTrackerAllowedPercentage;
 			  float areaRatio;
@@ -1208,7 +1208,7 @@ namespace itms {
 			  if ((areaRatio > (1 - allowedPct)) && (areaRatio <= (1 + allowedPct))) { // 1/2 
 				  // eliminate the current blob because it has been already tracked and updated using tracking-based approach
 				  _curBlob = currentFrameBlobs.erase(_curBlob);
-				  if (_conf.debugGeneralDetail) {
+				  if (_conf.debugGeneral && _conf.debugGeneralDetail) {
 					  cout << "\n cur Blob #: " << ii << " was erased form current Frame Blobs !! <<tracking-based>> -------------------->" << endl;
 				  }				  
 			  }
@@ -2156,7 +2156,7 @@ namespace itms {
 			  }			  
 
 			  _new_rect = (success)? newRoi: expRect;		
-			  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
+			  if (_conf.debugShowImages&&_conf.debugShowImagesDetail) { // full image debug
 				  cv::Mat tmp2 = _srcImg.clone();
 				  cv::Rect prect = _new_rect;
 
@@ -2168,7 +2168,7 @@ namespace itms {
 				  else
 					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
 				  cv::imshow("Full Image Tracking Global location", tmp2);
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 
 		  }else{
@@ -2251,7 +2251,7 @@ namespace itms {
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
 					  cv::imshow("track", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
@@ -2260,7 +2260,7 @@ namespace itms {
 					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 					  cv::imshow("Full Image Tracking location", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 
 			  }
@@ -2330,7 +2330,7 @@ namespace itms {
 				  else
 					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
 				  cv::imshow("Full Image Tracking Global location", tmp2);
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 
 		  }
@@ -2414,7 +2414,7 @@ namespace itms {
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
 					  cv::imshow("track", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
@@ -2423,7 +2423,7 @@ namespace itms {
 					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 					  cv::imshow("Full Image Tracking location", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 
 			  }
