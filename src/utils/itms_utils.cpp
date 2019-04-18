@@ -248,6 +248,7 @@ namespace itms {
   // 2019. 01. 04 -> Apply fastDSST when the existing blob was not matched by current blob
   // 2019. 04. 05 -> Apply fastDSST at the searching stage for matching blobs, otherwise it can cross the different objects
   // 2019. 04. 08 -> fastDSST-based Approach => matchExistingBlobsToCurrentFrameBlobs 
+  // 2019. 04. 18 -> back to the 04. 05 
   void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, const cv::Mat& orgImg, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
 	  // lost object tracker
 	  //size_t N = existingBlobs.size();
@@ -473,158 +474,156 @@ namespace itms {
 		  // ----------------- matching with tracker ------------------------------
 		  // -------------------------------------------------
 		  bool buseTrackerMatchingFlag = true;
-		  if (0 && /*_conf.m_externalTrackerForLost && */_conf.useTrackerMatching 
-			  && (intIndexOfLeastDistance != -1) 
-			   && (0 || (existingBlobs[intIndexOfLeastDistance].oc == itms::ObjectClass::OC_VEHICLE)/* || (existingBlobs[intIndexOfLeastDistance].oc == itms::ObjectClass::OC_HUMAN && currentFrameBlob.oc != itms::ObjectClass::OC_HUMAN)*/)
-			  /* 과거 차 이거나 || (과거 사람이고 && 현재 사람이 아닐경우)에 다시 판단 */
-			  && (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize)) {
+		  //if (0 && /*_conf.m_externalTrackerForLost && */_conf.useTrackerMatching 
+			 // && (intIndexOfLeastDistance != -1) 
+			 //  && (0 || (existingBlobs[intIndexOfLeastDistance].oc == itms::ObjectClass::OC_VEHICLE)/* || (existingBlobs[intIndexOfLeastDistance].oc == itms::ObjectClass::OC_HUMAN && currentFrameBlob.oc != itms::ObjectClass::OC_HUMAN)*/)
+			 // /* 과거 차 이거나 || (과거 사람이고 && 현재 사람이 아닐경우)에 다시 판단 */
+			 // && (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize)) {
 
-			  //blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
-			  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect, exBlob_rect = existingBlobs[intIndexOfLeastDistance].currentBoundingRect;
-			  // size adjustment for template matching
-			  float maxwidth = max(curBlob_rect.width, exBlob_rect.width);
-			  float maxheight = max(curBlob_rect.height, exBlob_rect.height);
-			  curBlob_rect.width = maxwidth;
-			  curBlob_rect.height = maxheight;
-			  exBlob_rect.width = maxwidth;
-			  exBlob_rect.height = maxheight;
-			  
-			  double blobNCC = getNCC(_conf, preImg(exBlob_rect), srcImg(curBlob_rect), cv::Mat(), _conf.match_method, _conf.use_mask);
-			  if (_conf.debugSpecial) {
-				  /*cv::imshow("cur blob", srcImg(curBlob_rect));
-				  cv::imshow("pre blob", preImg(exBlob_rect));*/
-				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), preImg(exBlob_rect), " cur / pre blobs", 1);
-				  //cv::waitKey(1);
-			  }
-			  if (blobNCC < _conf.BlobNCC_Th)
-				  buseTrackerMatchingFlag = false;
-		  }
-		  float fareaRatio = _conf.useTrackerMatchingThres;
-		  if (0 && /*_conf.m_externalTrackerForLost && */ _conf.useTrackerMatching && (intIndexOfLeastDistance != -1) 
-			  && (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize)
-			  && ( (float)existingBlobs[intIndexOfLeastDistance].currentBoundingRect.area()/(float)currentFrameBlob.currentBoundingRect.area() < (1-fareaRatio) ||
-			  (float)existingBlobs[intIndexOfLeastDistance].currentBoundingRect.area() / (float)currentFrameBlob.currentBoundingRect.area() > (1 + fareaRatio)
-				  )			  
-			  ) {
-			  // tracker-based approach 
-			  cv::Rect newRoi, m_predictionRect;
-			  int expandY = 0;
-			  float heightRatio = (float)(existingBlobs[intIndexOfLeastDistance].currentBoundingRect.height + expandY) / (existingBlobs[intIndexOfLeastDistance].currentBoundingRect.height);
-			  int expandX = max(0, cvRound((float)(existingBlobs[intIndexOfLeastDistance].currentBoundingRect.width)*heightRatio - existingBlobs[intIndexOfLeastDistance].currentBoundingRect.width));
-			  cv::Rect expRect = expandRect(existingBlobs[intIndexOfLeastDistance].currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
+			 // //blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
+			 // cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect, exBlob_rect = existingBlobs[intIndexOfLeastDistance].currentBoundingRect;
+			 // // size adjustment for template matching
+			 // float maxwidth = max(curBlob_rect.width, exBlob_rect.width);
+			 // float maxheight = max(curBlob_rect.height, exBlob_rect.height);
+			 // curBlob_rect.width = maxwidth;
+			 // curBlob_rect.height = maxheight;
+			 // exBlob_rect.width = maxwidth;
+			 // exBlob_rect.height = maxheight;
+			 // 
+			 // double blobNCC = getNCC(_conf, preImg(exBlob_rect), srcImg(curBlob_rect), cv::Mat(), _conf.match_method, _conf.use_mask);
+			 // if (_conf.debugSpecial) {				  
+				//  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), preImg(exBlob_rect), " cur / pre blobs", 1);
+				//  //cv::waitKey(1);
+			 // }
+			 // if (blobNCC < _conf.BlobNCC_Th)
+				//  buseTrackerMatchingFlag = false;
+		  //}
+		  //float fareaRatio = _conf.useTrackerMatchingThres;
+		  //if (0 && /*_conf.m_externalTrackerForLost && */ _conf.useTrackerMatching && (intIndexOfLeastDistance != -1) 
+			 // && (dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize)
+			 // && ( (float)existingBlobs[intIndexOfLeastDistance].currentBoundingRect.area()/(float)currentFrameBlob.currentBoundingRect.area() < (1-fareaRatio) ||
+			 // (float)existingBlobs[intIndexOfLeastDistance].currentBoundingRect.area() / (float)currentFrameBlob.currentBoundingRect.area() > (1 + fareaRatio)
+				//  )			  
+			 // ) {
+			 // // tracker-based approach 
+			 // cv::Rect newRoi, m_predictionRect;
+			 // int expandY = 0;
+			 // float heightRatio = (float)(existingBlobs[intIndexOfLeastDistance].currentBoundingRect.height + expandY) / (existingBlobs[intIndexOfLeastDistance].currentBoundingRect.height);
+			 // int expandX = max(0, cvRound((float)(existingBlobs[intIndexOfLeastDistance].currentBoundingRect.width)*heightRatio - existingBlobs[intIndexOfLeastDistance].currentBoundingRect.width));
+			 // cv::Rect expRect = expandRect(existingBlobs[intIndexOfLeastDistance].currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
 
-			  m_predictionRect = expRect;//existingBlob.currentBoundingRect;//expRect;			
-										 // partial local tracking using FDSST 2019. 01. 17
-			  cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // origin: max small subImage selection, I need to check if we can reduce more
-			  bool success = false;
-			  if (roiSize.width > srcImg.cols)
-			  {
-				  roiSize.width = srcImg.cols;
-			  }
-			  if (roiSize.height > srcImg.rows)
-			  {
-				  roiSize.height = srcImg.rows;
-			  }
-			  cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
-			  cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
-			  Clamp(roiRect.x, roiRect.width, srcImg.cols);
-			  Clamp(roiRect.y, roiRect.height, srcImg.rows);
+			 // m_predictionRect = expRect;//existingBlob.currentBoundingRect;//expRect;			
+				//						 // partial local tracking using FDSST 2019. 01. 17
+			 // cv::Size roiSize(max(2 * m_predictionRect.width, srcImg.cols / 8), std::max(2 * m_predictionRect.height, srcImg.rows / 8)); // origin: max small subImage selection, I need to check if we can reduce more
+			 // bool success = false;
+			 // if (roiSize.width > srcImg.cols)
+			 // {
+				//  roiSize.width = srcImg.cols;
+			 // }
+			 // if (roiSize.height > srcImg.rows)
+			 // {
+				//  roiSize.height = srcImg.rows;
+			 // }
+			 // cv::Point roiTL(m_predictionRect.x + m_predictionRect.width / 2 - roiSize.width / 2, m_predictionRect.y + m_predictionRect.height / 2 - roiSize.height / 2);
+			 // cv::Rect roiRect(roiTL, roiSize);			// absolute full image coordinates
+			 // Clamp(roiRect.x, roiRect.width, srcImg.cols);
+			 // Clamp(roiRect.y, roiRect.height, srcImg.rows);
 
-			  cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height);
-			  // relative subImage coordinates
-			  if (!existingBlobs[intIndexOfLeastDistance].m_tracker_psr || existingBlobs[intIndexOfLeastDistance].m_tracker_psr.empty()) {
-				  existingBlobs[intIndexOfLeastDistance].CreateExternalTracker();
-			  }
-				cv:Rect2d newsubRoi = lastRect;  // local window rect
-			  if (lastRect.x >= 0 &&
-				  lastRect.y >= 0 &&
-				  lastRect.x + lastRect.width < roiRect.width &&
-				  lastRect.y + lastRect.height < roiRect.height &&
-				  lastRect.area() > 0) {
-				  cv::Mat preImg3, srcImg3;
-				  if (preImg.channels() < 3) {
-					  cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
-					  cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);
-				  }
+			 // cv::Rect2d lastRect(m_predictionRect.x - roiRect.x, m_predictionRect.y - roiRect.y, m_predictionRect.width, m_predictionRect.height);
+			 // // relative subImage coordinates
+			 // if (!existingBlobs[intIndexOfLeastDistance].m_tracker_psr || existingBlobs[intIndexOfLeastDistance].m_tracker_psr.empty()) {
+				//  existingBlobs[intIndexOfLeastDistance].CreateExternalTracker();
+			 // }
+				//cv:Rect2d newsubRoi = lastRect;  // local window rect
+			 // if (lastRect.x >= 0 &&
+				//  lastRect.y >= 0 &&
+				//  lastRect.x + lastRect.width < roiRect.width &&
+				//  lastRect.y + lastRect.height < roiRect.height &&
+				//  lastRect.area() > 0) {
+				//  cv::Mat preImg3, srcImg3;
+				//  if (preImg.channels() < 3) {
+				//	  cv::cvtColor(preImg, preImg3, CV_GRAY2BGR);
+				//	  cv::cvtColor(srcImg, srcImg3, CV_GRAY2BGR);
+				//  }
 
-				  if (!existingBlobs[intIndexOfLeastDistance].m_tracker_initialized) {
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
-					  existingBlobs[intIndexOfLeastDistance].m_tracker_initialized = true; // ??????????????						
-				  }
-				  else {
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->updateAt(cv::Mat(srcImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->updateAt(cv::Mat(srcImg, roiRect), newsubRoi);
-				  }
+				//  if (!existingBlobs[intIndexOfLeastDistance].m_tracker_initialized) {
+				//	  success = (preImg.channels() < 3) ?
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
+				//	  existingBlobs[intIndexOfLeastDistance].m_tracker_initialized = true; // ??????????????						
+				//  }
+				//  else {
+				//	  success = (preImg.channels() < 3) ?
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->updateAt(cv::Mat(srcImg3, roiRect), newsubRoi) :
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->updateAt(cv::Mat(srcImg, roiRect), newsubRoi);
+				//  }
 
-				  // update position and update the current frame because we not do this sometime if necessary						
-				  if (!success) { // lastRect is not new, and old one is used								
-					  newsubRoi = lastRect;
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
+				//  // update position and update the current frame because we not do this sometime if necessary						
+				//  if (!success) { // lastRect is not new, and old one is used								
+				//	  newsubRoi = lastRect;
+				//	  success = (preImg.channels() < 3) ?
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->reinit(cv::Mat(preImg, roiRect), newsubRoi);
 
-					  success = (preImg.channels() < 3) ?
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
-						  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->update(cv::Mat(srcImg, roiRect), newsubRoi);
-				  } // else is not required because if updateAt is successful, the new location after update is same							
-				  // 요기까지 functiondd을 하나 만들면 되겠네...
-				  cv::Rect prect;
-				  if (success) {
-					  prect = cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
-				  }
-				  else {
-					  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
-				  }
-				  // verify the location which cover both locations
-				  //cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect, exBlob_rect = existingBlobs[intIndexOfLeastDistance].currentBoundingRect;
-				  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect;
-				  cv::Rect intRect = (curBlob_rect & prect);
-				  if (_conf.debugSpecial) {
-					  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(prect), "curBlob / predicted Blob rect", 2);
-					  std::cout << " Area ratio : intRect/prect area ratio --> " << (float)intRect.area()/prect.area() << endl;
-					  //cv::waitKey(1);
-				  }
-				  float allowedPct = _conf.useTrackerAllowedPercentage;
-				  float areaRatio;
+				//	  success = (preImg.channels() < 3) ?
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
+				//		  existingBlobs[intIndexOfLeastDistance].m_tracker_psr->update(cv::Mat(srcImg, roiRect), newsubRoi);
+				//  } // else is not required because if updateAt is successful, the new location after update is same							
+				//  // 요기까지 functiondd을 하나 만들면 되겠네...
+				//  cv::Rect prect;
+				//  if (success) {
+				//	  prect = cv::Rect(cvRound(newsubRoi.x) + roiRect.x, cvRound(newsubRoi.y) + roiRect.y, cvRound(newsubRoi.width), cvRound(newsubRoi.height)); // new global location 
+				//  }
+				//  else {
+				//	  prect = cv::Rect(cvRound(lastRect.x) + roiRect.x, cvRound(lastRect.y) + roiRect.y, cvRound(lastRect.width), cvRound(lastRect.height)); // new global location using old one
+				//  }
+				//  // verify the location which cover both locations
+				//  //cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect, exBlob_rect = existingBlobs[intIndexOfLeastDistance].currentBoundingRect;
+				//  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect;
+				//  cv::Rect intRect = (curBlob_rect & prect);
+				//  if (_conf.debugSpecial) {
+				//	  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(prect), "curBlob / predicted Blob rect", 2);
+				//	  std::cout << " Area ratio : intRect/prect area ratio --> " << (float)intRect.area()/prect.area() << endl;
+				//	  //cv::waitKey(1);
+				//  }
+				//  float allowedPct = _conf.useTrackerAllowedPercentage;
+				//  float areaRatio;
 
-				  areaRatio = (float)intRect.area()/(float)prect.area();
+				//  areaRatio = (float)intRect.area()/(float)prect.area();
 
-				  if (!success || (areaRatio < (1-allowedPct)) || ( areaRatio > (1+allowedPct))) { // 1/2 
-					  buseTrackerMatchingFlag = false;
-				  }
-			  }
-		  }
+				//  if (!success || (areaRatio < (1-allowedPct)) || ( areaRatio > (1+allowedPct))) { // 1/2 
+				//	  buseTrackerMatchingFlag = false;
+				//  }
+			 // }
+		  //}
 		  // ----------------- matching with tracker ends -------------------------
 		  // --------------------------------------------------
 		  // hit test // sangkny 2019/04/10
-		  bool bhittest = false;
-		  cv::Rect hit_rect;
-		  if (intIndexOfLeastDistance != -1) {
-			  bool success = trackNewLocationFromPrevBlob(_conf, preImg, srcImg, existingBlobs[intIndexOfLeastDistance], hit_rect, 2);
-			  cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect;
-			  cv::Rect intRect = (curBlob_rect & hit_rect);
-			  if (_conf.debugGeneralDetail) {
-				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(hit_rect), "curBlob / existing Blob rect", 2);
-				  std::cout << "\n\n\r Hit Test ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / hit_rect.area() << endl;
-				  //cv::waitKey(1);
-			  }
-			  float allowedPct = 0.75;// _conf.useTrackerAllowedPercentage;
-			  float areaRatio;
-			  areaRatio = (float)intRect.area() / (float)hit_rect.area();
+		  //bool bhittest = false;
+		  //cv::Rect hit_rect;
+		  //if ( 0 && intIndexOfLeastDistance != -1) {
+			 // bool success = trackNewLocationFromPrevBlob(_conf, preImg, srcImg, existingBlobs[intIndexOfLeastDistance], hit_rect, 2);
+			 // cv::Rect curBlob_rect = currentFrameBlob.currentBoundingRect;
+			 // cv::Rect intRect = (curBlob_rect & hit_rect);
+			 // if (_conf.debugGeneralDetail) {
+				//  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(hit_rect), "curBlob / existing Blob rect", 2);
+				//  std::cout << "\n\n\r Hit Test ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / hit_rect.area() << endl;
+				//  //cv::waitKey(1);
+			 // }
+			 // float allowedPct = 0.75;// _conf.useTrackerAllowedPercentage;
+			 // float areaRatio;
+			 // areaRatio = (float)intRect.area() / (float)hit_rect.area();
 
-			  if ((areaRatio > (1 - allowedPct)) && (areaRatio <= (1 + allowedPct))) { // 1/2 
-				  bhittest = true;
-				  if (_conf.debugGeneralDetail) {
-					  cout << ">>>>>>>>>>>>>>> The current blob: id -> " << currentFrameBlob.id << " was passed in HitTest" << endl;
-				  }			  
-			  }
+			 // if ((areaRatio > (1 - allowedPct)) && (areaRatio <= (1 + allowedPct))) { // 1/2 
+				//  bhittest = true;
+				//  if (_conf.debugGeneralDetail) {
+				//	  cout << ">>>>>>>>>>>>>>> The current blob: id -> " << currentFrameBlob.id << " was passed in HitTest" << endl;
+				//  }			  
+			 // }
 
-		  }
+		  //}
 
-		  if (buseTrackerMatchingFlag && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize && bhittest) { // 충분히 클수록 좋다. // 그리고, option 선택... 
+		  if (buseTrackerMatchingFlag && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize) { // 충분히 클수록 좋다. // 그리고, option 선택... 
 			  addBlobToExistingBlobs(_conf, currentFrameBlob, existingBlobs, intIndexOfLeastDistance);
 
 			  //  if(maxTotalScore>=cutTotalScore && dblLeastDistance < currentFrameBlob.dblCurrentDiagonalSize * 0.5){
@@ -3841,7 +3840,7 @@ namespace itms {
 	  else {
 		  _config->trackid = _config->trackid % _config->maxTrackIds;
 		  matchCurrentFrameBlobsToExistingBlobs(*_config, orgImage, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
-		  //matchExistingBlobsToCurrentFrameBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid);
+		  //matchExistingBlobsToCurrentFrameBlobs(*_config, preImg/* imgFrame1 */, curImg/* imgFrame2 */, blobs, currentFrameBlobs, _config->trackid); // 실패..
 	  }
 	  //imgFrame2Copy = imgFrame2.clone();          // color get another copy of frame 2 since we changed the previous frame 2 copy in the processing above
 

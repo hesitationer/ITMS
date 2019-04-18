@@ -102,7 +102,7 @@ int main(void) {
 
     char chCheckForEscKey = 0;
 	bool bsaveEventFile = true;
-	float fscaleFractor = 0.75;
+	float fscaleFractor = 0.5;
     bool blnFirstFrame = true;
 	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;	    
