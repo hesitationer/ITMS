@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\bgsubcnt.cpp" />
+    <ClCompile Include="src\detector\BackgroundSubtract.cpp" />
     <ClCompile Include="src\detector\BaseDetector.cpp" />
     <ClCompile Include="src\detector\MotionDetector.cpp" />
     <ClCompile Include="src\itms_Blob.cpp" />
@@ -28,10 +29,14 @@
     <ClCompile Include="src\psrdsst\math_helper.cpp" />
     <ClCompile Include="src\psrdsst\math_spectrums.cpp" />
     <ClCompile Include="src\psrdsst\shift.cpp" />
+    <ClCompile Include="src\Tracker\Ctracker.cpp" />
     <ClCompile Include="src\Tracker\Kalman.cpp" />
     <ClCompile Include="src\Tracker\LocalTracker.cpp" />
     <ClCompile Include="src\Tracker\track.cpp" />
     <ClCompile Include="src\utils\itms_utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Multitarget-tracker-master\defines.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{930206C8-E6F6-4BDC-9F76-5A70FBABF35D}</ProjectGuid>

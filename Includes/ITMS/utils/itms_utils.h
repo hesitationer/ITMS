@@ -25,7 +25,7 @@ using namespace std;
 #endif
 
 
-typedef float track_t;
+//typedef float track_t;
 
 namespace itms {
 	// global variables ///////////////////////////////////////////////////////////////////////////////
