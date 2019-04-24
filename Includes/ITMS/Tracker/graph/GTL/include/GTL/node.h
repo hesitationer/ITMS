@@ -9,8 +9,8 @@
 #ifndef GTL_NODE_H
 #define GTL_NODE_H
 
-#include <GTL/GTL.h>
-#include <GTL/edge.h>
+#include "GTL.h"
+#include "edge.h"
 
 #include <list>
 

@@ -9,7 +9,7 @@
 #ifndef GTL_NE_MAP_H
 #define GTL_NE_MAP_H
 
-#include <GTL/GTL.h>
+#include "GTL.h"
 
 #include <vector>
 #include <cassert>

@@ -1,3 +1,46 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #pragma once
 #ifndef ITMS_BACKGROUNDSUBTRACT_H
 #define ITMS_BACKGROUNDSUBTRACT_H
@@ -41,4 +84,4 @@ private:
 	cv::UMat preImg;
 };
 
-#endif // ITMS_BACKGROUNDSUBTRACT_H
+#endif // !ITMS_BACKGROUNDSUBTRACT_H

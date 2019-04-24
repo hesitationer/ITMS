@@ -6,7 +6,7 @@
 //==========================================================================
 // $Id: biconnectivity.cpp,v 1.20 2002/02/28 15:40:52 raitner Exp $
 
-#include <GTL/biconnectivity.h>
+#include "Tracker/graph/GTL/include/GTL/biconnectivity.h"
 
 __GTL_BEGIN_NAMESPACE
 

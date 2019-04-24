@@ -9,8 +9,8 @@
 #ifndef GTL_GML_PARSER_H
 #define GTL_GML_PARSER_H
 
-#include <GTL/GTL.h>
-#include <GTL/gml_scanner.h>
+#include "GTL.h"
+#include "gml_scanner.h"
 
 __GTL_BEGIN_NAMESPACE
 

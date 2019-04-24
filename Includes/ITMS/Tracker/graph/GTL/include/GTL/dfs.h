@@ -9,8 +9,8 @@
 #ifndef GTL_DFS_H
 #define GTL_DFS_H
 
-#include <GTL/GTL.h>
-#include <GTL/algorithm.h>
+#include "GTL.h"
+#include "algorithm.h"
 
 __GTL_BEGIN_NAMESPACE
 

@@ -6,8 +6,8 @@
 //==========================================================================
 // $Id: bfs.cpp,v 1.11 2001/11/07 13:58:09 pick Exp $
 
-#include <GTL/bfs.h>
-#include <GTL/edge_map.h>
+#include "Tracker/graph/GTL/include/GTL/bfs.h"
+#include "Tracker/graph/GTL/include/GTL/edge_map.h"
 
 __GTL_BEGIN_NAMESPACE
 

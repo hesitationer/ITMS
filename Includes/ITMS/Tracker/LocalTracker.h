@@ -1,4 +1,8 @@
 #pragma once
+#ifndef ITMS_LOCALTRACKER_H
+#define ITMS_LOCALTRACKER_H
+
+
 #include "defines.h"
 #include "track.h"
 
@@ -13,3 +17,5 @@ public:
 
     void Update(tracks_t& tracks, cv::UMat prevFrame, cv::UMat currFrame);
 };
+
+#endif // !ITMS_LOCALTRACKER_H

@@ -1,4 +1,6 @@
 #pragma once
+#ifndef ITMS_DEFINES_H
+#define ITMS_DEFINES_H
 
 #include <vector>
 #include <string>
@@ -53,58 +55,61 @@ typedef std::vector<CRegion> regions_t;
 ///
 ///
 ///
-namespace tracking
-{
-///
-enum Detectors
-{    
-    Motion_MOG2 
-};
+namespace itms {
+	namespace tracking
+	{
+		///
+		enum Detectors
+		{
+			Motion_MOG2
+		};
 
-///
-/// \brief The DistType enum
-///
-enum DistType
-{
-    DistCenters = 0,
-    DistRects = 1,
-    DistJaccard = 2
-};
+		///
+		/// \brief The DistType enum
+		///
+		enum DistType
+		{
+			DistCenters = 0,
+			DistRects = 1,
+			DistJaccard = 2
+		};
 
-///
-/// \brief The FilterGoal enum
-///
-enum FilterGoal
-{
-    FilterCenter = 0,
-    FilterRect = 1
-};
+		///
+		/// \brief The FilterGoal enum
+		///
+		enum FilterGoal
+		{
+			FilterCenter = 0,
+			FilterRect = 1
+		};
 
-///
-/// \brief The KalmanType enum
-///
-enum KalmanType
-{
-    KalmanLinear = 0,
-    KalmanUnscented = 1,
-    KalmanAugmentedUnscented
-};
+		///
+		/// \brief The KalmanType enum
+		///
+		enum KalmanType
+		{
+			KalmanLinear = 0,
+			KalmanUnscented = 1,
+			KalmanAugmentedUnscented
+		};
 
-///
-/// \brief The MatchType enum
-///
-enum MatchType
-{
-    MatchHungrian = 0,
-    MatchBipart = 1
-};
+		///
+		/// \brief The MatchType enum
+		///
+		enum MatchType
+		{
+			MatchHungrian = 0,
+			MatchBipart = 1
+		};
 
-///
-/// \brief The LostTrackType enum
-///
-enum LostTrackType
-{
-    TrackNone = 0,
-    TrackKCF = 1    
-};
+		///
+		/// \brief The LostTrackType enum
+		///
+		enum LostTrackType
+		{
+			TrackNone = 0,
+			TrackKCF = 1
+		};
+	}
 }
+#endif // ! ITMS_DEFINES_H

@@ -9,9 +9,9 @@
 
 #include <iostream>
 #include "opencv/cv.hpp"
-#include "./itms_Blob.h"
-#include "./detector/BaseDetector.h"
-#include "./Tracker/Ctracker.h"
+#include "itms_Blob.h"
+#include "detector/BaseDetector.h"
+#include "Tracker/Ctracker.h"
 
 using namespace cv;
 using namespace std;
@@ -518,7 +518,7 @@ namespace itms {
 		void reset(void) { objStatus.clear(); objClass.clear(); objRect.clear(); objSpeed.clear(); };
 	};
 
-	class CRegion
+	/*class CRegion
 	{
 	public:
 		CRegion()
@@ -543,7 +543,7 @@ namespace itms {
 
 		std::string m_type;
 		float m_confidence;
-	};
+	};*/
 
 	//typedef std::vector<CRegion> regions_t;
 
@@ -753,30 +753,6 @@ namespace itms {
 	  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);	  
   };
 
-  // ITMS API Native Class 
-  class ITMS_DLL_EXPORT ITMSAPINativeClass
-{
-public:
-	ITMSAPINativeClass();
-	~ITMSAPINativeClass();
-	int Init();
-	int ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize); // reset and process
-	int ResetAndProcessFrame(const cv::Mat& curImg1);
-	//std::unique_ptr<ITMSResult> getResult(void);							// it has some problem because of direct calling even with move
-	std::vector<std::pair<int, int>> getObjectStatus(void);
-	std::vector<std::pair<int, int>> getObjectClass(void);
-	std::vector<cv::Rect> getObjectRect(void);
-	std::vector<track_t> getObjectSpeed(void);
-
-	Config conf;
-	Mat pFrame;
-
-	bool isInitialized;
-
-protected:
-	std::unique_ptr<itmsFunctions> itmsFncs;				// itms main class	
-	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure		
-};
 
   // car counting-related classes
   class ITMS_DLL_EXPORT RoadLine
@@ -992,14 +968,34 @@ protected:
   {
   public:
 	  CarsCounting(const cv::CommandLineParser& parser);
+	  CarsCounting(Config* config);
 	  virtual ~CarsCounting();
 
+	  bool Init(void); // from ITMSFunctions
 	  void Process();
+	  Config* _config;
+
+	  // parameters
+	  bool isInitialized = false;
+	  bool isConfigFileLoaded = false;
+	  bool m_collectPoints = false;
+	  bool blnFirstFrame = true;
+	  
 
 	  // Lines API
 	  void AddLine(const RoadLine& newLine);
 	  bool GetLine(unsigned int lineUid, RoadLine& line);
 	  bool RemoveLine(unsigned int lineUid);
+
+  private:
+	  //std::vector<Blob> blobs;
+	  std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold
+	  cv::Rect brightnessRoi; // brightness ROI  = conf.AutoBrightness_Rect;
+	  cv::Mat BGImage; // background image
+	  cv::Mat accmImage; // accumulated Image for background model
+	  cv::Mat road_mask;
+	  cv::Mat orgImage; // original image of current image
+
 
   protected:
 	  std::unique_ptr<BaseDetector> m_detector;
@@ -1041,6 +1037,32 @@ protected:
 	  void CheckLinesIntersection(const CTrack& track, float xMax, float yMax, std::set<size_t>& currIntersections);
 	  std::set<size_t> m_lastIntersections;
   };
+
+  // ITMS API Native Class 
+  class ITMS_DLL_EXPORT ITMSAPINativeClass
+{
+public:
+	ITMSAPINativeClass();
+	~ITMSAPINativeClass();
+	int Init();
+	int ResetAndProcessFrame(int iCh, unsigned char * pImage, int lSize); // reset and process
+	int ResetAndProcessFrame(const cv::Mat& curImg1);
+	//std::unique_ptr<ITMSResult> getResult(void);							// it has some problem because of direct calling even with move
+	std::vector<std::pair<int, int>> getObjectStatus(void);
+	std::vector<std::pair<int, int>> getObjectClass(void);
+	std::vector<cv::Rect> getObjectRect(void);
+	std::vector<track_t> getObjectSpeed(void);
+
+	Config conf;
+	Mat pFrame;
+
+	bool isInitialized;
+
+protected:
+	std::unique_ptr<itmsFunctions> itmsFncs;				// itms main class	
+	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure		
+};
+
 }
 #endif // _ITMS_UTILS_H
 

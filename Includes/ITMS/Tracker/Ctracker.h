@@ -1,4 +1,8 @@
 #pragma once
+#ifndef ITMS_CTRACKER_H
+#define ITMS_CTRACKER_H 
+
+
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -24,11 +28,11 @@ struct TrackerSettings
     ///
     bool m_useLocalTracking = false;
 
-    tracking::DistType m_distType = tracking::DistCenters;
-    tracking::KalmanType m_kalmanType = tracking::KalmanLinear;
-    tracking::FilterGoal m_filterGoal = tracking::FilterCenter;
-    tracking::LostTrackType m_lostTrackType = tracking::TrackKCF;
-    tracking::MatchType m_matchType = tracking::MatchHungrian;
+    itms::tracking::DistType m_distType = itms::tracking::DistCenters;
+    itms::tracking::KalmanType m_kalmanType = itms::tracking::KalmanLinear;
+    itms::tracking::FilterGoal m_filterGoal = itms::tracking::FilterCenter;
+    itms::tracking::LostTrackType m_lostTrackType = itms::tracking::TrackKCF;
+    itms::tracking::MatchType m_matchType = itms::tracking::MatchHungrian;
 
     ///
     /// \brief m_dt
@@ -106,3 +110,5 @@ private:
 
     void UpdateHungrian(const regions_t& regions, cv::UMat grayFrame, float fps);
 };
+
+#endif // ! ITMS_CTRACKER_H

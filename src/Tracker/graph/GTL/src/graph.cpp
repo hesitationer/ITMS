@@ -6,13 +6,14 @@
 //==========================================================================
 // $Id: graph.cpp,v 1.58 2003/01/14 16:47:14 raitner Exp $
 
-#include <GTL/graph.h>
-#include <GTL/node_data.h>
-#include <GTL/edge_data.h>
-#include <GTL/node_map.h>
+#include "Tracker/graph/GTL/include/GTL/graph.h"
 
-#include <GTL/dfs.h>
-#include <GTL/topsort.h>
+#include "Tracker/graph/GTL/include/GTL/node_data.h"
+#include "Tracker/graph/GTL/include/GTL/edge_data.h"
+#include "Tracker/graph/GTL/include/GTL/node_map.h"
+
+#include "Tracker/graph/GTL/include/GTL/dfs.h"
+#include "Tracker/graph/GTL/include/GTL/topsort.h"
 
 #include <cassert>
 #include <cstdio>

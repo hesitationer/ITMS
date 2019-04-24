@@ -26,7 +26,7 @@ The code itself is available from Tadao Takaoka's <A HREF="http://www.cosc.cante
 #if FHEAP_DUMP
 #include <stdio.h>
 #endif
-#include "fheap.h"
+#include "Tracker/graph/fheap.h"
 
 
 

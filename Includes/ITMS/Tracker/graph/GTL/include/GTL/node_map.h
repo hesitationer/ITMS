@@ -9,9 +9,9 @@
 #ifndef GTL_NODE_MAP_H
 #define GTL_NODE_MAP_H
 
-#include <GTL/GTL.h>
-#include <GTL/node.h>
-#include <GTL/ne_map.h>
+#include "GTL.h"
+#include "node.h"
+#include "ne_map.h"
 
 __GTL_BEGIN_NAMESPACE
 

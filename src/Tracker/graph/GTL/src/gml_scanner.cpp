@@ -6,7 +6,7 @@
 //==========================================================================
 // $Id: gml_scanner.cpp,v 1.10 2001/11/07 13:58:10 pick Exp $
 
-#include <GTL/gml_scanner.h>
+#include "Tracker/graph/GTL/include/GTL/gml_scanner.h"
 
 #include <cstdlib>
 #include <cctype>

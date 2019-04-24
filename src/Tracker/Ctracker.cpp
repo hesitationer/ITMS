@@ -1,10 +1,10 @@
-#include "Ctracker.h"
-#include "HungarianAlg.h"
+#include "Tracker/Ctracker.h"
+#include "Tracker/HungarianAlg/HungarianAlg.h"
 
-#include <GTL/GTL.h>
-#include "mygraph.h"
-#include "mwbmatching.h"
-#include "tokenise.h"
+#include "Tracker/graph/GTL/include/GTL/GTL.h"
+#include "Tracker/graph/mygraph.h"
+#include "Tracker/graph/mwbmatching.h"
+#include "Tracker/graph/tokenise.h"
 
 // ---------------------------------------------------------------------------
 // Tracker. Manage tracks. Create, remove, update.
@@ -71,7 +71,7 @@ void CTracker::UpdateHungrian(
         track_t maxCost = 0;
         switch (m_settings.m_distType)
         {
-        case tracking::DistCenters:
+		case itms::tracking::DistCenters:
             for (size_t i = 0; i < tracks.size(); i++)
             {
                 for (size_t j = 0; j < regions.size(); j++)
@@ -86,7 +86,7 @@ void CTracker::UpdateHungrian(
             }
             break;
 
-        case tracking::DistRects:
+		case itms::tracking::DistRects:
             for (size_t i = 0; i < tracks.size(); i++)
             {
                 for (size_t j = 0; j < regions.size(); j++)
@@ -101,7 +101,7 @@ void CTracker::UpdateHungrian(
             }
             break;
 
-        case tracking::DistJaccard:
+		case itms::tracking::DistJaccard:
             for (size_t i = 0; i < tracks.size(); i++)
             {
                 for (size_t j = 0; j < regions.size(); j++)
@@ -122,7 +122,7 @@ void CTracker::UpdateHungrian(
         // -----------------------------------
         // Solving assignment problem (tracks and predictions of Kalman filter)
         // -----------------------------------
-        if (m_settings.m_matchType == tracking::MatchHungrian)
+        if (m_settings.m_matchType == itms::tracking::MatchHungrian)
         {
             AssignmentProblemSolver APS;
             APS.Solve(Cost, N, M, assignment, AssignmentProblemSolver::optimal);
@@ -224,7 +224,7 @@ void CTracker::UpdateHungrian(
                                                       m_settings.m_dt,
                                                       m_settings.m_accelNoiseMag,
                                                       m_nextTrackID++,
-                                                      m_settings.m_filterGoal == tracking::FilterRect,
+                                                      m_settings.m_filterGoal == itms::tracking::FilterRect,
                                                       m_settings.m_lostTrackType));			
         }
     }

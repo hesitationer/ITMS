@@ -9,12 +9,12 @@
 #ifndef GTL_GRAPH_H
 #define GTL_GRAPH_H
 
-#include <GTL/GTL.h>
-#include <GTL/node.h>
-#include <GTL/edge.h>
-#include <GTL/edge_map.h>
-#include <GTL/node_map.h>
-#include <GTL/gml_parser.h>
+#include "GTL.h"
+#include "node.h"
+#include "edge.h"
+#include "edge_map.h"
+#include "node_map.h"
+#include "gml_parser.h"
 
 #include <iostream>
 #include <string>

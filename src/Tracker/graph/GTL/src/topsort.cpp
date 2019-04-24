@@ -6,7 +6,7 @@
 //==========================================================================
 // $Id: topsort.cpp,v 1.7 2001/11/07 13:58:12 pick Exp $
 
-#include <GTL/topsort.h>
+#include "Tracker/graph/GTL/include/GTL/topsort.h"
 
 __GTL_BEGIN_NAMESPACE
 

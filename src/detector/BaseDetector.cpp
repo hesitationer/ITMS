@@ -9,7 +9,7 @@
 /// \return
 ///
 BaseDetector* CreateDetector(
-        tracking::Detectors detectorType,
+        itms::tracking::Detectors detectorType,
         const config_t& config,
         bool collectPoints,
         cv::UMat& gray
@@ -19,7 +19,7 @@ BaseDetector* CreateDetector(
 
     switch (detectorType)
     {
-    case tracking::Motion_MOG2:
+	case itms::tracking::Motion_MOG2:
         detector = new MotionDetector(BackgroundSubtract::BGFG_ALGS::ALG_MOG2, collectPoints, gray);
         break;
     

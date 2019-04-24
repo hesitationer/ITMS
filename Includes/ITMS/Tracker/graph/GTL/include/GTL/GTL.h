@@ -9,7 +9,7 @@
 #ifndef GTL_GTL_H
 #define GTL_GTL_H
 
-#include <GTL/version.h>
+#include "Tracker/graph/GTL/include/GTL/version.h"
 
 //--------------------------------------------------------------------------
 //   Generic iteration over container elements

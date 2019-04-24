@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Multitarget-tracker-master\Tracker\graph\mygraph.cpp" />
     <ClCompile Include="src\bgsubcnt.cpp" />
     <ClCompile Include="src\detector\BackgroundSubtract.cpp" />
     <ClCompile Include="src\detector\BaseDetector.cpp" />
@@ -30,6 +31,17 @@
     <ClCompile Include="src\psrdsst\math_spectrums.cpp" />
     <ClCompile Include="src\psrdsst\shift.cpp" />
     <ClCompile Include="src\Tracker\Ctracker.cpp" />
+    <ClCompile Include="src\Tracker\graph\fheap.c" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\bfs.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\dfs.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\edge.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\gml_parser.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\gml_scanner.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\graph.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\node.cpp" />
+    <ClCompile Include="src\Tracker\graph\GTL\src\topsort.cpp" />
+    <ClCompile Include="src\Tracker\graph\mwbmatching.cpp" />
+    <ClCompile Include="src\Tracker\HungarianAlg\HungarianAlg.cpp" />
     <ClCompile Include="src\Tracker\Kalman.cpp" />
     <ClCompile Include="src\Tracker\LocalTracker.cpp" />
     <ClCompile Include="src\Tracker\track.cpp" />
@@ -123,7 +135,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GTL_STATIC;USE_OCV_KCF;USE_OCV_BGFG;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)/Includes/OPENCV342;$(SolutionDir)/Includes/ITMS;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>true</EnablePREfast>
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -164,7 +176,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GTL_STATIC;NDEBUG;USE_OCV_UKF;USE_OCV_KCF;USE_OCV_BGFG;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)/Includes/OPENCV342;$(SolutionDir)/Includes/ITMS;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
       <WholeProgramOptimization>false</WholeProgramOptimization>

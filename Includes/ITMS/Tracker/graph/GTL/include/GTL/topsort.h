@@ -9,8 +9,8 @@
 #ifndef GTL_TOPSORT
 #define GTL_TOPSORT
 
-#include <GTL/GTL.h>
-#include <GTL/dfs.h>
+#include "Tracker/graph/GTL/include/GTL/GTL.h"
+#include "Tracker/graph/GTL/include/GTL/dfs.h"
 
 __GTL_BEGIN_NAMESPACE
 

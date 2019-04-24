@@ -9,9 +9,9 @@
 #ifndef GTL_BFS_H
 #define GTL_BFS_H
 
-#include <GTL/GTL.h>
-#include <GTL/algorithm.h>
-#include <GTL/node_map.h>
+#include "GTL.h"
+#include "algorithm.h"
+#include "node_map.h"
 
 #include <deque>
 

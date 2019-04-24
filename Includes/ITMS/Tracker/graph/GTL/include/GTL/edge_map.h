@@ -9,9 +9,9 @@
 #ifndef GTL_EDGE_MAP_H
 #define GTL_EDGE_MAP_H
 
-#include <GTL/GTL.h>
-#include <GTL/edge.h>
-#include <GTL/ne_map.h>
+#include "GTL.h"
+#include "edge.h"
+#include "ne_map.h"
 
 __GTL_BEGIN_NAMESPACE
 

@@ -9,8 +9,8 @@
 #ifndef GTL_ALGORITHM_H
 #define GTL_ALGORITHM_H
 
-#include <GTL/GTL.h>
-#include <GTL/graph.h>
+#include "GTL.h"
+#include "graph.h"
 
 __GTL_BEGIN_NAMESPACE
 

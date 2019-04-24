@@ -3,7 +3,7 @@
 #ifndef MWBMATCHING_H
 #define MWBMATCHING_H
 
-#include <GTL/algorithm.h>
+#include "GTL/include/GTL/algorithm.h"
 #include <map>
 #include "fheap.h"
 

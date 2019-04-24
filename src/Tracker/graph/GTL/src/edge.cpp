@@ -6,8 +6,8 @@
 //==========================================================================
 // $Id: edge.cpp,v 1.17 2001/11/07 13:58:09 pick Exp $
 
-#include <GTL/node_data.h>
-#include <GTL/edge_data.h>
+#include "Tracker/graph/GTL/include/GTL/node_data.h"
+#include "Tracker/graph/GTL/include/GTL/edge_data.h"
 #include <cassert>
 #include <iostream>
 

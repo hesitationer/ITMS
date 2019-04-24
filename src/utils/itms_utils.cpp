@@ -4049,6 +4049,44 @@ namespace itms {
 	  m_colors.push_back(cv::Scalar(127, 0, 127));
   }
 
+  CarsCounting::CarsCounting(Config * config)
+	  :
+	  m_showLogs(true),
+	  m_fps(25),
+	  m_useLocalTracking(false), // local tracking control
+	  m_isTrackerInitialized(false),
+	  m_startFrame(0),
+	  m_endFrame(0),
+	  m_finishDelay(0)
+  {
+	  m_inFile = "";// parser.get<std::string>(0);
+	  m_outFile = "";// parser.get<std::string>("out");
+	  m_showLogs = true;// parser.get<int>("show_logs") != 0;
+	  m_startFrame = 0; // parser.get<int>("start_frame");
+	  m_endFrame = 0;// parser.get<int>("end_frame");
+	  m_finishDelay = 0;// parser.get<int>("end_delay");
+
+	  m_colors.push_back(cv::Scalar(255, 0, 0));
+	  m_colors.push_back(cv::Scalar(0, 255, 0));
+	  m_colors.push_back(cv::Scalar(0, 0, 255));
+	  m_colors.push_back(cv::Scalar(255, 255, 0));
+	  m_colors.push_back(cv::Scalar(0, 255, 255));
+	  m_colors.push_back(cv::Scalar(255, 0, 255));
+	  m_colors.push_back(cv::Scalar(255, 127, 255));
+	  m_colors.push_back(cv::Scalar(127, 0, 255));
+	  m_colors.push_back(cv::Scalar(127, 0, 127));
+
+	  if (!config->isLoaded) {
+		  isConfigFileLoaded = false;
+	  }
+	  else {
+		  _config = config;
+		  isConfigFileLoaded = true;
+		  Init();
+	  }
+
+  }
+ 
   ///
   /// \brief CarsCounting::~CarsCounting
   ///
@@ -4064,6 +4102,50 @@ namespace itms {
 	  }*/
   }
 
+  bool CarsCounting::Init(void) {
+	  //pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
+	  //pBgSub = createBackgroundSubtractorMOG2();
+	  //blobs.clear();
+	  pastBrightnessLevels.clear();
+
+	  brightnessRoi = _config->AutoBrightness_Rect;
+	  m_collectPoints = _config->m_useLocalTracking;
+	  blnFirstFrame = true;
+	  if (existFileTest(_config->BGImagePath)) {
+		  BGImage = cv::imread(_config->BGImagePath);
+		  if (!BGImage.empty()) {
+			  if (BGImage.channels() > 1)
+				  cv::cvtColor(BGImage, BGImage, cv::COLOR_BGR2GRAY);
+			  cv::resize(BGImage, BGImage, cv::Size(), _config->scaleFactor, _config->scaleFactor);
+			  // sangkny 2019. 02. 09
+			  cv::GaussianBlur(BGImage, BGImage, cv::Size(5, 5), 0);
+			  accmImage = BGImage; // copy the background as an initialization
+								   // road_mask define
+			  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());
+			  for (int ir = 0; ir<_config->Road_ROI_Pts.size(); ir++)
+				  fillConvexPoly(road_mask, _config->Road_ROI_Pts.at(ir).data(), _config->Road_ROI_Pts.at(ir).size(), Scalar(255, 255, 255), 8);
+
+			  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+				  cv::Mat debugImg = road_mask.clone();
+				  if (debugImg.channels() < 3)
+					  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
+				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
+					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
+				  imshow("road mask", debugImg);
+				  //waitKey(1);
+			  }
+		  }
+	  }
+	  else {
+		  if (_config->debugGeneral) {
+			  cout << "Please check the background file : " << _config->BGImagePath << endl;
+			  cout << "The background will be current frame <!><!>.\n";
+		  }
+		  // alternative frame will be the previous frame at processing
+
+	  }
+	  return isInitialized = true;
+  }
   ///
   /// \brief CarsCounting::Process
   ///

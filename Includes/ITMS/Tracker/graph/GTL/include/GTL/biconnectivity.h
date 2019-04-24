@@ -9,8 +9,8 @@
 #ifndef GTL_BICONNECTIVITY_H
 #define GTL_BICONNECTIVITY_H
 
-#include <GTL/GTL.h>
-#include <GTL/dfs.h>
+#include "GTL.h"
+#include "dfs.h"
 
 #include <list>
 #include <stack>

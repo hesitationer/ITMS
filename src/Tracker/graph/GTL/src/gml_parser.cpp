@@ -8,7 +8,7 @@
 //==========================================================================
 // $Id: gml_parser.cpp,v 1.9 2001/11/07 13:58:10 pick Exp $
 
-#include <GTL/gml_parser.h>
+#include "Tracker/graph/GTL/include/GTL/gml_parser.h"
 
 #include <cstdio>
 #include <cstdlib>

@@ -1,4 +1,4 @@
-#include "./Tracker/track.h"
+#include "Tracker/track.h"
 
 ///
 /// \brief CTrack
@@ -12,12 +12,12 @@
 ///
 CTrack::CTrack(
         const CRegion& region,
-        tracking::KalmanType kalmanType,
+	itms::tracking::KalmanType kalmanType,
         track_t deltaTime,
         track_t accelNoiseMag,
         size_t trackID,
         bool filterObjectSize,
-        tracking::LostTrackType externalTrackerForLost
+	itms::tracking::LostTrackType externalTrackerForLost
         )
     :
       m_trackID(trackID),
@@ -313,10 +313,10 @@ void CTrack::RectUpdate(
 
     switch (m_externalTrackerForLost)
     {
-    case tracking::TrackNone:
+    case itms::tracking::TrackNone:
         break;
 
-    case tracking::TrackKCF:    
+    case itms::tracking::TrackKCF:
 #ifdef USE_OCV_KCF
         if (!dataCorrect)
         {
@@ -462,10 +462,10 @@ void CTrack::CreateExternalTracker()
 {
     switch (m_externalTrackerForLost)
     {
-    case tracking::TrackNone:
+    case itms::tracking::TrackNone:
         break;
 
-    case tracking::TrackKCF:
+    case itms::tracking::TrackKCF:
 #ifdef USE_OCV_KCF
         if (!m_tracker || m_tracker.empty())
         {

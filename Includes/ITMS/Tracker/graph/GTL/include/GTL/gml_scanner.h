@@ -9,7 +9,7 @@
 #ifndef GTL_GML_SCANNER_H
 #define GTL_GML_SCANNER_H
 
-#include <GTL/GTL.h>
+#include "GTL.h"
 
 #include <cstdio>
 

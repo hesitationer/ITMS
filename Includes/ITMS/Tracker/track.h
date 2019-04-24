@@ -9,7 +9,7 @@
 #include <memory>
 #include <array>
 
-#define USE_OCV_KCF
+//#define USE_OCV_KCF
 
 #ifdef USE_OCV_KCF
 #include <opencv2/tracking.hpp>
@@ -173,12 +173,12 @@ class CTrack
 {
 public:
     CTrack(const CRegion& region,
-            tracking::KalmanType kalmanType,
+            itms::tracking::KalmanType kalmanType,
             track_t deltaTime,
             track_t accelNoiseMag,
             size_t trackID,
             bool filterObjectSize,
-            tracking::LostTrackType externalTrackerForLost);
+            itms::tracking::LostTrackType externalTrackerForLost);
 	~CTrack() {
 		if (m_kalman) {
 			delete m_kalman;
@@ -232,7 +232,7 @@ private:
     bool m_filterObjectSize;
     bool m_outOfTheFrame;
 
-    tracking::LostTrackType m_externalTrackerForLost;
+    itms::tracking::LostTrackType m_externalTrackerForLost;
 #ifdef USE_OCV_KCF
     cv::Ptr<cv::Tracker> m_tracker;
 #endif

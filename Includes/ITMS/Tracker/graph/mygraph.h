@@ -10,7 +10,7 @@
 #include <set>
 
 // GTL
-#include <GTL/graph.h>
+#include "GTL/include/GTL/graph.h"
 
 
 

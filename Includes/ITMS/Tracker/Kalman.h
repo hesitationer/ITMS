@@ -19,8 +19,8 @@
 class TKalmanFilter
 {
 public:
-    TKalmanFilter(tracking::KalmanType type, Point_t pt, track_t deltaTime = 0.2, track_t accelNoiseMag = 0.5);
-    TKalmanFilter(tracking::KalmanType type, cv::Rect rect, track_t deltaTime = 0.2, track_t accelNoiseMag = 0.5);
+    TKalmanFilter(itms::tracking::KalmanType type, Point_t pt, track_t deltaTime = 0.2, track_t accelNoiseMag = 0.5);
+    TKalmanFilter(itms::tracking::KalmanType type, cv::Rect rect, track_t deltaTime = 0.2, track_t accelNoiseMag = 0.5);
 	~TKalmanFilter();
 
     Point_t GetPointPrediction();
@@ -30,7 +30,7 @@ public:
     cv::Rect Update(cv::Rect rect, bool dataCorrect);
 
 private:
-    tracking::KalmanType m_type;
+    itms::tracking::KalmanType m_type;
     std::unique_ptr<cv::KalmanFilter> m_linearKalman;
 #ifdef USE_OCV_UKF
     cv::Ptr<cv::tracking::UnscentedKalmanFilter> m_uncsentedKalman;

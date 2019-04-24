@@ -1,6 +1,6 @@
 // $Id: mwbmatching.cpp,v 1.3 2007/10/28 08:47:20 rdmp1c Exp $
 
-#include "mwbmatching.h"
+#include "Tracker/graph/mwbmatching.h"
 
 
 #include <cstdlib>
