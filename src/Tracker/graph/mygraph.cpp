@@ -1,6 +1,6 @@
 // $Id: mygraph.cpp,v 1.6 2005/03/16 09:51:26 rdmp1c Exp $
 
-#include "mygraph.h"
+#include "Tracker/graph/mygraph.h"
 
 #ifdef __GNUC__
 	#if __GNUC__ == 3
