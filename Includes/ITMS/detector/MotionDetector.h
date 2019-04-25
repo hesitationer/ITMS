@@ -3,6 +3,7 @@
 
 #include "BaseDetector.h"
 #include "BackgroundSubtract.h"
+#include "utils\itms_utils.h"
 
 ///
 /// \brief The MotionDetector class
@@ -19,6 +20,10 @@ public:
 
 	void CalcMotionMap(cv::Mat frame);
 
+	cv::UMat GetForeGround(void) { return m_fg; };
+	regions_t getRegions(void) { return m_regions; };
+	cv::UMat GetBackGround(void) { return m_backgroundSubst->GetBGImg(); };
+
 private:
     void DetectContour();
 
@@ -26,5 +31,5 @@ private:
 
     cv::UMat m_fg;
 
-    BackgroundSubtract::BGFG_ALGS m_algType;
+    BackgroundSubtract::BGFG_ALGS m_algType;	
 };

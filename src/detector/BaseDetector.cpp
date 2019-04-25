@@ -25,6 +25,7 @@ BaseDetector* CreateDetector(
     
 
     default:
+		cout << " Other BGFG_ALGS requires implementations \n";
         break;
     }
 

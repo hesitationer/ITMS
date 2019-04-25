@@ -972,7 +972,8 @@ namespace itms {
 	  virtual ~CarsCounting();
 
 	  bool Init(void); // from ITMSFunctions
-	  void Process();
+	  void Process();  // full looping : all frames processes
+	  bool process(const cv::Mat& colorFrame, ITMSResult& _itmsRes); // single loop : one frame process
 	  Config* _config;
 
 	  // parameters
@@ -981,6 +982,10 @@ namespace itms {
 	  bool m_collectPoints = false;
 	  bool blnFirstFrame = true;
 	  
+	  // functions
+	  cv::Mat preImg;
+	  int mCarCount = 0;
+	  int maxCarCount = 1024;
 
 	  // Lines API
 	  void AddLine(const RoadLine& newLine);

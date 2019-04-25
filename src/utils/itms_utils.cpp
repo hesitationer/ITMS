@@ -4132,7 +4132,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  //waitKey(1);
+				  waitKey(1);
 			  }
 		  }
 	  }
@@ -4270,6 +4270,7 @@ namespace itms {
 		  m_detector->Detect(GrayProcessing() ? grayFrame : clFrame);
 
 		  const regions_t& regions = m_detector->GetDetects();
+		  // 여기서 걸러내면 됨...
 
 		  m_tracker->Update(regions, m_tracker->GrayFrameToTrack() ? grayFrame : clFrame, m_fps);
 
@@ -4310,7 +4311,195 @@ namespace itms {
 	  std::cout << "work time = " << (allTime / freq) << std::endl;
 	  cv::waitKey(m_finishDelay);
   }
+  bool CarsCounting::process(const cv::Mat& colorFrame, ITMSResult& _itmsRes)
+  {
+	  cv::Mat _colorFrame = colorFrame.clone();
 
+	  m_fps = (float)_config->fps;
+
+	  //m_fps = std::max(1.f, (float)capture.get(cv::CAP_PROP_FPS)); // is it required for 2 times ?
+
+	  float scaleFactor = _config->scaleFactor;
+	  
+	  cv::UMat grayFrame;
+
+	  //cv::Mat road_mask;
+	  if (!isInitialized) {
+		  cout << "itmsFunctions is not initialized (!)(!)\n";
+		  return false;
+	  }
+	  if (_colorFrame.empty())
+		{
+			std::cerr << "Frame is empty!" << std::endl;
+			return false;
+		
+		}
+		
+	  resize(_colorFrame, _colorFrame, cv::Size(), scaleFactor, scaleFactor);
+		
+	  if (_colorFrame.channels() > 1) {
+			cv::cvtColor(_colorFrame, grayFrame, cv::COLOR_BGR2GRAY);
+		}else{
+			_colorFrame.copyTo(grayFrame);
+		}		
+	  
+	  if (preImg.empty()) {
+		  preImg = _colorFrame.clone(); // resized frame
+	  }
+	  if (BGImage.empty()) {
+		  preImg.copyTo(BGImage);
+		  accmImage = BGImage; // accumulate the image for background generation
+		  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());
+		  for (int ir = 0; ir<_config->Road_ROI_Pts.size(); ir++)
+			  fillConvexPoly(road_mask, _config->Road_ROI_Pts.at(ir).data(), _config->Road_ROI_Pts.at(ir).size(), Scalar(255, 255, 255), 8);
+
+		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+			  cv::Mat debugImg = road_mask.clone();
+			  if (debugImg.channels() < 3)
+				  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
+			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
+				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
+			  imshow("road mask", debugImg);
+			  //waitKey(1);
+		  }
+	  }
+
+	  // if needs to adjust img_dif_th
+	  if (_config->isAutoBrightness) {
+		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
+		  float roiMean = mean(_colorFrame(brightnessRoi)/*currentGray roi*/)[0];
+		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness) // the size of vector is max_past_frames
+			  pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
+																														  //pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
+		  pastBrightnessLevels.push_back(cvRound(roiMean));
+		  // adj function for adjusting image difference thresholding
+		  int newTh = weightFnc(pastBrightnessLevels);
+		  _config->img_dif_th = newTh;
+		  if (_config->debugGeneral &&_config->debugGeneralDetail) {
+			  std::cout << "Brightness mean for Roi: " << roiMean << "\n";
+			  int m = mean(pastBrightnessLevels)[0];
+			  std::cout << "Brightness mean for Past Frames: " << m << "\n";
+			  std::cout << "New Dif Th : " << newTh << "\n";
+		  }
+
+	  }
+	  		
+	  if (!road_mask.empty()) { // only one time setting
+		  bitwise_and(road_mask, grayFrame, grayFrame);
+	  }
+	  		
+	  if (!m_isTrackerInitialized)	
+	  {
+			m_isTrackerInitialized = InitTracker(grayFrame);
+			if (!m_isTrackerInitialized)
+			{
+				std::cerr << "Tracker initilize error!!!" << std::endl;
+				return false;
+			}
+		}		
+
+		cv::UMat clFrame;
+		if (!GrayProcessing() || !m_tracker->GrayFrameToTrack())
+		{
+			clFrame = _colorFrame.getUMat(cv::ACCESS_READ);
+		}
+
+		m_detector->Detect(GrayProcessing() ? grayFrame : clFrame);
+		BGImage = m_detector->GetBackGround().getMat(cv::ACCESS_READ).clone();
+		
+		regions_t& regions = m_detector->GetDetects();
+
+		// ------------------- 여기서 걸러내면 됨...
+		regions_t::iterator region = regions.begin();
+		while(region != regions.end()){
+			// 1. distance, 2. correlation within certain range			
+			std::vector<cv::Point2f> blob_ntPts;
+			cv::Point2f center(region->m_rect.x + 0.5f * region->m_rect.width, region->m_rect.y + 0.5f * region->m_rect.height);
+			blob_ntPts.push_back(center);
+			cv::Rect roi_rect = region->m_rect;
+			float blobncc = 0;
+			// bg image
+			// currnt image
+			// blob correlation
+			//cv::Mat img = grayFrame.getMat(cv::ACCESS_READ).clone();
+			BGImage;
+		
+			blobncc = getNCC(*_config, BGImage(roi_rect), grayFrame.getMat(cv::ACCESS_READ)(roi_rect), Mat(), _config->match_method, _config->use_mask);
+			// background image need to be updated periodically 
+			// option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
+			if (blobncc <= abs(_config->BlobNCC_Th)
+				&& checkIfPointInBoundary(*_config, blob_ntPts.back(), _config->Boundary_ROI_Pts)
+				/*realDistance >= 100 && realDistance <= 19900*//* distance constraint */)
+			{// check the correlation with bgground, object detection/classification
+				float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+				if (_config->debugGeneral && _config->debugGeneralDetail) {
+					cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+				}
+
+				//ObjectClass objclass;
+				//float classProb = 0.f;
+				//classifyObjectWithDistanceRatio(*_config, possibleBlob, realDistance / 100, objclass, classProb);
+				//// update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
+				//// verify the object with cascade object detection
+				//if (classProb > 0.79 /* 1.0 */) {
+				//	currentFrameBlobs.push_back(possibleBlob);
+				//}
+				//else if (classProb > 0.5f) {
+
+				//	// check with a ML-based approach
+				//	//float scaleRect = 1.5;
+				//	//Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, imgFrame2Copy.cols, imgFrame2Copy.rows);
+
+				//	//if (possibleBlob.oc == itms::ObjectClass::OC_VEHICLE) {
+				//	//	// verify it
+				//	//	std::vector<cv::Rect> cars;
+				//	//	detectCascadeRoiVehicle(imgFrame2Copy, expRect, cars);
+				//	//	if (cars.size())
+				//	//		possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+				//	//	//else													// commented  :  put the all candidates commented out : it does not put the object in the candidates
+				//	//	//	continue;
+				//	//}
+				//	//else if (possibleBlob.oc == itms::ObjectClass::OC_HUMAN) {
+				//	//	// verify it
+				//	//	std::vector<cv::Rect> people;
+				//	//	detectCascadeRoiHuman(imgFrame2Copy, expRect, people);
+				//	//	if (people.size())
+				//	//		possibleBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+				//	//	//else
+				//	//	//	continue;
+				//	//}
+				//	//else {// should not com in this loop (OC_OTHER)
+				//	//	int kkk = 0;
+				//	//}				
+				//	if (objclass != ObjectClass::OC_OTHER) // sankgny 2019. 03. 30
+				//		currentFrameBlobs.push_back(possibleBlob);
+				//}
+
+			}
+			else { // delete
+				region = regions.erase(region);
+				continue;
+			}
+
+
+			++region;
+		} // end while loop
+		// -----------------------------------
+		m_tracker->Update(regions, m_tracker->GrayFrameToTrack() ? grayFrame : clFrame, m_fps);
+
+		
+		if (_config->debugGeneralDetail) {
+			DrawData(_colorFrame, 0/*framesCounter*/, 0/*currTime*/);
+		}
+		if (_config->debugShowImagesDetail) {
+			cv::imshow("Video", _colorFrame);
+			cv::waitKey(1);
+		}
+		
+		preImg = _colorFrame.clone();// resized current Image
+
+	  return true;
+  }
   ///
   /// \brief CarsCounting::GrayProcessing
   /// \return
@@ -4473,7 +4662,7 @@ namespace itms {
   /// \param frame
   ///
   void CarsCounting::DrawData(cv::Mat frame, int framesCounter, int currTime)
-  {
+  { // 여기서 각종 event/ property update를 하면 됨...
 	  if (m_showLogs)
 	  {
 		  std::cout << "Frame " << framesCounter << ": tracks = " << m_tracker->tracks.size() << ", time = " << currTime << std::endl;

@@ -55,10 +55,22 @@ void MotionDetector::DetectContour()
 		{
 			cv::Rect r = cv::boundingRect(contours[i]);
 
-			if (r.width >= m_minObjectSize.width &&
-				r.height >= m_minObjectSize.height && r.width< m_fg.cols/2 && r.height < m_fg.rows/2)
+			double dblCurrentAspectRatio = (double)r.width / (double)r.height;
+			double dblCurrentDiagonalSize = sqrt(pow(r.width, 2) + pow(r.height, 2));
+
+			/*if (r.width >= m_minObjectSize.width &&
+				r.height >= m_minObjectSize.height && r.width< m_fg.cols/2 && r.height < m_fg.rows/2)*/
+			if (r.area() > 10 &&
+				dblCurrentAspectRatio > 0.2 &&
+				dblCurrentAspectRatio < 6.0 &&
+				r.width > 3 &&
+				r.height > 3 &&
+				dblCurrentDiagonalSize > 3.0 &&
+				(cv::contourArea(contours[i]) / (double)r.area()) > 0.50)
 			{
 				CRegion region(r); // 조건만 달아서 class 구별하고 넣으면 될 것 같은데... 
+				// 
+				
 
 				cv::Point2f center(r.x + 0.5f * r.width, r.y + 0.5f * r.height);
 

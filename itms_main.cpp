@@ -2,6 +2,7 @@
 
 
 #include<opencv2/core/core.hpp>
+#include <opencv2/core/ocl.hpp>
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 //#include <opencv2/dnn.hpp>
@@ -67,6 +68,10 @@ int main(void) {
 #endif	
 	std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
 
+	bool useOCL = false;
+	cv::ocl::setUseOpenCL(useOCL);
+	std::cout << (cv::ocl::useOpenCL() ? "OpenCL is enabled" : "OpenCL not used") << std::endl;
+
 	int trackId = conf.trackid;          // unique object id, you can set or get the track id
 	int maxTrackId = conf.maxTrackIds;   // now two variable tracId and maxTrackId are not used 
 	
@@ -81,8 +86,10 @@ int main(void) {
 
 	// -------------------------------------- HOW TO USE THE API --------------------------------------------
 	// construct an instance 
-	std::unique_ptr<itmsFunctions> itmsFncs;   // itms main class	
-	itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
+	//std::unique_ptr<itmsFunctions> itmsFncs;   // itms main class	
+	//itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
+	std::unique_ptr<CarsCounting> itmsFncs;   // itms main class	
+	itmsFncs = std::make_unique<CarsCounting>(&conf); // create instance and initialize
 	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure
 	itmsres = std::make_unique<ITMSResult>();
 	// --------------------------------------------------------------------------------------------------------
@@ -136,7 +143,7 @@ int main(void) {
     bool blnFirstFrame = true;
 	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;	    
-	int PlayInterval = 2;                // make it increase if you want to speed up !!
+	int PlayInterval = 1;                // make it increase if you want to speed up !!
 	PlayInterval = std::max(1, PlayInterval);
 
 	capVideo.set(cv::CAP_PROP_POS_FRAMES, m_startFrame);
@@ -147,7 +154,7 @@ int main(void) {
 		double t1 = (double)cvGetTickCount();   
         
 		// -------------------------------------- HOW TO USE THE API --------------------------------------------
-		itmsres->reset();
+		itmsres->reset();		
 		itmsFncs->process(imgFrame2, *itmsres); // with current Frame 
 		// check the object events 
 		if(itmsres->objClass.size()){

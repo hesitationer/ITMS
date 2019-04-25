@@ -20,7 +20,7 @@ public:
     BaseDetector(bool collectPoints, cv::UMat& frame)
         : m_collectPoints(collectPoints)
     {
-        m_minObjectSize.width = std::max(5, frame.cols / 100);
+        m_minObjectSize.width = std::max(3, frame.cols / 1000);
         m_minObjectSize.height = m_minObjectSize.width;
     }
     ///
@@ -42,6 +42,10 @@ public:
     ///
     virtual void Detect(cv::UMat& frame) = 0;
 
+	virtual cv::UMat GetForeGround(void) = 0;
+	virtual regions_t getRegions(void) = 0;
+	virtual cv::UMat GetBackGround(void) = 0;
+
     ///
     /// \brief SetMinObjectSize
     /// \param minObjectSize
@@ -55,7 +59,7 @@ public:
     /// \brief GetDetects
     /// \return
     ///
-    const regions_t& GetDetects() const
+    regions_t& GetDetects()
     {
         return m_regions;
     }
@@ -143,6 +147,8 @@ protected:
     bool m_collectPoints;
 
     cv::Mat m_motionMap;
+	public:
+
 };
 
 

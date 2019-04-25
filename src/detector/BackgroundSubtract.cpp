@@ -246,7 +246,7 @@ void BackgroundSubtract::Subtract(const cv::UMat& image, cv::UMat& foreground)
 		else
 			cv::absdiff(preImg, image, difImg);
 
-        //cv::threshold(foreground, foreground, 200, 255, cv::THRESH_BINARY);
+        cv::threshold(foreground, foreground, 150, 255, cv::THRESH_BINARY);
 		//cv::threshold(difImg, foreground, 20, 255, cv::THRESH_BINARY);
 
         break;

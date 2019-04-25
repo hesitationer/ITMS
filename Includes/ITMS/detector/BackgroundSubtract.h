@@ -82,6 +82,15 @@ public:
 private:	
 	cv::Ptr<cv::BackgroundSubtractor> m_modelOCV;    
 	cv::UMat preImg;
+	cv::UMat bgImg; // backgroundImage
+public:
+	
+	cv::UMat GetPreImg(void) { return preImg; };
+	cv::UMat GetBGImg(void) {
+		m_modelOCV->getBackgroundImage(bgImg); 
+		return bgImg;
+	};
+	
 };
 
 #endif // !ITMS_BACKGROUNDSUBTRACT_H
