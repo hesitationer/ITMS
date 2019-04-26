@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	cv::waitKey(1);
+	//cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -1726,7 +1726,7 @@ namespace itms {
 	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
-	  cv::waitKey(1);
+	  //cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1760,7 +1760,7 @@ namespace itms {
 	  }
 
 	  cv::imshow(strImageName, image);
-	  cv::waitKey(1);
+	  //cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2250,7 +2250,7 @@ namespace itms {
 						  line(tmp2, cv::Point_<double>(tl.x, br.y),
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
-					  cv::imshow("track", tmp2);
+					  cv::imshow("local track", tmp2);
 					  //cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
@@ -2376,19 +2376,7 @@ namespace itms {
 					  success = (_preImg.channels() < 3) ?
 						  _ref.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
 						  _ref.m_tracker_psr->update(cv::Mat(_srcImg, roiRect), newsubRoi); // it is different from newLocationFromprevBlob
-				  }
-
-				  // update position and update the current frame because we not do this sometime if necessary						
-				  //if (!success) { // lastRect is not new, and old one is used								
-					 // newsubRoi = lastRect;
-					 // success = (_preImg.channels() < 3) ?
-						//  _ref.m_tracker_psr->reinit(cv::Mat(preImg3, roiRect), newsubRoi) :
-						//  _ref.m_tracker_psr->reinit(cv::Mat(_preImg, roiRect), newsubRoi);
-
-					 // success = (_preImg.channels() < 3) ?
-						//  _ref.m_tracker_psr->update(cv::Mat(srcImg3, roiRect), newsubRoi) :
-						//  _ref.m_tracker_psr->update(cv::Mat(_srcImg, roiRect), newsubRoi);
-				  //} // else is not required because if updateAt is successful, the new location after update is same							
+				  }				  
 
 				  cv::Rect prect;
 				  if (success) {
@@ -2413,7 +2401,7 @@ namespace itms {
 						  line(tmp2, cv::Point_<double>(tl.x, br.y),
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
-					  cv::imshow("track", tmp2);
+					  cv::imshow("local track", tmp2);
 					  //cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
@@ -2441,7 +2429,7 @@ namespace itms {
 
   float itmsFunctions::getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
 	  //// template matching algorithm implementation, demo	
-	  if (0 && _conf.debugGeneralDetail) {
+	  if (1 && _conf.debugGeneralDetail) {
 		  string ty = type2str(bgimg.type());
 		  printf("Matrix: %s %dx%d \n", ty.c_str(), bgimg.cols, bgimg.rows);
 		  ty = type2str(fgtempl.type());
@@ -2461,9 +2449,10 @@ namespace itms {
 	  }
 
 	  bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
-	  if (0 && _conf.debugShowImages && _conf.debugShowImagesDetail) {
-		  imshow("img", bgimg_gray);
-		  imshow("template image", fgtempl_gray);
+	  if (1 && _conf.debugShowImages && _conf.debugShowImagesDetail) {
+		  imshowBeforeAndAfter(bgimg_gray, fgtempl_gray, "NCC cur/template img", 2);
+		  /*imshow("img", bgimg_gray);
+		  imshow("template image", fgtempl_gray);*/
 		  //waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
@@ -3505,7 +3494,7 @@ namespace itms {
   }
   bool itmsFunctions::Init() {
 	  //pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
-	  pBgSub = createBackgroundSubtractorMOG2();
+	  pBgSub = createBackgroundSubtractorMOG2(_config->intNumBGRefresh, _config->dblMOGVariance, true);
 	  blobs.clear();
 	  pastBrightnessLevels.clear();
 
@@ -3582,7 +3571,7 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  waitKey(1);
+			  //waitKey(1);
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
@@ -3593,8 +3582,9 @@ namespace itms {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  Mat bgImage = Mat::zeros(curImg.size(), curImg.type());
 			  pBgSub->getBackgroundImage(bgImage);
-			  cv::imshow("backgroundImage", bgImage);
-			  cv::waitKey(1);
+			  cv::imshow("background Image MOG2", bgImage);
+			  itms::imshowBeforeAndAfter(bgImage, imgDifferenceBg, "bg image and imgdiffBg", 2);
+			  //cv::waitKey(1);
 			  /*if (isWriteToFile && frameCount == 200) {
 				  string filename = conf.VideoPath;
 				  filename.append("_" + to_string(conf.scaleFactor) + "x.jpg");
@@ -3641,7 +3631,7 @@ namespace itms {
 			  /*cv::imshow("rmask& imgdiff", imgDifference);
 			  cv::imshow("rmask& imgdiffBg", imgDifferenceBg);
 			  */
-			  cv::waitKey(1);
+			  //cv::waitKey(1);
 		  }
 
 		  float roi_bg_mean = mean(BGImage(brightnessRoi))[0];
@@ -3650,26 +3640,31 @@ namespace itms {
 		  if (_config->debugGeneralDetail) {
 			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
 		  }
-		  //cv::threshold(imgDifferenceBg, imgThreshBg, 40, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
-		  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
+		  cv::threshold(imgDifferenceBg, imgThreshBg, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
+		  //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
 	  }
 
 	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY);	  	  
 	  
 	  // sangkny 2019/04/03 DIFF dilation and AND and OR operation
-	  cv::Mat imgThreshDil, imgThresh_2;
-	  cv::threshold(imgDifference, imgThresh_2, (double)(_config->img_dif_th)/2.0, 255.0, CV_THRESH_BINARY);
-	  cv::dilate(imgThresh, imgThreshDil, structuringElement5x5);
-	  cv::bitwise_and(imgThreshDil, imgThreshBg, imgThreshDil);
-	  if (_config->debugShowImages && _config->debugShowImagesDetail) {		  
+	  // sangkny 2019/04/26 XOR etc
+	  /*cv::Mat imgThreshDil, imgThresh_2;*/
+	  //cv::threshold(imgDifference, imgThresh_2, (double)(_config->img_dif_th)/2.0, 255.0, CV_THRESH_BINARY);
+	  //cv::dilate(imgThresh, imgThreshDil, structuringElement5x5);
+	  //cv::bitwise_and(imgThreshDil, imgThreshBg, imgThreshDil);
+	  /*if (_config->debugShowImages && _config->debugShowImagesDetail) {		  
 		  itms::imshowBeforeAndAfter(imgThresh, imgThresh_2, " imgThresh/ imgThresh_2", 2);
 		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);		  		  
 
 	  }
-	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);
+	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);*/
+	  cv::Mat imgXor;
+
 	  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);		  
+		  itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
 	  }
 
 	  for (unsigned int i = 0; i < 1; i++) {
@@ -4134,7 +4129,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 	  }
@@ -4240,7 +4235,7 @@ namespace itms {
 				  cvtColor(road_mask, road_mask, CV_BGR2GRAY);
 			  if (0) {
 				  imshow("road mask", road_mask);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 		  if (!road_mask.empty()) // only one time setting

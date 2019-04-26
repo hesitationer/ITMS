@@ -116,6 +116,8 @@ namespace itms {
 		char BGImagePath[512];       // background related 
         bool bGenerateBG = true;
 		int  intNumBGRefresh = 5 * 30; // 5 seconds * frames/sec
+		double dblMOGVariance = 32; // default : 16 in OpenCV
+		double dblMOGShadowThr = 50; // default 50 MOG2 Shadow Filtering Thredhold : 200
 
 
 		double StartX = 0;
@@ -271,6 +273,8 @@ namespace itms {
 			// detection related
 			_conf.bGenerateBG = cvReadIntByName(fs, 0, "bGenerateBG", 1);
 			_conf.intNumBGRefresh = cvReadIntByName(fs, 0, "intNumBGRefresh", 150);
+			_conf.dblMOGVariance = cvReadRealByName(fs, 0, "dblMOGVariance", 32);
+			_conf.dblMOGShadowThr = cvReadRealByName(fs, 0, "dblMOGShadowThr", 50); 
 
 			_conf.ldirection = LaneDirection(cvReadIntByName(fs, 0, "ldirection", LaneDirection::LD_NORTH));
 			_conf.bgsubtype = BgSubType(cvReadIntByName(fs, 0, "bgsubtype", BgSubType::BGS_DIF));

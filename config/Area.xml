@@ -8,7 +8,7 @@
 <debugGeneralDetail>1</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
 <debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
 <debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
-<debugSpecial>0</debugSpecial>                      <!-- debug flag for improving purpose only -->
+<debugSpecial>1</debugSpecial>                      <!-- debug flag for improving purpose only -->
 
 <scaleFactor>0.5</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
 
@@ -24,7 +24,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_114611_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -52,7 +52,9 @@
 <!-- -- Detection - related : BackGround Lane Direction and etc -- -->
 <BGImagePath>"config\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
 <bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
-<intNumBGRefresh> 250 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
+<intNumBGRefresh> 300 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
+<dblMOGVariance>32</dblMOGVariance>                             <!-- MOG2 variance : how much different between pixel's value and a BG model : high no sensitive 32 -->
+<dblMOGShadowThr> 50 </dblMOGShadowThr>                         <!-- MOG2 Shadow detection and Filtering Threshold 50 -->
 
 <ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
 <bgsubtype> 1 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
@@ -90,7 +92,7 @@
 <speedLimitForstopping> 5 </speedLimitForstopping>              <!-- 2 speed to be determined as "STOP", Km/Hour -->
 <minConsecutiveFramesForOS> 6 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
 
-<BlobNCC_Th> 0.5 </BlobNCC_Th>
+<BlobNCC_Th> 0.7 </BlobNCC_Th>
 
 <!-- Object Tracking ---------------------------- -->
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->

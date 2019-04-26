@@ -116,7 +116,7 @@ int main(int argc, char **argv)
   //CString m_MediaPath = "E:/Camera1/야간/야간 - 추가 - 복합 - 정지(2), 정지(3), 역주행(2), 역주행(3)/20180912_201357_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/야간/야간 - 추가 - 복합 - 정지 차로변경 - 역주행 차로변경/20180911_221801_cam_0.mjpg";
   //CString m_MediaPath = "E:/Camera1/전이/전이 - 전이 - 단독 - 정지 - 역주행/20180912_184308_cam_0.mjpg";// 주행, 정차, 주행 영상
-  CString m_MediaPath = "E:/Camera1/주간/주간 - 일반 - 단독 - 보행/20180911_114411_cam_0.mjpg"; // 단독 보행 후 차량이동
+  CString m_MediaPath = "E:/Camera1/주간/주간 - 일반 - 단독 - 보행/20180911_114611_cam_0.mjpg"; // 단독 보행 후 차량이동
   //CString m_MediaPath = "E:/Camera1/주간/주간 - 추가 - 복합 - 보행자/20180912_112338_cam_0.mjpg";// 보행자 2명 차량 정차 실험
   CMjpgFile* mjpgEmul = new CMjpgFile(m_MediaPath);
   iWidth = mjpgEmul->m_width;
