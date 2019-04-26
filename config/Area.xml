@@ -24,7 +24,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_114411_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -55,7 +55,7 @@
 <intNumBGRefresh> 250 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
 
 <ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
-<bgsubtype> 0 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
+<bgsubtype> 1 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
 <use_mask> 0 </use_mask>                                        <!-- // for template matching -->
 <match_method> 5 </match_method>                                <!-- // TM_CCOEFF_NORMED : 5 -->
 <max_Trackbar> 5 </max_Trackbar>    
@@ -95,7 +95,7 @@
 <!-- Object Tracking ---------------------------- -->
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
-<isSubImgTracking>0</isSubImgTracking>                          <!-- loast object local searching flag -->
+<isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
 <useTrackerMatching>1</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
 <useTrackerMatchingThres>0.75</useTrackerMatchingThres>         <!-- Tracker matching threshold for different object determination  -->

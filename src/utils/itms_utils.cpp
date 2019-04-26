@@ -50,6 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
+	cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -1725,7 +1726,7 @@ namespace itms {
 	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
-	  ////cv::waitKey(1);
+	  cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1759,7 +1760,7 @@ namespace itms {
 	  }
 
 	  cv::imshow(strImageName, image);
-	  ////cv::waitKey(1);
+	  cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3581,19 +3582,19 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  //waitKey(1);
+			  waitKey(1);
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
 	  cv::Mat imgDifference, imgDifferenceBg;
 	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
-		  pBgSub->apply(curImg, imgDifference,1./(double)(_config->intNumBGRefresh));
+		  pBgSub->apply(curImg, imgDifferenceBg,1./(double)(_config->intNumBGRefresh));
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  Mat bgImage = Mat::zeros(curImg.size(), curImg.type());
 			  pBgSub->getBackgroundImage(bgImage);
 			  cv::imshow("backgroundImage", bgImage);
-			  //cv::waitKey(1);
+			  cv::waitKey(1);
 			  /*if (isWriteToFile && frameCount == 200) {
 				  string filename = conf.VideoPath;
 				  filename.append("_" + to_string(conf.scaleFactor) + "x.jpg");
@@ -3601,7 +3602,8 @@ namespace itms {
 				  std::cout << " background image has been generated (!!)\n";
 			  }*/
 		  }
-		  cv::absdiff(BGImage, curImg, imgDifferenceBg);
+		  //cv::absdiff(BGImage, curImg, imgDifferenceBg);
+		  cv::absdiff(preImg, curImg, imgDifference);
 	  }
 	  else {
 		  cv::absdiff(preImg, curImg, imgDifference);	  		  
@@ -3631,15 +3633,15 @@ namespace itms {
 
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
-		  //cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404
-		  cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
+		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404
+		  //cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);
 			  /*cv::imshow("rmask& imgdiff", imgDifference);
 			  cv::imshow("rmask& imgdiffBg", imgDifferenceBg);
 			  */
-			  //cv::waitKey(1);
+			  cv::waitKey(1);
 		  }
 
 		  float roi_bg_mean = mean(BGImage(brightnessRoi))[0];
@@ -3661,13 +3663,13 @@ namespace itms {
 	  cv::bitwise_and(imgThreshDil, imgThreshBg, imgThreshDil);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {		  
 		  itms::imshowBeforeAndAfter(imgThresh, imgThresh_2, " imgThresh/ imgThresh_2", 2);
-		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);		  
+		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);		  		  
 
 	  }
-	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);	  
+	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);
+	  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg/ imgThresh", 2);
-		 // cv::waitKey(1);
+		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);		  
 	  }
 
 	  for (unsigned int i = 0; i < 1; i++) {
@@ -3705,7 +3707,7 @@ namespace itms {
 	  cv::findContours(imgThreshCopy, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  drawAndShowContours(imgThresh.size(), contours, "imgContours");
+		  drawAndShowContours(imgThresh.size(), contours, "imgContours");		  
 	  }
 
 	  std::vector<std::vector<cv::Point> > convexHulls(contours.size());

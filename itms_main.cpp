@@ -86,10 +86,10 @@ int main(void) {
 
 	// -------------------------------------- HOW TO USE THE API --------------------------------------------
 	// construct an instance 
-	//std::unique_ptr<itmsFunctions> itmsFncs;   // itms main class	
-	//itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
-	std::unique_ptr<CarsCounting> itmsFncs;   // itms main class	
-	itmsFncs = std::make_unique<CarsCounting>(&conf); // create instance and initialize
+	std::unique_ptr<itmsFunctions> itmsFncs;   // itms main class	
+	itmsFncs= std::make_unique<itmsFunctions>(&conf); // create instance and initialize
+	//std::unique_ptr<CarsCounting> itmsFncs;   // itms main class	
+	//itmsFncs = std::make_unique<CarsCounting>(&conf); // create instance and initialize
 	std::unique_ptr<ITMSResult> itmsres;                     // itms result structure
 	itmsres = std::make_unique<ITMSResult>();
 	// --------------------------------------------------------------------------------------------------------
