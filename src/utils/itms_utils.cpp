@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	//cv::waitKey(1);
+	cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -250,6 +250,7 @@ namespace itms {
   // 2019. 04. 05 -> Apply fastDSST at the searching stage for matching blobs, otherwise it can cross the different objects
   // 2019. 04. 08 -> fastDSST-based Approach => matchExistingBlobsToCurrentFrameBlobs 
   // 2019. 04. 18 -> back to the 04. 05 
+  // 2019. 04. 28 -> 
   void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, const cv::Mat& orgImg, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id) {
 	  // lost object tracker
 	  //size_t N = existingBlobs.size();
@@ -446,6 +447,7 @@ namespace itms {
 			  if (existingBlobs[i].blnStillBeingTracked == true) { // find assigned tracks
 			  // it can be replaced with the tracking algorithm or assignment algorithm like KALMAN or Hungrian Assignment algorithm 
 				  double dblDistance = distanceBetweenPoints(currentFrameBlob.centerPositions.back(), existingBlobs[i].predictedNextPosition);
+				  double dblDistance1 = distanceBetweenBlobs(currentFrameBlob, existingBlobs[i]); // sangkny 2019/04/28
 				  /* // sangkny 2019. 02. 15
 				  totalScore -= dblDistance;
 				  totalScore -= (existingBlobs[i].currentBoundingRect.height < minDiagonal || existingBlobs[i].currentBoundingRect.height>maxDiagonal) ? 10 : 0;
@@ -659,6 +661,22 @@ namespace itms {
 						  detectCascadeRoiVehicle(_conf, srcImg, expRect, cars);
 						  if (cars.size())
 							  currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
+						  //else if (distance >= 100 && _conf.scaleFactor < 1.0) {       // sangkny 2019. 04. 28
+							 // //한번 더 원래 이미지로 사람인지..							  
+							 // cv::Rect _roi_rect = currentFrameBlob.currentBoundingRect; //상대좌표가 들어와야 한다.
+							 // _roi_rect.x = (float)currentFrameBlob.currentBoundingRect.x / _conf.scaleFactor;
+							 // _roi_rect.y = (float)currentFrameBlob.currentBoundingRect.y / _conf.scaleFactor;
+							 // _roi_rect.width = (float)currentFrameBlob.currentBoundingRect.width / _conf.scaleFactor;
+							 // _roi_rect.height = (float)currentFrameBlob.currentBoundingRect.height / _conf.scaleFactor;
+							 // _roi_rect = expandRect(_roi_rect, 8, 8, orgImg.cols, orgImg.rows);
+
+							 // detectCascadeRoiHuman(_conf, orgImg, _roi_rect, cars); // 
+							 // if (cars.size()){
+								//  currentFrameBlob.oc_prob = 1.0;
+								//  currentFrameBlob.oc = itms::ObjectClass::OC_HUMAN; // 
+							 // }
+
+						  //}
 						  else if (_conf.img_dif_th >= _conf.nightBrightness_Th &&/* at night */ classProb >= _conf.nightObjectProb_Th)
 							  ;	// just put this candidate
 						  else //if(/* at night and */classProb < 0.8)
@@ -705,24 +723,18 @@ namespace itms {
 	  // 2018. 10. 25 getObjectStatusFromBlobCenters 을 전반부에서 이동.. 그리고, 각종 object status object classification을 여기서 함..
 	  // 2019. 01. 04 for unassigned tracks, perform the fast DSST to find out the lost object if any and check if therer exists missing objects.
 	  size_t blobIdx = 0;
-	  
-
 	  for (auto &existingBlob : existingBlobs) { // update track routine
 
 		  if (existingBlob.blnCurrentMatchFoundOrNewBlob == false) { // unassigned tracks            
 			  existingBlob.age++;
 
-			  if (_conf.m_externalTrackerForLost /* && (assignment[blobIdx] == -1)*/) { // 상관이 없네...
-				  existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
-																		// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method
-				  /*cv::Rect newRoi, m_predictionRect;
-				  int expandY = 2;
-				  float heightRatio = (float)(existingBlob.currentBoundingRect.height + expandY) / (existingBlob.currentBoundingRect.height);
-				  int expandX = max(0, cvRound((float)(existingBlob.currentBoundingRect.width)*heightRatio - existingBlob.currentBoundingRect.width));
-				  cv::Rect expRect = expandRect(existingBlob.currentBoundingRect, expandX, expandY, preImg.cols, preImg.rows);
+			  vector<Point2f> blobCenterPxs;
+			  blobCenterPxs.push_back(existingBlob.centerPositions.back());
+			  float startDist = _conf.sTrackingDist;
 
-				  if (0 && _conf.debugGeneral && _conf.debugGeneralDetail)
-					  cout << "From boundingRect: " << existingBlob.currentBoundingRect << " => To expectedRect: " << expRect << endl;*/
+			  if (_conf.m_externalTrackerForLost && getDistanceInMeterFromPixels(blobCenterPxs, _conf.transmtxH, _conf.lane_length, false)> startDist /* && (assignment[blobIdx] == -1)*/) { // 상관이 없네...
+				  existingBlob.intNumOfConsecutiveFramesWithoutAMatch++;// temporal line
+																		// reinitialize the fastDSST with prevFrame and update the fastDSST with current Frame, finally check its robustness with template matching or other method				  
 				  int expandY = 2;
 				  bool successTracking = false;
 				  if (!_conf.isSubImgTracking) { // Global/full image-based approach				  
@@ -1199,7 +1211,7 @@ namespace itms {
 			  if (_conf.debugGeneral && _conf.debugGeneralDetail) {				  
 				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(exBlob_rect), "curBlob / existing Blob rect", 2);
 				  std::cout << " Area ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / exBlob_rect.area() << endl;
-				  //cv::waitKey(1);
+				  cv::waitKey(1);
 			  }
 			  float allowedPct = 0.5;// _conf.useTrackerAllowedPercentage;
 			  float areaRatio;
@@ -1719,6 +1731,23 @@ namespace itms {
 	  return(sqrt(pow(intX, 2) + pow(intY, 2)));
   }
 
+  double distanceBetweenBlobs(const itms::Blob& _blob1, const itms::Blob& _blob2) {
+	  std::array<track_t, 4> diff;
+	  cv::Point _bPt1=_blob1.centerPositions.back();
+	  cv::Point _bPt2=_blob2.centerPositions.back();
+	  diff[0] = _bPt1.x - _bPt2.x;
+	  diff[1] = _bPt1.y - _bPt2.y;
+	  diff[2] = static_cast<track_t>(_blob1.currentBoundingRect.width - _blob2.currentBoundingRect.width);
+	  diff[3] = static_cast<track_t>(_blob1.currentBoundingRect.height - _blob2.currentBoundingRect.height);
+
+	  track_t dist = 0;
+	  for (size_t i = 0; i < diff.size(); ++i)
+	  {
+		  dist += diff[i] * diff[i];
+	  }
+	  return sqrtf(dist);
+
+  }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName, const cv::Scalar& _color) {
 	  cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
@@ -1726,7 +1755,7 @@ namespace itms {
 	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
-	  //cv::waitKey(1);
+	  cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1760,7 +1789,7 @@ namespace itms {
 	  }
 
 	  cv::imshow(strImageName, image);
-	  //cv::waitKey(1);
+	  cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2068,10 +2097,10 @@ namespace itms {
 	  }
 
 	  bool method_accepts_mask = (CV_TM_SQDIFF == match_method || match_method == CV_TM_CCORR_NORMED);
-	  if (0 && _conf.debugShowImages && _conf.debugShowImagesDetail) {
+	  if (1&& _conf.debugShowImages && _conf.debugShowImagesDetail) {
 		  imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);
-		  //waitKey(1);
+		  waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -2168,7 +2197,7 @@ namespace itms {
 				  else
 					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
 				  cv::imshow("Full Image Tracking Global location", tmp2);
-				  //cv::waitKey(1);
+				  cv::waitKey(1);
 			  }
 
 		  }else{
@@ -2251,7 +2280,7 @@ namespace itms {
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
 					  cv::imshow("local track", tmp2);
-					  //cv::waitKey(1);
+					  cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
@@ -2260,7 +2289,7 @@ namespace itms {
 					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 					  cv::imshow("Full Image Tracking location", tmp2);
-					  //cv::waitKey(1);
+					  cv::waitKey(1);
 				  }
 
 			  }
@@ -2330,7 +2359,7 @@ namespace itms {
 				  else
 					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
 				  cv::imshow("Full Image Tracking Global location", tmp2);
-				  //cv::waitKey(1);
+				  cv::waitKey(1);
 			  }
 
 		  }
@@ -2402,7 +2431,7 @@ namespace itms {
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
 					  cv::imshow("local track", tmp2);
-					  //cv::waitKey(1);
+					  cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
@@ -2411,7 +2440,7 @@ namespace itms {
 					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 					  cv::imshow("Full Image Tracking location", tmp2);
-					  //cv::waitKey(1);
+					  cv::waitKey(1);
 				  }
 
 			  }
@@ -2453,7 +2482,7 @@ namespace itms {
 		  imshowBeforeAndAfter(bgimg_gray, fgtempl_gray, "NCC cur/template img", 2);
 		  /*imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);*/
-		  //waitKey(1);
+		  waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -2913,8 +2942,7 @@ namespace itms {
 				  cv::Rect roi_rect_Ex = expandRect(roi_rect, 2, 2, BGImage.cols, BGImage.rows);
 				  // blob correlation debug
 				  if (_config->debugShowImagesDetail) {					  					  
-					  itms::imshowBeforeAndAfter(BGImage(roi_rect_Ex), _curImg(roi_rect), "NCC BG / Target", 2);					  
-					  //cv::waitKey(1);
+					  itms::imshowBeforeAndAfter(BGImage(roi_rect_Ex), _curImg(roi_rect), "NCC BG / Target", 2);					  					  
 				  }
 				  float blobncc = getNCC(_conf, BGImage(roi_rect_Ex), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
 				  if (abs(blobncc) > _config->BlobNCC_Th) // background
@@ -2949,7 +2977,7 @@ namespace itms {
 						  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
 					  cv::rectangle(debugImg, roi_rect_Ex, Scalar(0, 0, 255), 3);
 					  cv::imshow("Stopped Object", debugImg);
-					  //cv::waitKey(1);
+					  cv::waitKey(1);
 				  }
 					  
 			  }
@@ -3026,7 +3054,7 @@ namespace itms {
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("cascade image", roiImg);
 		  imshow("hog", hogImg);
-		  //waitKey(1);
+		  waitKey(1);
 	  }
 
   }
@@ -3072,7 +3100,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("vehicle in detection", roiImg);
-		  //waitKey(1);
+		  waitKey(1);
 	  }
   }
   // find people in the given ROI
@@ -3083,7 +3111,7 @@ namespace itms {
 	  const float minMax_threshold = 0.5; // 25 % margin
 	  const float h_w_ratio = (float)rect.height / (float)rect.width;
 	  const float RefRatio = 2;			// reference ration 2 : 1
-	  if (((RefRatio - minMax_threshold) > h_w_ratio) 
+	  if (((RefRatio - minMax_threshold-0.4) > h_w_ratio) 
 		  || (h_w_ratio > (RefRatio + minMax_threshold))) { // need to change the status of object class???? 
 		  if (_conf.debugGeneralDetail)
 			  cout << "Human detection condition is not matched in detectCascadeRoiHuman.\n  with rect : " << rect<<endl;
@@ -3159,7 +3187,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("human in HOG SVM", hogImg);
-		  //waitKey(1);
+		  waitKey(1);
 	  }
   }
 
@@ -3268,7 +3296,7 @@ namespace itms {
 		  for (int i = 0; i<points[1].size(); i++)
 			  circle(debugImg, points[1].at(i), 2, Scalar(0, 255, 0));
 		  imshow("calcOpticalFlowPyr", debugImg);
-		  //waitKey(1);
+		  waitKey(1);
 	  }
 	  size_t i = 0;
 	  for (auto track : tracks)
@@ -3347,7 +3375,7 @@ namespace itms {
 				  contours.push_back(contour);
 				  drawContours(debugImg, contours, -1, Scalar(0, 0, 255));
 				  imshow("contours_", debugImg);
-				  //waitKey(1);
+				  waitKey(1);
 			  }
 		  }
 	  }
@@ -3522,7 +3550,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  //waitKey(1);
+				  waitKey(1);
 			  }
 		  }
 	  }
@@ -3571,7 +3599,7 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  //waitKey(1);
+			  waitKey(1);
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
@@ -3584,7 +3612,7 @@ namespace itms {
 			  pBgSub->getBackgroundImage(bgImage);
 			  cv::imshow("background Image MOG2", bgImage);
 			  itms::imshowBeforeAndAfter(bgImage, imgDifferenceBg, "bg image and imgdiffBg", 2);
-			  //cv::waitKey(1);
+			  
 			  /*if (isWriteToFile && frameCount == 200) {
 				  string filename = conf.VideoPath;
 				  filename.append("_" + to_string(conf.scaleFactor) + "x.jpg");
@@ -3627,11 +3655,7 @@ namespace itms {
 		  //cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);
-			  /*cv::imshow("rmask& imgdiff", imgDifference);
-			  cv::imshow("rmask& imgdiffBg", imgDifferenceBg);
-			  */
-			  //cv::waitKey(1);
+			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);			  
 		  }
 
 		  float roi_bg_mean = mean(BGImage(brightnessRoi))[0];
@@ -3659,9 +3683,13 @@ namespace itms {
 	  }
 	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);*/
 	  cv::Mat imgXor;
-
-	  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  
 	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor);
+	  if(_config->img_dif_th <= 15 ){ // under day condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
+		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  }else{ // under dark condition, only difference between pre and cur is used
+		  ; // doing for night condition
+	  }
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);		  
 		  itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
@@ -3801,8 +3829,7 @@ namespace itms {
 	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");
-			  //waitKey(1);
+			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");			  
 		  }
 		  //collectPointsInBlobs(currentFrameBlobs, m_collectPoints);	// collecting points in all blobs for local tracking , please check this out
 		  //collectPointsInBlobs(blobs, m_collectPoints);	// collecting points in all blobs for local tracking 
@@ -3826,8 +3853,7 @@ namespace itms {
 		  }
 	  }
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");
-		  //waitKey(1);
+		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");		  
 	  }
 	  if (blnFirstFrame == true) {
 		  for (auto &currentFrameBlob : currentFrameBlobs) {
@@ -3866,7 +3892,7 @@ namespace itms {
 		  }		  
 		  drawCarCountOnImage(mCarCount, debugImg);
 		  cv::imshow("current Image", debugImg);
-		  //////cv::waitKey(1);
+		  cv::waitKey(1);
 	  }
 
 	  // now we prepare for the next iteration
@@ -3898,8 +3924,7 @@ namespace itms {
 		  
 		  setBGImage(accmImage);
 		  if(_config->debugShowImagesDetail){
-			  cv::imshow("generating BG", getBGImage());
-			  //waitKey(1);
+			  cv::imshow("generating BG", getBGImage());			
 		  }
 	  }
 
@@ -4129,7 +4154,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  //waitKey(1);
+				  waitKey(1);
 			  }
 		  }
 	  }
@@ -4235,7 +4260,7 @@ namespace itms {
 				  cvtColor(road_mask, road_mask, CV_BGR2GRAY);
 			  if (0) {
 				  imshow("road mask", road_mask);
-				  //waitKey(1);
+				  waitKey(1);
 			  }
 		  }
 		  if (!road_mask.empty()) // only one time setting
@@ -4357,7 +4382,7 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  //waitKey(1);
+			  waitKey(1);
 		  }
 	  }
 

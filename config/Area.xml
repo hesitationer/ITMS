@@ -24,7 +24,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_114611_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -98,6 +98,7 @@
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
 <isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
+<sTrackingDist> 500</sTrackingDist>                           <!-- tracking start distance from zero point default: 5 meters -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
 <useTrackerMatching>1</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
 <useTrackerMatchingThres>0.75</useTrackerMatchingThres>         <!-- Tracker matching threshold for different object determination  -->

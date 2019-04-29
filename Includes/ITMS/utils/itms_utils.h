@@ -155,6 +155,7 @@ namespace itms {
 		bool m_useLocalTracking = false;				// local tracking  capture and detect level
 		bool m_externalTrackerForLost = false;			// do fastDSST for lost object
 		bool isSubImgTracking = false;					// come with m_externalTrackerForLost to find out the lost object inSubImg or FullImg
+		float sTrackingDist = 10000;                    // tracking start distance from the zero point for detecting stoppin in distance
 		bool isCorrectTrackerBlob = false;              // correct blob property from tracker's correction, it has to do more works in globall tracking....
 		bool useTrackerMatching = false;                // option: use tracker to match a block to the existing blobs, it can be used to verify same object matching !!
 		float useTrackerMatchingThres = 0.75;			// use TrackerMatching Threshold 
@@ -316,6 +317,7 @@ namespace itms {
 			_conf.m_useLocalTracking = cvReadIntByName(fs, 0, "m_useLocalTracking", 0);
 			_conf.m_externalTrackerForLost = cvReadIntByName(fs, 0, "m_externalTrackerForLost", 0);
 			_conf.isSubImgTracking = cvReadIntByName(fs, 0, "isSubImgTracking", 0);
+			_conf.sTrackingDist = cvReadRealByName(fs, 0, "sTrackingDist", 10000);
 			_conf.isCorrectTrackerBlob = cvReadIntByName(fs, 0, "isCorrectTrackerBlob", 0);
 			_conf.useTrackerMatching = cvReadIntByName(fs, 0, "useTrackerMatching", 0);
 			_conf.useTrackerMatchingThres = cvReadRealByName(fs, 0, "useTrackerMatchingThres", 0.75);
@@ -671,6 +673,7 @@ namespace itms {
   void addBlobToExistingBlobs(itms::Config& _conf, Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
   void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &id);
   double distanceBetweenPoints(cv::Point point1, cv::Point point2);
+  double distanceBetweenBlobs(const itms::Blob& _blob1, const itms::Blob& _blob2);
   ObjectStatus getObjectStatusFromBlobCenters(Config& config, Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount = 3);
   ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount = 3);
   void drawAndShowContours(cv::Size imageSize, std::vector<std::vector<cv::Point> > contours, std::string strImageName, const cv::Scalar& _color=SCALAR_WHITE);
