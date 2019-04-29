@@ -141,7 +141,7 @@ int main(void) {
     char chCheckForEscKey = 0;
 
     bool blnFirstFrame = true;
-	int m_startFrame = 350;	 // 240
+	int m_startFrame = 0;	 // 240
     int frameCount = m_startFrame + 1;	    
 	int PlayInterval = 1;                // make it increase if you want to speed up !!
 	PlayInterval = std::max(1, PlayInterval);
@@ -151,7 +151,7 @@ int main(void) {
 	
     while (capVideo.isOpened() && chCheckForEscKey != 27) {
 
-		if(frameCount == 382)
+		if(frameCount == 428)
 			int kkk = 0;
 		double t1 = (double)cvGetTickCount();   
         

@@ -18,9 +18,10 @@ namespace itms {
     currentCenter.y = (currentBoundingRect.y + currentBoundingRect.y + currentBoundingRect.height) / 2;
 
 	//	object start center point to save the starting distance from the starting point later
-    startPoint = currentCenter;
+    startPoint = currentCenter;	
 
-    centerPositions.push_back(currentCenter);
+    centerPositions.push_back(currentCenter);	
+	predictNextPosition();		// should be after assining the center Position
 
     dblCurrentDiagonalSize = sqrt(pow(currentBoundingRect.width, 2) + pow(currentBoundingRect.height, 2));
 
