@@ -206,6 +206,9 @@ namespace itms {
 
     // starting point
     startPoint = rhBlob.startPoint; // start in Y direction, it will initiated at adding new blob
+
+	// prediction point
+	predictedNextPosition = rhBlob.predictedNextPosition;
     
 	  // object status information
 	  oc = rhBlob.oc;

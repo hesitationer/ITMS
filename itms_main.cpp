@@ -149,10 +149,7 @@ int main(void) {
 	capVideo.set(cv::CAP_PROP_POS_FRAMES, m_startFrame);
         
 	
-    while (capVideo.isOpened() && chCheckForEscKey != 27) {
-
-		if(frameCount == 428)
-			int kkk = 0;
+    while (capVideo.isOpened() && chCheckForEscKey != 27) {		
 		double t1 = (double)cvGetTickCount();   
         
 		// -------------------------------------- HOW TO USE THE API --------------------------------------------

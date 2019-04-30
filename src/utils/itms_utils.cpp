@@ -1184,10 +1184,16 @@ namespace itms {
 				  existingBlobs[intIndex].oc_prob = currentFrameBlob.oc_prob;
 			  }
 			  else { // they have different its own classes and it is not ObjectClass::OC_OTHER
+				  if(existingBlobs[intIndex].bNotifyMessage && existingBlobs[intIndex].oc_notified != existingBlobs[intIndex].oc){
+					  existingBlobs[intIndex].bNotifyMessage = false;
+					  existingBlobs[intIndex].oc_notified = itms::ObjectClass::OC_OTHER;
+					  existingBlobs[intIndex].os_notified = itms::ObjectStatus::OS_NOTDETERMINED;
+				  }
 			  if(_conf.debugGeneralDetail){
 				  std::cout << " --------- ************* Class Human & Vehicle **************** ----------- \n";
 				  std::cout << " algorithm can not be here !!!\n";
 				  std::cout << " actually, it happens in the long distance -->!! \n";
+				  std::cout << " 2019/04/30, bNotifyMessage will be false if necessary \n";
 				  std::cout << " --------- ************* --------------------- **************** ----------- \n";
 				  // they can not be here because this case should have been refined in the above step MatchCurrentBlobsToExistingBlbos
 				  // 현재는 후자 (currentFrameBlob 을 무시함)
@@ -2612,6 +2618,8 @@ namespace itms {
 			  _itmsRes.objSpeed.push_back(curBlob->speed);
 			  checkStatus = true;
 			  curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce )? true: false;
+			  curBlob->oc_notified = curBlob->oc;
+			  curBlob->os_notified = curBlob->fos;
 		  }
 		  else {
 			  // WWD
@@ -2680,6 +2688,8 @@ namespace itms {
 				  _itmsRes.objSpeed.push_back(curBlob->speed);
 				  checkStatus = true;
 				  curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce) ? true : false;
+				  curBlob->oc_notified = curBlob->oc;
+				  curBlob->os_notified = curBlob->fos;
 				  
 			  }
 		  }
