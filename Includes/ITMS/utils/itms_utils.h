@@ -104,7 +104,8 @@ namespace itms {
 		// 
 
 		// main processing parameters
-		float scaleFactor = .15;
+		float scaleFactor = .5;
+		bool zoomBG = true;		// background subtraction after zooming the longdistance region 
 		// auto brightness and apply to threshold
 		bool isAutoBrightness = true;
 		int AutoBrightness_x = 1162;
@@ -249,6 +250,7 @@ namespace itms {
 			_conf.debugSpecial = cvReadIntByName(fs, 0, "debugSpecial", 0);
 
 			_conf.scaleFactor = (float)cvReadRealByName(fs, 0, "scaleFactor", 0.5); // sangkny 2019. 02. 12 
+			_conf.zoomBG = (bool)cvReadIntByName(fs, 0, "zoomBG", 1);				// sangkny 2019. 04. 30
 			
 			// road configuration 		
 			_conf.camera_height = cvReadRealByName(fs, 0, "camera_height", 11 * 100);
@@ -564,10 +566,7 @@ namespace itms {
 	
 																					// returns the value according to the tp position according to starting point sP and ending point eP;
   // + : left/bottom(below), 0: on the line, -: right/top(above)
-  bool isPointBelowLine(cv::Point sP, cv::Point eP, cv::Point tP);
-   
-  
-  
+  bool isPointBelowLine(cv::Point sP, cv::Point eP, cv::Point tP);  
   
   /// vector related
   /*  example to use the pop_front
@@ -673,6 +672,7 @@ namespace itms {
   void addBlobToExistingBlobs(itms::Config& _conf, Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &intIndex);
   void addNewBlob(Blob &currentFrameBlob, std::vector<Blob> &existingBlobs, int &id);
   double distanceBetweenPoints(cv::Point point1, cv::Point point2);
+  float angleBetweenPoints(Point p1, Point p2);
   double distanceBetweenBlobs(const itms::Blob& _blob1, const itms::Blob& _blob2);
   ObjectStatus getObjectStatusFromBlobCenters(Config& config, Blob &blob, const LaneDirection &lanedirection, int movingThresholdInPixels, int minTotalVisibleCount = 3);
   ObjectStatus getObjStatusUsingLinearRegression(Config& config, Blob &blob, const LaneDirection &lanedirection, const int movingThresholdInPixels, const int minTotalVisibleCount = 3);
@@ -713,8 +713,8 @@ namespace itms {
   // get the new blob information including contour and etc under the new rect on the given image
   bool doubleCheckBackwardMoving(const Config& _conf, itms::Blob& _curBlob);
   bool trackNewLocationFromPrevBlob(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);
-  bool trackNewLocation(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);
-
+  bool trackNewLocation(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);  
+  
   // sangkny FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   
@@ -739,6 +739,8 @@ namespace itms {
 	  cv::Mat preImg;
 	  int mCarCount = 0;
 	  int maxCarCount = 1024;
+  protected:
+	  cv::Point2f zPmin, zPmax; // zoomBG region
   private:
 	  std::vector<Blob> blobs;
 	  std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold
@@ -759,7 +761,44 @@ namespace itms {
 	  bool checkObjectStatus(itms::Config& _conf, const cv::Mat& _curImg, std::vector<Blob>& _Blobs, itms::ITMSResult& _itmsRes);				// check the event true if exists, false otherwise
 	  float getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/);	  
   };
+  // line segment class
+  class ITMS_DLL_EXPORT LineSegment
+  {
 
+  public:
+	  cv::Point p1, p2;
+	  float slope;
+	  float length;
+	  float angle;
+
+	  // LineSegment(Point point1, Point point2);
+	  LineSegment();
+	  LineSegment(int x1, int y1, int x2, int y2);
+	  LineSegment(cv::Point p1, cv::Point p2);
+
+	  void init(int x1, int y1, int x2, int y2);
+
+	  bool isPointBelowLine(cv::Point tp);
+
+	  float getPointAt(float x);
+	  float getXPointAt(float y);
+
+	  cv::Point closestPointOnSegmentTo(cv::Point p);
+
+	  cv::Point intersection(LineSegment line);
+
+	  LineSegment getParallelLine(float distance);
+
+	  cv::Point midpoint();
+
+	  inline std::string str()
+	  {
+		  std::stringstream ss;
+		  ss << "(" << p1.x << ", " << p1.y << ") : (" << p2.x << ", " << p2.y << ")";
+		  return ss.str();
+	  }
+
+  };
 
   // car counting-related classes
   class ITMS_DLL_EXPORT RoadLine

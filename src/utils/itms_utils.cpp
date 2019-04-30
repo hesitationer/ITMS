@@ -1183,11 +1183,14 @@ namespace itms {
 				  existingBlobs[intIndex].oc = currentFrameBlob.oc;	// need to do classification according to the class of currentFrameBlob
 				  existingBlobs[intIndex].oc_prob = currentFrameBlob.oc_prob;
 			  }
-			  else { // they have different its own classes
+			  else { // they have different its own classes and it is not ObjectClass::OC_OTHER
 			  if(_conf.debugGeneralDetail){
+				  std::cout << " --------- ************* Class Human & Vehicle **************** ----------- \n";
 				  std::cout << " algorithm can not be here !!!\n";
-				  std::cout << " actually, it happens in the long distance !! \n";
+				  std::cout << " actually, it happens in the long distance -->!! \n";
+				  std::cout << " --------- ************* --------------------- **************** ----------- \n";
 				  // they can not be here because this case should have been refined in the above step MatchCurrentBlobsToExistingBlbos
+				  // 현재는 후자 (currentFrameBlob 을 무시함)
 				  }
 			  }
 		  }
@@ -1413,6 +1416,14 @@ namespace itms {
 	  int intY = (point1.y - point2.y);
 
 	  return(sqrt(pow(intX, 2) + pow(intY, 2)));
+  }
+  
+  float angleBetweenPoints(Point p1, Point p2)
+  {
+	  int deltaY = p2.y - p1.y;
+	  int deltaX = p2.x - p1.x;
+
+	  return atan2((float)deltaY, (float)deltaX) * (180 / CV_PI);
   }
 
   double distanceBetweenBlobs(const itms::Blob& _blob1, const itms::Blob& _blob2) {
@@ -3221,9 +3232,24 @@ namespace itms {
 			  cv::GaussianBlur(BGImage, BGImage, cv::Size(5, 5), 0);
 			  accmImage = BGImage; // copy the background as an initialization
 			  // road_mask define
-			  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());
-			  for (int ir = 0; ir<_config->Road_ROI_Pts.size(); ir++)
-				  fillConvexPoly(road_mask, _config->Road_ROI_Pts.at(ir).data(), _config->Road_ROI_Pts.at(ir).size(), Scalar(255, 255, 255), 8);
+			  road_mask = cv::Mat::zeros(BGImage.size(), BGImage.type());			 
+			  for (int ir = 0; ir < _config->Road_ROI_Pts.size(); ir++) 
+				  fillConvexPoly(road_mask, _config->Road_ROI_Pts.at(ir).data(), _config->Road_ROI_Pts.at(ir).size(), Scalar(255, 255, 255), 8);				  
+
+			  // determine the ROI for zoomming region			  
+			  if( _config->Boundary_ROI_Pts.size()==4) {
+				  cv::Point ptl, ptr, lh, rh;
+
+				  ptl = _config->Boundary_ROI_Pts.at(0);
+				  ptr = _config->Boundary_ROI_Pts.at(1);
+				  
+				  itms::LineSegment l1(_config->Boundary_ROI_Pts.at(0), _config->Boundary_ROI_Pts.at(3)), l2(_config->Boundary_ROI_Pts.at(1), _config->Boundary_ROI_Pts.at(2));
+				  lh = l1.midpoint();
+				  rh = l2.midpoint();
+
+				  this->zPmin = cv::Point2f(min(ptl.x, lh.x), min(ptl.y, lh.y));
+				  this->zPmax = cv::Point2f(max(ptr.x, rh.x), max(ptr.y, rh.y));
+			  }			  
 
 			  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 				  cv::Mat debugImg = road_mask.clone();
@@ -3289,9 +3315,10 @@ namespace itms {
 	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
 		  pBgSub->apply(curImg, imgDifferenceBg,1./(double)(_config->intNumBGRefresh));
+		  pBgSub->getBackgroundImage(BGImage);		// 이것을 하면 뒷부분의 addWeight 을 해제해야 함 (즉, 메모리 아낄 수 있음) // 2019. 04. 30.
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  Mat bgImage = Mat::zeros(curImg.size(), curImg.type());
-			  pBgSub->getBackgroundImage(bgImage);
+			  bgImage = getBGImage();			  // it shoud be same as pBgSub->getBackgroundImage(bgImage);
 			  cv::imshow("background Image MOG2", bgImage);
 			  itms::imshowBeforeAndAfter(bgImage, imgDifferenceBg, "bg image and imgdiffBg", 2);
 			  
@@ -3337,7 +3364,7 @@ namespace itms {
 		  //cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg",2);			  
+			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg before thresholding",2);			  
 		  }
 
 		  float roi_bg_mean = mean(BGImage(brightnessRoi))[0];
@@ -3347,7 +3374,26 @@ namespace itms {
 			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
 		  }
 		  cv::threshold(imgDifferenceBg, imgThreshBg, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
-		  //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
+		 //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
+		  if (_config->zoomBG) { // sangkny 2019. 04. 30
+			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image
+			  cv::Rect zROI(zPmin, zPmax);
+			  cv::Mat tmp = imgDifferenceBg(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  cv::Mat tmpZoom;
+			  cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor,CV_INTER_NN);			  
+			  cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr / 2., 255.0, CV_THRESH_BINARY); // 90 부터 낮게
+			  cv::dilate(tmpZoom, tmpZoom, structuringElement15x15);
+			  
+			  cv::resize(tmpZoom, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
+			  // mix with imgThresBg			  
+			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));
+			  mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp;
+			  bitwise_or(imgThreshBg, mask, imgThreshBg);
+			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  imshowBeforeAndAfter(tmp2, imgThreshBg, "Zoom before/after", 2);
+			  }
+		  }
+		  
 	  }
 
 	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY);	  	  
@@ -3372,10 +3418,7 @@ namespace itms {
 	  }else{ // under dark condition, only difference between pre and cur is used
 		  ; // doing for night condition
 	  }
-	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);		  
-		  itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
-	  }
+	  
 
 	  for (unsigned int i = 0; i < 1; i++) {
 		  if (_config->bgsubtype == BgSubType::BGS_CNT)
@@ -3403,7 +3446,11 @@ namespace itms {
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 		  }
-	  }	  
+	  }	 
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);
+		  itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
+	  }
 
 	  cv::Mat imgThreshCopy = imgThresh.clone();
 
@@ -3582,7 +3629,7 @@ namespace itms {
 
 	  preImg = curImg.clone();           // move frame 1 up to where frame 2 is	  
 	  // generate background image
-	  if(_config->bGenerateBG && _config->intNumBGRefresh > 0){
+	  if(_config->bGenerateBG && _config->intNumBGRefresh > 0 && (_config->bgsubtype == BgSubType::BGS_DIF)){
 		  
 		  double learningRate = (double)1./(double)(_config->intNumBGRefresh);
 		  Mat curTmp = curImg.clone();
@@ -3719,7 +3766,136 @@ namespace itms {
   {
 	  return (this->itmsres->objSpeed);
   }
-  ;
+  
+  // linesegment class related 
+
+  LineSegment::LineSegment()
+  {
+	  init(0, 0, 0, 0);
+  }
+
+  LineSegment::LineSegment(Point p1, Point p2)
+  {
+	  init(p1.x, p1.y, p2.x, p2.y);
+  }
+
+  LineSegment::LineSegment(int x1, int y1, int x2, int y2)
+  {
+	  init(x1, y1, x2, y2);
+  }
+
+  void LineSegment::init(int x1, int y1, int x2, int y2)
+  {
+	  this->p1 = Point(x1, y1);
+	  this->p2 = Point(x2, y2);
+
+	  if (p2.x - p1.x == 0)
+		  this->slope = 0.00000000001;
+	  else
+		  this->slope = (float)(p2.y - p1.y) / (float)(p2.x - p1.x);
+
+	  this->length = distanceBetweenPoints(p1, p2);
+
+	  this->angle = angleBetweenPoints(p1, p2);
+  }
+
+  bool LineSegment::isPointBelowLine(Point tp)
+  {
+	  return ((p2.x - p1.x)*(tp.y - p1.y) - (p2.y - p1.y)*(tp.x - p1.x)) > 0;
+  }
+
+  float LineSegment::getPointAt(float x)
+  {
+	  return slope * (x - p2.x) + p2.y;
+  }
+
+  float LineSegment::getXPointAt(float y)
+  {
+	  float y_intercept = getPointAt(0);
+	  return (y - y_intercept) / slope;
+  }
+
+  Point LineSegment::closestPointOnSegmentTo(Point p)
+  { // inner product (dot product)
+	  float top = (p.x - p1.x) * (p2.x - p1.x) + (p.y - p1.y)*(p2.y - p1.y);
+
+	  float bottom = distanceBetweenPoints(p2, p1);
+	  bottom = bottom * bottom;
+
+	  float u = top / bottom;
+
+	  float x = p1.x + u * (p2.x - p1.x);
+	  float y = p1.y + u * (p2.y - p1.y);
+
+	  return Point(x, y);
+  }
+
+  Point LineSegment::intersection(LineSegment line)
+  {
+	  float c1, c2;
+	  float intersection_X = -1, intersection_Y = -1;
+
+	  c1 = p1.y - slope * p1.x; // which is same as y2 - slope * x2
+
+	  c2 = line.p2.y - line.slope * line.p2.x; // which is same as y2 - slope * x2
+
+	  if ((slope - line.slope) == 0)
+	  {
+		  //std::cout << "No Intersection between the lines" << endl;
+	  }
+	  else if (p1.x == p2.x)
+	  {
+		  // Line1 is vertical
+		  return Point(p1.x, line.getPointAt(p1.x));
+	  }
+	  else if (line.p1.x == line.p2.x)
+	  {
+		  // Line2 is vertical
+		  return Point(line.p1.x, getPointAt(line.p1.x));
+	  }
+	  else
+	  {
+		  intersection_X = (c2 - c1) / (slope - line.slope);
+		  intersection_Y = slope * intersection_X + c1;
+	  }
+
+	  return Point(intersection_X, intersection_Y);
+  }
+
+  Point LineSegment::midpoint()
+  {
+	  // Handle the case where the line is vertical
+	  if (p1.x == p2.x)
+	  {
+		  float ydiff = p2.y - p1.y;
+		  float y = p1.y + (ydiff / 2);
+		  return Point(p1.x, y);
+	  }
+	  float diff = p2.x - p1.x;
+	  float midX = ((float)p1.x) + (diff / 2);
+	  int midY = getPointAt(midX);
+
+	  return Point(midX, midY);
+  }
+
+  LineSegment LineSegment::getParallelLine(float distance)
+  {
+	  float diff_x = p2.x - p1.x;
+	  float diff_y = p2.y - p1.y;
+	  float angle = atan2(diff_x, diff_y);
+	  float dist_x = distance * cos(angle);
+	  float dist_y = -distance * sin(angle);
+
+	  int offsetX = (int)round(dist_x);
+	  int offsetY = (int)round(dist_y);
+
+	  LineSegment result(p1.x + offsetX, p1.y + offsetY,
+		  p2.x + offsetX, p2.y + offsetY);
+
+	  return result;
+  }
+  
+  
   // car counting related function implementation
   ///
   /// \brief CarsCounting::CarsCounting
@@ -4474,6 +4650,6 @@ namespace itms {
 			  }
 		  }
 	  }
-  }
+  }  
 
 } // itms namespace
