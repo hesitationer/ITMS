@@ -7,7 +7,7 @@ using namespace std;
 
 
 int main() {
-	String filename = "RoadMapPoints.xml";
+	String filename = "RoadMapPoints_20190430.xml";
 	
 	{
 		FileStorage fs(filename, FileStorage::WRITE);
@@ -70,17 +70,17 @@ int main() {
 		}
 	}
 	{ // vehicle LUT generation for TOPES
-		std::string lutFile = "vehicleRatio.xml";
+		std::string lutFile = "vehicleRatio_20190430.xml";
 		FileStorage fw(lutFile, FileStorage::WRITE);
 		std::vector<Mat> vecMat;
-		std::vector<float> sedan_h = { -0.00004444328872f*2.0, 0.01751602326f*2.0, -2.293443176f*2.0, 112.527668f*2.0 }; // scale factor 0.5 need to go header
-		std::vector<float> sedan_w = { -0.00003734137716f*2.0, 0.01448943505f*2.0, -1.902199174f*2.0, 98.56691135f*2.0 };
-		std::vector<float> suv_h = { -0.00005815785621f*2.0, 0.02216859672f*2.0, -2.797603666f*2.0, 139.0638999f*2.0 };
-		std::vector<float> suv_w = { -0.00004854032314f*2.0, 0.01884736545f*2.0, -2.425686251f*2.0, 121.9226426f*2.0 };
-		std::vector<float> truck_h = { -0.00006123592908f*2.0, 0.02373661426f*2.0, -3.064585294f*2.0, 149.6535855f*2.0 };
+		std::vector<float> sedan_h = { -0.00004382882987f*2.0, 0.0173377779098603f*2.0, -2.28169958272933f*2.0, 112.308488612836f*2.0 }; // scale factor 0.5 need to go header
+		std::vector<float> sedan_w = { -0.00003795583601f*2.0, 0.0146676803999458f*2.0, -1.91394276754689f*2.0, 98.7860907208733f*2.0 };
+		std::vector<float> suv_h = { -0.0000573893011f*2.0, 0.02198602567f*2.0, -2.786735669f*2.0, 138.9535103f*2.0 };
+		std::vector<float> suv_w = { -0.00004930887826f*2.0, 0.0190299365f*2.0, -2.436554248f*2.0, 122.0330322f*2.0 };
+		std::vector<float> truck_h = { -0.00006180993767f*2.0, 0.02390822247f*2.0, -3.076351259f*2.0, 149.7855261f*2.0 };
 		std::vector<float> truck_w = { -0.00003778247771f*2.0, 0.015239317f*2.0, -2.091105041f*2.0, 110.7544702f*2.0 };
-		std::vector<float> human_h = { -0.000002473245036f*2.0, 0.001813179193f*2.0, -0.5058008988f*2.0, 49.27950311f*2.0 };
-		std::vector<float> human_w = { -0.000003459461125f*2.0, 0.001590306464f*2.0, -0.3208648543f*2.0, 28.23621306f*2.0 };
+		std::vector<float> human_h = { -0.000003756096433f*2.0, 0.002062517955f*2.0, -0.4861445445f*2.0, 48.88594015f*2.0 };
+		std::vector<float> human_w = { -0.000006119547882f*2.0, 0.002164848881f*2.0, -0.3171686628f*2.0, 27.98164879f*2.0 };
 
 		vecMat.push_back(cv::Mat(sedan_h));
 		vecMat.push_back(cv::Mat(sedan_w));

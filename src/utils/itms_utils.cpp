@@ -1184,8 +1184,11 @@ namespace itms {
 				  existingBlobs[intIndex].oc_prob = currentFrameBlob.oc_prob;
 			  }
 			  else { // they have different its own classes
+			  if(_conf.debugGeneralDetail){
 				  std::cout << " algorithm can not be here !!!\n";
+				  std::cout << " actually, it happens in the long distance !! \n";
 				  // they can not be here because this case should have been refined in the above step MatchCurrentBlobsToExistingBlbos
+				  }
 			  }
 		  }
 		  else { // they have the same class
