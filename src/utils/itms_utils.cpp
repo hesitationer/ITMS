@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	cv::waitKey(1);
+	//cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -893,7 +893,7 @@ namespace itms {
 			  if (_conf.debugGeneral && _conf.debugGeneralDetail) {				  
 				  itms::imshowBeforeAndAfter(srcImg(curBlob_rect), srcImg(exBlob_rect), "curBlob / existing Blob rect", 2);
 				  std::cout << " Area ratio : intRect/exBlob_rect area ratio --> " << (float)intRect.area() / exBlob_rect.area() << endl;
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 			  float allowedPct = 0.5;// _conf.useTrackerAllowedPercentage;
 			  float areaRatio;
@@ -1456,7 +1456,7 @@ namespace itms {
 	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
-	  cv::waitKey(1);
+	  //cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1490,7 +1490,7 @@ namespace itms {
 	  }
 
 	  cv::imshow(strImageName, image);
-	  cv::waitKey(1);
+	  //cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1800,7 +1800,7 @@ namespace itms {
 	  if (1&& _conf.debugShowImages && _conf.debugShowImagesDetail) {
 		  imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -1897,7 +1897,7 @@ namespace itms {
 				  else
 					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
 				  cv::imshow("Full Image Tracking Global location", tmp2);
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 
 		  }else{
@@ -1980,7 +1980,7 @@ namespace itms {
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
 					  cv::imshow("local track", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
@@ -1989,7 +1989,7 @@ namespace itms {
 					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 					  cv::imshow("Full Image Tracking location", tmp2);
-					  cv::waitKey(1);
+					 // cv::waitKey(1);
 				  }
 
 			  }
@@ -2059,7 +2059,7 @@ namespace itms {
 				  else
 					  cv::rectangle(tmp2, prect, SCALAR_RED, 2);
 				  cv::imshow("Full Image Tracking Global location", tmp2);
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 			  }
 
 		  }
@@ -2131,7 +2131,7 @@ namespace itms {
 							  cv::Point_<double>(br.x, tl.y), Scalar(0, 0, 255));
 					  }
 					  cv::imshow("local track", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
@@ -2140,7 +2140,7 @@ namespace itms {
 					  cv::rectangle(tmp2, expRect, SCALAR_CYAN, 1);
 					  cv::rectangle(tmp2, prect, SCALAR_MAGENTA, 2);
 					  cv::imshow("Full Image Tracking location", tmp2);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 
 			  }
@@ -2182,7 +2182,7 @@ namespace itms {
 		  imshowBeforeAndAfter(bgimg_gray, fgtempl_gray, "NCC cur/template img", 2);
 		  /*imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);*/
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -2635,10 +2635,10 @@ namespace itms {
 				  cv::Rect roi_rect= curBlob->currentBoundingRect;
 				  
 				  if (realDistance/100.f > 100.f) {
-					  roi_rect = expandRect(roi_rect, 18, 18, BGImage.cols, BGImage.rows);
+					  roi_rect = expandRect(roi_rect, 4, 4, BGImage.cols, BGImage.rows);
 				  }
 				  else {
-					  roi_rect = expandRect(roi_rect, 4, 4, BGImage.cols, BGImage.rows);
+					  roi_rect = expandRect(roi_rect, 8, 8, BGImage.cols, BGImage.rows);
 				  }
 				  cv::Rect roi_rect_Ex = expandRect(roi_rect, 2, 2, BGImage.cols, BGImage.rows);
 				  // blob correlation debug
@@ -2678,7 +2678,7 @@ namespace itms {
 						  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
 					  cv::rectangle(debugImg, roi_rect_Ex, Scalar(0, 0, 255), 3);
 					  cv::imshow("Stopped Object", debugImg);
-					  cv::waitKey(1);
+					  //cv::waitKey(1);
 				  }
 					  
 			  }
@@ -2757,7 +2757,7 @@ namespace itms {
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("cascade image", roiImg);
 		  imshow("hog", hogImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 
   }
@@ -2803,7 +2803,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("vehicle in detection", roiImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
   }
   // find people in the given ROI
@@ -2890,7 +2890,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("human in HOG SVM", hogImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
   }
 
@@ -2999,7 +2999,7 @@ namespace itms {
 		  for (int i = 0; i<points[1].size(); i++)
 			  circle(debugImg, points[1].at(i), 2, Scalar(0, 255, 0));
 		  imshow("calcOpticalFlowPyr", debugImg);
-		  waitKey(1);
+		  //waitKey(1);
 	  }
 	  size_t i = 0;
 	  for (auto track : tracks)
@@ -3078,7 +3078,7 @@ namespace itms {
 				  contours.push_back(contour);
 				  drawContours(debugImg, contours, -1, Scalar(0, 0, 255));
 				  imshow("contours_", debugImg);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 	  }
@@ -3268,7 +3268,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 	  }
@@ -3317,13 +3317,14 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  waitKey(1);
+			  //waitKey(1);
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
 	  cv::Mat imgDifference, imgDifferenceBg;
 	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
+		  //pBgSub->setVarThreshold(10);
 		  pBgSub->apply(curImg, imgDifferenceBg,1./(double)(_config->intNumBGRefresh));
 		  pBgSub->getBackgroundImage(BGImage);		// 이것을 하면 뒷부분의 addWeight 을 해제해야 함 (즉, 메모리 아낄 수 있음) // 2019. 04. 30.
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
@@ -3631,7 +3632,7 @@ namespace itms {
 		  }		  
 		  drawCarCountOnImage(mCarCount, debugImg);
 		  cv::imshow("current Image", debugImg);
-		  cv::waitKey(1);
+		  //cv::waitKey(1);
 	  }
 
 	  // now we prepare for the next iteration
@@ -4022,7 +4023,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 	  }
@@ -4128,7 +4129,7 @@ namespace itms {
 				  cvtColor(road_mask, road_mask, CV_BGR2GRAY);
 			  if (0) {
 				  imshow("road mask", road_mask);
-				  waitKey(1);
+				  //waitKey(1);
 			  }
 		  }
 		  if (!road_mask.empty()) // only one time setting
@@ -4250,7 +4251,7 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  waitKey(1);
+			  //waitKey(1);
 		  }
 	  }
 
@@ -4383,7 +4384,7 @@ namespace itms {
 		}
 		if (_config->debugShowImagesDetail) {
 			cv::imshow("Video", _colorFrame);
-			cv::waitKey(1);
+			//cv::waitKey(1);
 		}
 		
 		preImg = _colorFrame.clone();// resized current Image

@@ -729,7 +729,7 @@ namespace itms {
 	  ~itmsFunctions() {};
 	  
 	  Config* _config;
-	  Ptr<BackgroundSubtractor> pBgSub;
+	  Ptr<BackgroundSubtractorMOG2> pBgSub;
 	  // parameters
 	  bool isInitialized = false;
 	  bool isConfigFileLoaded = false;
