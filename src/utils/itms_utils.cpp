@@ -3280,6 +3280,19 @@ namespace itms {
 		  // alternative frame will be the previous frame at processing
 		  
 	  }
+	  if (_config->debugSaveFile) {
+		  std::string str(_config->VideoPath), from = ".avi", to = ".txt";
+		  size_t start_pos = 0; // 
+
+		  while ((start_pos = str.find(from, start_pos)) != std::string::npos)
+		  {
+			  str.replace(start_pos, from.length(), to);
+			  start_pos += to.length();
+		  } // retrun str;
+		  out_object_class = ofstream(str);		
+		  out_object_class << "class \t Width \t Height \t realDistance \t Probability\n";
+	  }
+
 	  return isInitialized = true;
   }
 
@@ -3513,11 +3526,16 @@ namespace itms {
 			  {// check the correlation with bgground, object detection/classification
 				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
 				  if (_config->debugGeneral && _config->debugGeneralDetail) {
-					  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+					  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";					  
 				  }
 				  ObjectClass objclass;
 				  float classProb = 0.f;
 				  classifyObjectWithDistanceRatio(*_config, possibleBlob, realDistance / 100, objclass, classProb);
+				  
+				  if (_config->debugSaveFile) {
+					  out_object_class << to_string(possibleBlob.oc) << "\t" << to_string(possibleBlob.currentBoundingRect.width) << "\t" << to_string(possibleBlob.currentBoundingRect.height) << "\t" << to_string(realDistance / 100.) << "\t" << to_string(possibleBlob.oc_prob) << endl;
+				  }
+
 				  // update the blob info and add to the existing blobs according to the classifyObjectWithDistanceRatio function output
 				  // verify the object with cascade object detection
 				  if (classProb > 0.79 /* 1.0 */) {					  

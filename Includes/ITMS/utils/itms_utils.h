@@ -101,6 +101,7 @@ namespace itms {
 		bool debugTime = false;
 
 		bool debugSpecial = false;
+		bool debugSaveFile = false;
 		// 
 
 		// main processing parameters
@@ -248,6 +249,7 @@ namespace itms {
 			_conf.debugTrace = cvReadIntByName(fs, 0, "debugTrace", 0);
 			_conf.debugTime = cvReadIntByName(fs, 0, "debugTime", 1);
 			_conf.debugSpecial = cvReadIntByName(fs, 0, "debugSpecial", 0);
+			_conf.debugSaveFile = cvReadIntByName(fs, 0, "debugSaveFile", 0);
 
 			_conf.scaleFactor = (float)cvReadRealByName(fs, 0, "scaleFactor", 0.5); // sangkny 2019. 02. 12 
 			_conf.zoomBG = (bool)cvReadIntByName(fs, 0, "zoomBG", 1);				// sangkny 2019. 04. 30
@@ -409,7 +411,7 @@ namespace itms {
 		}
 
 		// generate the boundary ROI points from Road_ROI_Pts.
-		int interval = 6; // 10 pixel
+		int interval = 1; // 10 pixel
 		_conf.Boundary_ROI_Pts.clear();
 		_conf.Boundary_ROI_Pts.push_back(cv::Point(_conf.Road_ROI_Pts.at(0).at(0).x + interval, _conf.Road_ROI_Pts.at(0).at(0).y + interval));
 		_conf.Boundary_ROI_Pts.push_back(cv::Point(_conf.Road_ROI_Pts.at(2).at(1).x - interval, _conf.Road_ROI_Pts.at(2).at(1).y + interval));
@@ -739,6 +741,9 @@ namespace itms {
 	  cv::Mat preImg;
 	  int mCarCount = 0;
 	  int maxCarCount = 1024;
+	  // file write
+	  ofstream out_object_class;
+
   protected:
 	  cv::Point2f zPmin, zPmax; // zoomBG region
   private:
