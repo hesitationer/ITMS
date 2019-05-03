@@ -3290,6 +3290,7 @@ namespace itms {
 			  start_pos += to.length();
 		  } // retrun str;
 		  out_object_class = ofstream(str);		
+		  out_object_class << "scale factor \t"<< to_string(_config->scaleFactor)<< endl;
 		  out_object_class << "class \t Width \t Height \t realDistance \t Probability\n";
 	  }
 
