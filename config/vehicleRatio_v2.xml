@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<Vehicle0 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -7.99759582e-05 3.22557390e-02 -4.30225039e+00 2.18488983e+02</data></Vehicle0>
+<Vehicle1 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -7.66898593e-05 2.97174100e-02 -3.83479023e+00 1.98294556e+02</data></Vehicle1>
+<Vehicle2 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -1.14778602e-04 4.39720526e-02 -5.57347155e+00 2.77907013e+02</data></Vehicle2>
+<Vehicle3 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -9.86177547e-05 3.80598716e-02 -4.87310839e+00 2.44066071e+02</data></Vehicle3>
+<Vehicle4 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -1.23619873e-04 4.78164442e-02 -6.15270233e+00 2.99571045e+02</data></Vehicle4>
+<Vehicle5 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -7.55649526e-05 3.04786339e-02 -4.18220997e+00 2.21508942e+02</data></Vehicle5>
+<Vehicle6 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -7.51219295e-06 4.12503583e-03 -9.72289085e-01 9.77718811e+01</data></Vehicle6>
+<Vehicle7 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    -1.22390957e-05 4.32969769e-03 -6.34337306e-01 5.59632988e+01</data></Vehicle7>
+</opencv_storage>

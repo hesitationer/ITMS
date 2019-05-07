@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	//cv::waitKey(1);
+	cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -3401,20 +3401,37 @@ namespace itms {
 		  cv::threshold(imgDifferenceBg, imgThreshBg, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
 		 //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
 		  if (_config->zoomBG) { // sangkny 2019. 04. 30
-			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image
+			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image			  
 			  cv::Rect zROI(zPmin, zPmax);
-			  cv::Mat tmp = imgDifferenceBg(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  cv::Rect ozRoi(zPmin*(1./_config->scaleFactor), zPmax*(1./_config->scaleFactor)); // original roi			  
+			  //cv::Mat tmp = imgDifferenceBg(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  cv::Mat tmp = BGImage(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  cv::Mat orgPart = orgImage(ozRoi);
 			  cv::Mat tmpZoom;
-			  cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor,CV_INTER_NN);			  
-			  cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr / 2., 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
+			  //cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor,CV_INTER_NN);			  
+			  cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor, CV_INTER_NN);
+			  if(orgPart.channels()>1)
+				  cv::cvtColor(orgPart, orgPart, CV_RGB2GRAY);
+			  absdiff(orgPart, tmpZoom, tmpZoom);
+
+			  imshowBeforeAndAfter(orgPart, tmpZoom, "orgPart/tmpZoom", 2);
+
+			  //cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr / 2., 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
+			  cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
+			  cv::imshow("tmpZoom before dilation", tmpZoom);
 			  cv::dilate(tmpZoom, tmpZoom, structuringElement15x15);
-			  
+			  cv::imshow("tmpZoom after dilation", tmpZoom);
+			  cv::waitKey(1);
+
 			  cv::resize(tmpZoom, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
 			  // mix with imgThresBg			  
 			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));
 			  mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp;
 			  bitwise_or(imgThreshBg, mask, imgThreshBg);
+			  cv::imshow("bitwise_or mask", mask);
+			  cv::waitKey(1);
 			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  imshowBeforeAndAfter(mask, tmp,"mask tmp",2);
 				  imshowBeforeAndAfter(tmp2, imgThreshBg, "Zoom before/after", 2);
 			  }
 		  }

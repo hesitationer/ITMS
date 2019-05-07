@@ -70,11 +70,13 @@ int main() {
 		}
 	}
 	{ // vehicle LUT generation for TOPES
-		std::string lutFile = "vehicleRatio_20190430.xml";
+		std::string lutFile = "vehicleRatio_20190506.xml";
 		FileStorage fw(lutFile, FileStorage::WRITE);
 		std::vector<Mat> vecMat;
-		std::vector<float> sedan_h = { -0.00004382882987f*2.0, 0.0173377779098603f*2.0, -2.28169958272933f*2.0, 112.308488612836f*2.0 }; // scale factor 0.5 need to go header
-		std::vector<float> sedan_w = { -0.00003795583601f*2.0, 0.0146676803999458f*2.0, -1.91394276754689f*2.0, 98.7860907208733f*2.0 };
+		//std::vector<float> sedan_h = { -0.00004382882987f*2.0, 0.0173377779098603f*2.0, -2.28169958272933f*2.0, 112.308488612836f*2.0 }; // scale factor 0.5 need to go header
+		//std::vector<float> sedan_w = { -0.00003795583601f*2.0, 0.0146676803999458f*2.0, -1.91394276754689f*2.0, 98.7860907208733f*2.0 };  // 20190430
+		std::vector<float> sedan_h = { -0.000039987980491413f*2.0, 0.0161278690798142f*2.0, -2.15112517789863f*2.0, 109.244494635799f*2.0}; // scale factor 0.5 need to go header
+		std::vector<float> sedan_w = { -0.0000383449290771945f*2.0, 0.0148587047328466f*2.0, -1.91739512923723f*2.0, 99.1472802559759f*2.0}; // 20190506
 		std::vector<float> suv_h = { -0.0000573893011f*2.0, 0.02198602567f*2.0, -2.786735669f*2.0, 138.9535103f*2.0 };
 		std::vector<float> suv_w = { -0.00004930887826f*2.0, 0.0190299365f*2.0, -2.436554248f*2.0, 122.0330322f*2.0 };
 		std::vector<float> truck_h = { -0.00006180993767f*2.0, 0.02390822247f*2.0, -3.076351259f*2.0, 149.7855261f*2.0 };

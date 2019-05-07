@@ -11,7 +11,7 @@
 <debugSpecial>1</debugSpecial>                      <!-- debug flag for improving purpose only -->
 <debugSaveFile>0</debugSaveFile>                   <!-- for training object classifier with Ratio H/W -->
 
-<scaleFactor>0.75</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
+<scaleFactor>0.5</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
 <zoomBG> 1 </zoomBG>                                <!-- long distance background zoom and background substraction ---->
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
 <img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
@@ -97,7 +97,7 @@
 
 <!-- Object Tracking ---------------------------- -->
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
-<m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
+<m_externalTrackerForLost> 0 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
 <isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
 <sTrackingDist> 500</sTrackingDist>                           <!-- tracking start distance from zero point default: 5 meters -->
 <isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
