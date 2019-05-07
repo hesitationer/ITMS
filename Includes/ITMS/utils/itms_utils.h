@@ -734,6 +734,7 @@ namespace itms {
 	  
 	  Config* _config;
 	  Ptr<BackgroundSubtractorMOG2> pBgSub;
+	  Ptr<BackgroundSubtractorMOG2> pBgOrgSub; // original size image
 	  // parameters
 	  bool isInitialized = false;
 	  bool isConfigFileLoaded = false;
@@ -756,6 +757,7 @@ namespace itms {
 	  cv::Mat accmImage; // accumulated Image for background model
 	  cv::Mat road_mask;
 	  cv::Mat orgImage; // original image of current image
+	  cv::Mat orgPreImage;
 
 	  // 
 	  cv::Mat structuringElement3x3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));

@@ -3226,6 +3226,7 @@ namespace itms {
   bool itmsFunctions::Init() {
 	  //pBgSub = cv::bgsubcnt::createBackgroundSubtractorCNT(fps, true, fps * 60);
 	  pBgSub = createBackgroundSubtractorMOG2(_config->intNumBGRefresh, _config->dblMOGVariance, true);
+	  pBgOrgSub = createBackgroundSubtractorMOG2(_config->intNumBGRefresh, _config->dblMOGVariance*3./4., true);
 	  blobs.clear();
 	  pastBrightnessLevels.clear();
 
@@ -3337,7 +3338,7 @@ namespace itms {
 	  // we have two blurred images, now process the two image 
 	  cv::Mat imgDifference, imgDifferenceBg;
 	  cv::Mat imgThresh, imgThreshBg;
-	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
+	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT){
 		  //pBgSub->setVarThreshold(10);
 		  pBgSub->apply(curImg, imgDifferenceBg,1./(double)(_config->intNumBGRefresh));
 		  pBgSub->getBackgroundImage(BGImage);		// 이것을 하면 뒷부분의 addWeight 을 해제해야 함 (즉, 메모리 아낄 수 있음) // 2019. 04. 30.
@@ -3404,35 +3405,51 @@ namespace itms {
 			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image			  
 			  cv::Rect zROI(zPmin, zPmax);
 			  cv::Rect ozRoi(zPmin*(1./_config->scaleFactor), zPmax*(1./_config->scaleFactor)); // original roi			  
-			  //cv::Mat tmp = imgDifferenceBg(zROI).clone(), tmp2 = imgDifferenceBg.clone();
-			  cv::Mat tmp = BGImage(zROI).clone(), tmp2 = imgDifferenceBg.clone();
-			  cv::Mat orgPart = orgImage(ozRoi);
+			  cv::Mat tmp = imgDifferenceBg(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  //cv::Mat tmp = BGImage(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  if (orgPreImage.empty())
+				  orgPreImage = orgImage.clone();
+
+			  cv::Mat orgPart = orgImage(ozRoi), orgPrePart = orgPreImage(ozRoi);
 			  cv::Mat tmpZoom;
 			  //cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor,CV_INTER_NN);			  
-			  cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor, CV_INTER_NN);
-			  if(orgPart.channels()>1)
+			  //cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor, CV_INTER_NN);
+			  if (orgPart.channels() > 1) {
 				  cv::cvtColor(orgPart, orgPart, CV_RGB2GRAY);
-			  absdiff(orgPart, tmpZoom, tmpZoom);
-
-			  imshowBeforeAndAfter(orgPart, tmpZoom, "orgPart/tmpZoom", 2);
+				  cv::cvtColor(orgPrePart, orgPrePart, CV_RGB2GRAY);
+			  }
+			  //absdiff(orgPart, tmpZoom, tmpZoom);
+			  absdiff(orgPart, orgPrePart, tmpZoom);
+			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  imshowBeforeAndAfter(orgPart, tmpZoom, "orgPart/tmpZoom", 2);
+			  }
 
 			  //cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr / 2., 255.0, CV_THRESH_BINARY); // 90 부터 낮게
-			  cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
-			  cv::imshow("tmpZoom before dilation", tmpZoom);
-			  cv::dilate(tmpZoom, tmpZoom, structuringElement15x15);
-			  cv::imshow("tmpZoom after dilation", tmpZoom);
-			  cv::waitKey(1);
+			  cv::threshold(tmpZoom, tmpZoom, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
+			  medianBlur(tmpZoom, tmpZoom, 3);
+			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  cv::imshow("tmpZoom before dilation", tmpZoom);
+			  }
+			  cv::dilate(tmpZoom, tmpZoom, structuringElement3x3);
+			  cv::erode(tmpZoom, tmpZoom, structuringElement3x3);
+			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  cv::imshow("tmpZoom after dilation", tmpZoom);
+				  cv::waitKey(1);
+			  }
 
-			  cv::resize(tmpZoom, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
+			  cv::resize(tmpZoom, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);			  
 			  // mix with imgThresBg			  
 			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));
-			  mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp;
-			  bitwise_or(imgThreshBg, mask, imgThreshBg);
-			  cv::imshow("bitwise_or mask", mask);
-			  cv::waitKey(1);
+			  //mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp;
+			  cv::Rect copyRoi = cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows));
+			  tmp.copyTo(mask(copyRoi));
+			  cv::bitwise_and(mask, road_mask, mask);
+			  bitwise_or(imgThreshBg, mask, imgThreshBg);			  
 			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  cv::imshow("bitwise_or mask", mask);
+				  cv::waitKey(1);
 				  imshowBeforeAndAfter(mask, tmp,"mask tmp",2);
-				  imshowBeforeAndAfter(tmp2, imgThreshBg, "Zoom before/after", 2);
+				  imshowBeforeAndAfter(tmp2, imgThreshBg, "diffBG only(Zoom before)/after", 2);
 			  }
 		  }
 		  
@@ -3675,6 +3692,7 @@ namespace itms {
 	  currentFrameBlobs.clear();
 
 	  preImg = curImg.clone();           // move frame 1 up to where frame 2 is	  
+	  orgPreImage = curImg1.clone();	 // sangkny 2019/05/07
 	  // generate background image
 	  if(_config->bGenerateBG && _config->intNumBGRefresh > 0 && (_config->bgsubtype == BgSubType::BGS_DIF)){
 		  
