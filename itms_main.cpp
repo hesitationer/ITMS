@@ -173,6 +173,8 @@ int main(void) {
 				capVideo.read(imgFrame2);
 			frameCount = frameCount + (PlayInterval-1);
 			
+			if (frameCount == 1196)
+				int kkk = 0;
             ////resize(imgFrame2, imgFrame2, Size(), conf.scaleFactor, conf.scaleFactor);
             if (imgFrame2.empty()) {
               std::cout << "The input image is empty!! Please check the video file!!" << std::endl;

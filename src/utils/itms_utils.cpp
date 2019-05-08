@@ -3336,7 +3336,7 @@ namespace itms {
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
-	  cv::Mat imgDifference, imgDifferenceBg;
+	  cv::Mat imgDifference, imgDifferenceBg; // difference images from  a previous and background images
 	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT){
 		  //pBgSub->setVarThreshold(10);
@@ -3344,8 +3344,7 @@ namespace itms {
 		  pBgSub->getBackgroundImage(BGImage);		// 이것을 하면 뒷부분의 addWeight 을 해제해야 함 (즉, 메모리 아낄 수 있음) // 2019. 04. 30.
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  Mat bgImage = Mat::zeros(curImg.size(), curImg.type());
-			  bgImage = getBGImage();			  // it shoud be same as pBgSub->getBackgroundImage(bgImage);
-			  cv::imshow("background Image MOG2", bgImage);
+			  bgImage = getBGImage();			  // it shoud be same as pBgSub->getBackgroundImage(bgImage);			  
 			  itms::imshowBeforeAndAfter(bgImage, imgDifferenceBg, "bg image and imgdiffBg", 2);
 			  
 			  /*if (isWriteToFile && frameCount == 200) {
@@ -3354,8 +3353,7 @@ namespace itms {
 				  cv::imwrite(filename, bgImage);
 				  std::cout << " background image has been generated (!!)\n";
 			  }*/
-		  }
-		  //cv::absdiff(BGImage, curImg, imgDifferenceBg);
+		  }		  
 		  cv::absdiff(preImg, curImg, imgDifference);
 	  }
 	  else {
@@ -3387,7 +3385,7 @@ namespace itms {
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
-		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404
+		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404 -> 
 		  //cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
 		  
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
@@ -3413,38 +3411,35 @@ namespace itms {
 
 			  cv::Mat orgPart = orgImage(ozRoi), orgPrePart = orgPreImage(ozRoi);
 			  cv::Mat tmpZoom;
-			  //cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor,CV_INTER_NN);			  
-			  //cv::resize(tmp, tmpZoom, cv::Size(), 1. / _config->scaleFactor, 1. / _config->scaleFactor, CV_INTER_NN);
+			  
 			  if (orgPart.channels() > 1) {
 				  cv::cvtColor(orgPart, orgPart, CV_RGB2GRAY);
 				  cv::cvtColor(orgPrePart, orgPrePart, CV_RGB2GRAY);
 			  }
 			  // background generation with original part image
 			  cv::Mat imgOrgDifferenceBg, imgOrgBifThres;
-			  pBgOrgSub->apply(orgPart, imgOrgDifferenceBg, 1. / (double)(_config->intNumBGRefresh));
-			  //pBgOrgSub->getBackgroundImage(BGImage);		// 이것을 하면 뒷부분의 addWeight 을
+			  pBgOrgSub->apply(orgPart, imgOrgDifferenceBg, 1. / (double)(_config->intNumBGRefresh));			  
 			  			  
 			  absdiff(orgPart, orgPrePart, tmpZoom);
-			  if (0&& _config->debugShowImagesDetail && _config->debugSpecial) {
-				  imshowBeforeAndAfter(orgPart, tmpZoom, "orgPart/tmpZoom", 2);
-				  imshowBeforeAndAfter(tmpZoom, imgOrgDifferenceBg, " tmpZoom/ imgOrgDifBg", 2);
+			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+				  imshowBeforeAndAfter(orgPart, tmpZoom, "orgPart/ Difference image", 2);
+				  imshowBeforeAndAfter(tmpZoom, imgOrgDifferenceBg, " Org Dif / imgOrgDifBg", 2);
 			  }
 
 			  //cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr / 2., 255.0, CV_THRESH_BINARY); // 90 부터 낮게
-			  cv::threshold(tmpZoom, tmpZoom, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
+			  cv::threshold(tmpZoom, tmpZoom, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
 			  //cv::bitwise_and(road_mask, imgOrgDifferenceBg, imgOrgDifferenceBg); // resized and original size
 			  cv::threshold(imgOrgDifferenceBg, imgOrgBifThres, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
+
 			  medianBlur(tmpZoom, tmpZoom, 3);
 			  medianBlur(imgOrgBifThres,imgOrgBifThres,3);
 
 			  if (0 && _config->debugShowImagesDetail && _config->debugSpecial) {
 				  cv::imshow("tmpZoom before dilation", tmpZoom);				  
 			  }
-			  cv::dilate(tmpZoom, tmpZoom, structuringElement3x3);
-			  cv::erode(tmpZoom, tmpZoom, structuringElement3x3);
-			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
-				  /*cv::imshow("tmpZoom after dilation", tmpZoom);
-				  cv::waitKey(1);*/
+			  cv::dilate(tmpZoom, tmpZoom, structuringElement3x3); // MORP_CLOSE
+			  cv::erode(tmpZoom, tmpZoom, structuringElement3x3);  // MORP_CLOSE
+			  if (_config->debugShowImagesDetail && _config->debugSpecial) {				  
 				  imshowBeforeAndAfter(imgOrgBifThres, tmpZoom, "imgOrg Bg/Dif Thres",2);
 			  }
 
@@ -3460,8 +3455,7 @@ namespace itms {
 			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
 				  cv::imshow("bitwise_or mask", mask);
 				  cv::waitKey(1);
-				  imshowBeforeAndAfter(mask, tmp,"mask tmp",2);
-				  imshowBeforeAndAfter(tmp2, imgThreshBg, "diffBG only(Zoom before)/after", 2);
+				  imshowBeforeAndAfter(mask, tmp,"mask tmp",2);				  
 			  }
 		  }
 		  
@@ -3489,10 +3483,11 @@ namespace itms {
 	  }else{ // under dark condition, only difference between pre and cur is used
 		  ; // doing for night condition
 	  }
-	  
+	  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG -- >> imgThresh", 2);
+	  imshow("before erode dilation", imgThresh);
 
 	  for (unsigned int i = 0; i < 1; i++) {
-		  if (_config->bgsubtype == BgSubType::BGS_CNT)
+		  /*if (_config->bgsubtype == BgSubType::BGS_CNT)
 			  cv::erode(imgThresh, imgThresh, structuringElement3x3);
 		  if (_config->scaleFactor > 0.75) {
 			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
@@ -3506,6 +3501,7 @@ namespace itms {
 			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 		  }
+		  */
 		  if (_config->bgsubtype == BgSubType::BGS_DIF) {
 			  if (_config->scaleFactor > 0.75) {
 				  cv::erode(imgThresh, imgThresh, structuringElement3x3);
@@ -3518,6 +3514,8 @@ namespace itms {
 			  }
 		  }
 	  }	 
+	  imshow("after erode dilation", imgThresh);
+	  waitKey(1);
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);
 		  itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
