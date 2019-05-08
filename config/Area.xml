@@ -3,7 +3,7 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
-<debugShowImagesDetail>1</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
 <debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
 <debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
@@ -25,7 +25,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_115611_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_114911_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -53,7 +53,7 @@
 <!-- -- Detection - related : BackGround Lane Direction and etc -- -->
 <BGImagePath>"config\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
 <bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
-<intNumBGRefresh> 300 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
+<intNumBGRefresh> 600 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
 <dblMOGVariance>32</dblMOGVariance>                             <!-- MOG2 variance : how much different between pixel's value and a BG model : high no sensitive 32 -->
 <dblMOGShadowThr> 50 </dblMOGShadowThr>                         <!-- MOG2 Shadow detection and Filtering Threshold 50 -->
 
