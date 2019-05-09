@@ -3259,7 +3259,9 @@ namespace itms {
 				  rh = l2.midpoint();
 
 				  this->zPmin = cv::Point2f(min(ptl.x, lh.x), min(ptl.y, lh.y));
-				  this->zPmax = cv::Point2f(max(ptr.x, rh.x), max(ptr.y, rh.y));
+				  this->zPmax = cv::Point2f(max(ptr.x, rh.x), max(ptr.y, rh.y)/2);
+				  this->ozPmin = zPmin*(1./_config->scaleFactor);
+				  this->ozPmax = zPmax*(1./_config->scaleFactor);
 			  }			  
 
 			  if (_config->debugShowImages && _config->debugShowImagesDetail) {
@@ -3366,7 +3368,7 @@ namespace itms {
 	  if (_config->isAutoBrightness) {
 		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
 		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
-		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness) // the size of vector is max_past_frames
+		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness)									// the size of vector is max_past_frames
 			  pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
 			//pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
 		  pastBrightnessLevels.push_back(cvRound(roiMean));
@@ -3385,8 +3387,7 @@ namespace itms {
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
-		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404 -> 
-		  //cv::GaussianBlur(imgDifferenceBg, imgDifferenceBg, cv::Size(5, 5), 0);
+		  cv::medianBlur(imgDifferenceBg, imgDifferenceBg, 3); // 20190404 -> median blur is requred for BackGroundSubstract		  
 		  
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  itms::imshowBeforeAndAfter(imgDifference, imgDifferenceBg, " rmask& imgdiff / Bg before thresholding",2);			  
@@ -3398,56 +3399,55 @@ namespace itms {
 		  if (_config->debugGeneralDetail) {
 			  cout << "BG-Cur Brightness ---->: " << to_string(roi_brightness_difference) << " <<----------------->> \n\n\n";
 		  }
-		  cv::threshold(imgDifferenceBg, imgThreshBg, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
-		 //cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5./4. + 15/*50*/ +_config->img_dif_th)), 255.0, CV_THRESH_BINARY);		  
-		  if (_config->zoomBG) { // sangkny 2019. 04. 30
+		  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
+			  cv::threshold(imgDifferenceBg, imgThreshBg, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
+		  }
+		  else { // BGS_DIF
+			  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5. / 4. + 15/*50*/ + _config->img_dif_th)), 255.0, CV_THRESH_BINARY);
+		  }
+		  if (_config->zoomBG) { // sangkny 2019. 04. 30 -> 05. 09 =>
 			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image			  
 			  cv::Rect zROI(zPmin, zPmax);
-			  cv::Rect ozRoi(zPmin*(1./_config->scaleFactor), zPmax*(1./_config->scaleFactor)); // original roi			  
-			  cv::Mat tmp = imgDifferenceBg(zROI).clone(), tmp2 = imgDifferenceBg.clone();
-			  //cv::Mat tmp = BGImage(zROI).clone(), tmp2 = imgDifferenceBg.clone();
+			  cv::Rect ozRoi(ozPmin, ozPmax);// (zPmin*(1. / _config->scaleFactor), zPmax*(1. / _config->scaleFactor)); // original roi	=> init·Î		  
+			  cv::Mat tmp = imgDifferenceBg(zROI).clone();			  
 			  if (orgPreImage.empty())
 				  orgPreImage = orgImage.clone();
 
 			  cv::Mat orgPart = orgImage(ozRoi), orgPrePart = orgPreImage(ozRoi);
-			  cv::Mat tmpZoom;
+			  //cv::Mat tmpZoom;
 			  
 			  if (orgPart.channels() > 1) {
 				  cv::cvtColor(orgPart, orgPart, CV_RGB2GRAY);
 				  cv::cvtColor(orgPrePart, orgPrePart, CV_RGB2GRAY);
 			  }
 			  // background generation with original part image
-			  cv::Mat imgOrgDifferenceBg, imgOrgBifThres;
-			  pBgOrgSub->apply(orgPart, imgOrgDifferenceBg, 1. / (double)(_config->intNumBGRefresh));			  
-			  			  
-			  absdiff(orgPart, orgPrePart, tmpZoom);
-			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
-				  imshowBeforeAndAfter(orgPart, tmpZoom, "orgPart/ Difference image", 2);
-				  imshowBeforeAndAfter(tmpZoom, imgOrgDifferenceBg, " Org Dif / imgOrgDifBg", 2);
+			  cv::Mat imgOrgDifferenceBg, imgOrgDifThres;
+
+			  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
+				  pBgOrgSub->apply(orgPart, imgOrgDifferenceBg, 1. / (double)(_config->intNumBGRefresh));
+				  cv::threshold(imgOrgDifferenceBg, imgOrgDifThres, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
+				  medianBlur(imgOrgDifThres, imgOrgDifThres, 3);
+				  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+					  imshowBeforeAndAfter(orgPart, imgOrgDifferenceBg, "orgPart/ imgOrgDifBg", 2);					  
+				  }
 			  }
-
-			  //cv::threshold(tmpZoom, tmpZoom, _config->dblMOGShadowThr / 2., 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
-			  cv::threshold(tmpZoom, tmpZoom, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
-			  //cv::bitwise_and(road_mask, imgOrgDifferenceBg, imgOrgDifferenceBg); // resized and original size
-			  cv::threshold(imgOrgDifferenceBg, imgOrgBifThres, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 ºÎÅÍ ³·°Ô
-
-			  medianBlur(tmpZoom, tmpZoom, 3);
-			  medianBlur(imgOrgBifThres,imgOrgBifThres,3);
-
-			  if (0 && _config->debugShowImagesDetail && _config->debugSpecial) {
-				  cv::imshow("tmpZoom before dilation", tmpZoom);				  
+			  else { // BGS_DIF
+				  absdiff(orgPart, orgPrePart, imgOrgDifferenceBg);
+				  cv::threshold(imgOrgDifferenceBg, imgOrgDifThres, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
+				  medianBlur(imgOrgDifThres, imgOrgDifThres, 3); // consider more if neccessary 
+				  if (0 && _config->debugShowImagesDetail && _config->debugSpecial) {
+					  cv::imshow("tmpZoom before dilation", imgOrgDifThres);
+				  }
+				  //cv::dilate(tmpZoom, tmpZoom, structuringElement3x3); // MORP_CLOSE
+				  //cv::erode(tmpZoom, tmpZoom, structuringElement3x3);  // MORP_CLOSE
+				  if (_config->debugShowImagesDetail && _config->debugSpecial) {
+					  imshowBeforeAndAfter(imgOrgDifferenceBg, imgOrgDifThres, "imgOrg Bg/Dif Thres", 2);
+				  }
 			  }
-			  cv::dilate(tmpZoom, tmpZoom, structuringElement3x3); // MORP_CLOSE
-			  cv::erode(tmpZoom, tmpZoom, structuringElement3x3);  // MORP_CLOSE
-			  if (_config->debugShowImagesDetail && _config->debugSpecial) {				  
-				  imshowBeforeAndAfter(imgOrgBifThres, tmpZoom, "imgOrg Bg/Dif Thres",2);
-			  }
-
-			  //cv::resize(tmpZoom, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);			// original diff  
-			  cv::resize(imgOrgBifThres, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
+			  cv::resize(imgOrgDifThres, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
 			  // mix with imgThresBg			  
 			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));
-			  //mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp;
+			  //mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp; // it is not working
 			  cv::Rect copyRoi = cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows));
 			  tmp.copyTo(mask(copyRoi));
 			  cv::bitwise_and(mask, road_mask, mask);
@@ -3465,48 +3465,46 @@ namespace itms {
 	  	  
 	  cv::Mat imgXor;
 	  
-	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor);
-	  if(_config->img_dif_th <= 15 ){ // under day condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
-		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
-	  }else{ // under dark condition, only difference between pre and cur is used
-		  ; // doing for night condition
-	  }
-	  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG -- >> imgThresh", 2);
-	  imshow("before erode dilation", imgThresh);
+	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor); // need to do somthing for noise environments 
 
-	  for (unsigned int i = 0; i < 1; i++) {
-		  //if (_config->bgsubtype == BgSubType::BGS_CNT)
-		//	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
-		  if (_config->scaleFactor > 0.75) {
-			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
-			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
-		  }
-		  else if (_config->scaleFactor > 0.5) {
-			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
-			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-		  }
-		  else {
-			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
-		  }
-		  
+	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
+		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG -- >> imgThresh", 2);
+		  imshow("before erode dilation on imgThresh when DIF", imgThresh);
+	  }
+	  for (unsigned int i = 0; i < 1; i++) { // we need to this for the near distance regions, so before bit_wise_or with long distance regions
+											 //if (_config->bgsubtype == BgSubType::BGS_CNT)
+											 //	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
 		  if (_config->bgsubtype == BgSubType::BGS_DIF) {
 			  if (_config->scaleFactor > 0.75) {
+				  //cv::dilate(imgThresh, imgThresh, structuringElement3x3);
+				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 				  cv::erode(imgThresh, imgThresh, structuringElement3x3);
 			  }
 			  else if (_config->scaleFactor > 0.5) {
+				  //cv::dilate(imgThresh, imgThresh, structuringElement3x3);
+				  cv::dilate(imgThresh, imgThresh, structuringElement7x7);
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 			  else {
+				  //cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 		  }
-	  }	 
-	  imshow("after erode dilation", imgThresh);
-	  waitKey(1);
+	  }
+
+	  // then combine only at daytime
+	  if(_config->img_dif_th <= 15 ){ // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
+		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  }else{ // under dark condition, only difference between pre and cur is used
+		  ; // doing for night condition
+	  }  
+	  	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (dilate_AND/ imgThresh (bit_OR)", 2);
-		  itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
+		  imshow("after erode dilation and combine", imgThresh);
+		  waitKey(1);
+		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (after morphology on imgThresh (bit_OR)", 2);
+		  //itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
 	  }
 
 	  cv::Mat imgThreshCopy = imgThresh.clone();
@@ -3530,17 +3528,21 @@ namespace itms {
 	  }
 
 	  std::vector<Blob> currentFrameBlobs;
-
+	  float f_scale_factor = _config->scaleFactor;
+	  float fmin_area = 10 * f_scale_factor, 
+		  fmin_obj_width = 5* f_scale_factor, 
+		  fmin_obj_height = 5*f_scale_factor, 
+		  fmin_obj_diagSize = 8*f_scale_factor;
 	  for (auto &convexHull : convexHulls) {
 		  Blob possibleBlob(convexHull);
 
-		  if (possibleBlob.currentBoundingRect.area() > 10 &&
+		  if (possibleBlob.currentBoundingRect.area() > (int)fmin_area &&
 			  possibleBlob.dblCurrentAspectRatio > 0.2 &&
 			  possibleBlob.dblCurrentAspectRatio < 6.0 &&
-			  possibleBlob.currentBoundingRect.width > 3 &&
-			  possibleBlob.currentBoundingRect.height > 3 &&
-			  possibleBlob.dblCurrentDiagonalSize > 3.0 &&
-			  (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.50) {
+			  possibleBlob.currentBoundingRect.width > (int)fmin_obj_width &&
+			  possibleBlob.currentBoundingRect.height > (int)fmin_obj_height &&
+			  possibleBlob.dblCurrentDiagonalSize > (double)fmin_obj_diagSize &&
+			  (cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()) > 0.30) {
 			  //  new approach according to 
 			  // 1. distance, 2. correlation within certain range
 			  std::vector<cv::Point2f> blob_ntPts;
@@ -3607,6 +3609,10 @@ namespace itms {
 
 			  }
 		  }
+		  //else {
+			 // // cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()
+			 // cout << "---------- > contourArea/rectArea:" << cv::contourArea(possibleBlob.currentContour) / (double)possibleBlob.currentBoundingRect.area()<<"<<---------------" << endl;
+		  //}
 	  }
 
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {

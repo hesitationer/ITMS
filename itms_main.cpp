@@ -173,7 +173,7 @@ int main(void) {
 				capVideo.read(imgFrame2);
 			frameCount = frameCount + (PlayInterval-1);
 			
-			if (frameCount == 1196)
+			if (frameCount == 1050)
 				int kkk = 0;
             ////resize(imgFrame2, imgFrame2, Size(), conf.scaleFactor, conf.scaleFactor);
             if (imgFrame2.empty()) {

@@ -749,6 +749,7 @@ namespace itms {
 
   protected:
 	  cv::Point2f zPmin, zPmax; // zoomBG region
+	  cv::Point2f ozPmin, ozPmax; // original coordinate for the above coords.
   private:
 	  std::vector<Blob> blobs;
 	  std::vector<int> pastBrightnessLevels; // past brightness checking and adjust the threshold
