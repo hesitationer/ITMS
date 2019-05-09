@@ -3462,19 +3462,7 @@ namespace itms {
 	  }
 
 	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY);	  	  
-	  
-	  // sangkny 2019/04/03 DIFF dilation and AND and OR operation
-	  // sangkny 2019/04/26 XOR etc
-	  /*cv::Mat imgThreshDil, imgThresh_2;*/
-	  //cv::threshold(imgDifference, imgThresh_2, (double)(_config->img_dif_th)/2.0, 255.0, CV_THRESH_BINARY);
-	  //cv::dilate(imgThresh, imgThreshDil, structuringElement5x5);
-	  //cv::bitwise_and(imgThreshDil, imgThreshBg, imgThreshDil);
-	  /*if (_config->debugShowImages && _config->debugShowImagesDetail) {		  
-		  itms::imshowBeforeAndAfter(imgThresh, imgThresh_2, " imgThresh/ imgThresh_2", 2);
-		  itms::imshowBeforeAndAfter(imgThresh, imgThreshBg, " imgThresh/ imgThreshBg", 2);		  		  
-
-	  }
-	  cv::bitwise_or(imgThresh, imgThreshDil, imgThresh);*/
+	  	  
 	  cv::Mat imgXor;
 	  
 	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor);
@@ -3487,8 +3475,8 @@ namespace itms {
 	  imshow("before erode dilation", imgThresh);
 
 	  for (unsigned int i = 0; i < 1; i++) {
-		  /*if (_config->bgsubtype == BgSubType::BGS_CNT)
-			  cv::erode(imgThresh, imgThresh, structuringElement3x3);
+		  //if (_config->bgsubtype == BgSubType::BGS_CNT)
+		//	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
 		  if (_config->scaleFactor > 0.75) {
 			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
 			  cv::dilate(imgThresh, imgThresh, structuringElement3x3);
@@ -3501,7 +3489,7 @@ namespace itms {
 			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 			  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 		  }
-		  */
+		  
 		  if (_config->bgsubtype == BgSubType::BGS_DIF) {
 			  if (_config->scaleFactor > 0.75) {
 				  cv::erode(imgThresh, imgThresh, structuringElement3x3);
