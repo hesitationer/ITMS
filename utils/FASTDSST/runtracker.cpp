@@ -226,7 +226,7 @@ int main(int argc, char* argv[]){
 			if (count == 1 || _bROI_Selected)
 			{
 				cv::Mat img;
-				cv::cvtColor(show_img, img, cv::COLOR_RGB2GRAY);
+				cv::cvtColor(show_img, img, cv::COLOR_BGR2GRAY);
 				m_tracker->init(initRect, img);
 				showRect = initRect;
 				_bROI_Selected = false;
@@ -238,7 +238,7 @@ int main(int argc, char* argv[]){
 				QueryPerformanceCounter(&t1);
 #endif
 				cv::Mat img;
-				cv::cvtColor(show_img, img, cv::COLOR_RGB2GRAY);
+				cv::cvtColor(show_img, img, cv::COLOR_BGR2GRAY);
 				double tt1 = (double)cv::getTickCount();
 				showRect = m_tracker->update(img);
 				double tt2 = (double)cv::getTickCount();

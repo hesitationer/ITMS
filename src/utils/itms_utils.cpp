@@ -2436,7 +2436,7 @@ namespace itms {
 	  float fWidthHeightWeightRatio_Width = 0.7; // width 0.7 height 0.3
 
 	  if (_conf.bgsubtype == BgSubType::BGS_CNT)
-		  perc_Thres = 1.0; // should be bigger
+		  perc_Thres = 0.8; // should be bigger
 
 	  int tgtWidth, tgtHeight, refWidth, refHeight; // target, reference infors
 	  float tgtWidthHeightRatio, tgtCredit = 1.1;   // credit 10 %
@@ -3417,8 +3417,8 @@ namespace itms {
 			  //cv::Mat tmpZoom;
 			  
 			  if (orgPart.channels() > 1) {
-				  cv::cvtColor(orgPart, orgPart, CV_RGB2GRAY);
-				  cv::cvtColor(orgPrePart, orgPrePart, CV_RGB2GRAY);
+				  cv::cvtColor(orgPart, orgPart, CV_BGR2GRAY);
+				  cv::cvtColor(orgPrePart, orgPrePart, CV_BGR2GRAY);
 			  }
 			  // background generation with original part image
 			  cv::Mat imgOrgDifferenceBg, imgOrgDifThres;
@@ -3494,7 +3494,7 @@ namespace itms {
 	  }
 
 	  // then combine only at daytime
-	  if(_config->img_dif_th <= 15 ){ // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
+	  if(_config->img_dif_th <= 25/* be configured */ ){ // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
 		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  }else{ // under dark condition, only difference between pre and cur is used
 		  ; // doing for night condition
