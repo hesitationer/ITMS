@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	cv::waitKey(1);
+	//cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -2621,7 +2621,7 @@ namespace itms {
 			  curBlob->oc_notified = curBlob->oc;
 			  curBlob->os_notified = curBlob->fos;
 		  }
-		  else {
+		  else { // vehicle class
 			  // WWD
 			  // STOP
 			  if (curBlob->oc!= ObjectClass::OC_OTHER &&
@@ -2653,17 +2653,29 @@ namespace itms {
 					  
 					  ++curBlob;
 					  continue;
-				  }
-				  //std::vector<cv::Rect> _cars; 
-			   //   cv::Rect _roi_rect = curBlob->currentBoundingRect;
-				  //
-				  //_roi_rect.x = (float)curBlob->currentBoundingRect.x / _config->scaleFactor;
-				  //_roi_rect.y = (float)curBlob->currentBoundingRect.y / _config->scaleFactor;
-				  //_roi_rect.width = (float)curBlob->currentBoundingRect.width / _config->scaleFactor;
-				  //_roi_rect.height = (float)curBlob->currentBoundingRect.height / _config->scaleFactor;
-				  //expandRect(_roi_rect, 8, 8, orgImage.cols, orgImage.rows);
+				  }else if ((abs(blobncc) > _config->BlobNCC_Th/5.)) { // 백그라운드와 유사시...stop 구분  (양쪽에 차량이 있으면 안됨)
+					  std::vector<cv::Rect> _cars;					  					  
+					  detectCascadeRoiVehicle(_conf, BGImage, roi_rect_Ex, _cars);
+					  if (_cars.size()!=0) { //  백그라운드에 오프젝트가 있으면 안된다.
+							curBlob->os = itms::ObjectStatus::OS_NOTDETERMINED;
+							if (_conf.debugShowImagesDetail)
+								  std::cout << "Vehicle is in background !!! in detectCascadeRoiVehicle id:" << std::to_string(curBlob->id) << endl;
+							++curBlob;
+							continue;
+					 }
+					  _cars.clear();
+					  detectCascadeRoiVehicle(_conf, _curImg, roi_rect_Ex, _cars);
+					  if (_cars.size() == 0) { //  백그라운드에 오프젝트가 있으면 안된다.
+						  curBlob->os = itms::ObjectStatus::OS_NOTDETERMINED;
+						  if (_conf.debugShowImagesDetail)
+							  std::cout << "Vehicle is not in the curBlob !!! in detectCascadeRoiVehicle id:" << std::to_string(curBlob->id) << endl;
+						  ++curBlob;
+						  continue;
+					  }
 
-				  //detectCascadeRoiVehicle(_conf, orgImage, _roi_rect, _cars); // sangkny 20190331 check the human with original sized image 
+				}
+				
+				  //detectCascadeRoiVehicle(_conf, orgImage, _roi_rect, _cars); // sangkny 20190331 check the vehicle with original sized image 
 				  //if (_cars.size() == 0) {
 					 // //curBlob->oc = itms::ObjectClass::OC_OTHER;
 					 // if (_conf.debugShowImagesDetail)
@@ -2766,13 +2778,13 @@ namespace itms {
 	  Mat roiImg = img(rect).clone();
 
 	  int casWidth = 128; // ratio is 1: 1 for width to height
-	  if (_conf.bgsubtype == BgSubType::BGS_CNT)
-		  casWidth = (int)((float)casWidth *1.5);
+	  /*if (_conf.bgsubtype == BgSubType::BGS_CNT)
+		  casWidth = (int)((float)casWidth *1.5);*/
 
 	  // adjust cascade window image
 	  float casRatio = (float)casWidth / roiImg.cols;
 
-	  resize(roiImg, roiImg, Size(), casRatio, casRatio);
+	  resize(roiImg, roiImg, Size(), casRatio, casRatio);	  
 
 	  Size img_size = roiImg.size();
 	  vector<Rect> object;
@@ -3454,7 +3466,7 @@ namespace itms {
 			  bitwise_or(imgThreshBg, mask, imgThreshBg);			  
 			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
 				  cv::imshow("bitwise_or mask", mask);
-				  cv::waitKey(1);
+				  //cv::waitKey(1);
 				  imshowBeforeAndAfter(mask, tmp,"mask tmp",2);				  
 			  }
 		  }
@@ -3474,7 +3486,7 @@ namespace itms {
 	  for (unsigned int i = 0; i < 1; i++) { // we need to this for the near distance regions, so before bit_wise_or with long distance regions
 											 //if (_config->bgsubtype == BgSubType::BGS_CNT)
 											 //	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
-		  if (_config->bgsubtype == BgSubType::BGS_DIF) {
+		  if (_config->bgsubtype == BgSubType::BGS_DIF || (_config->bgsubtype == BgSubType::BGS_CNT && _config->img_dif_th<=_config->nightBrightness_Th/* night time */)) {
 			  if (_config->scaleFactor > 0.75) {
 				  //cv::dilate(imgThresh, imgThresh, structuringElement3x3);
 				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
@@ -3494,7 +3506,8 @@ namespace itms {
 	  }
 
 	  // then combine only at daytime
-	  if(_config->img_dif_th <= 25/* be configured */ ){ // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
+	  if(_config->img_dif_th <= _config->nightBrightness_Th/* 26 as of 20190510 */ ){ 
+		  // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
 		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  }else{ // under dark condition, only difference between pre and cur is used
 		  ; // doing for night condition
@@ -3502,7 +3515,7 @@ namespace itms {
 	  	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  imshow("after erode dilation and combine", imgThresh);
-		  waitKey(1);
+		  //waitKey(1);
 		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (after morphology on imgThresh (bit_OR)", 2);
 		  //itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
 	  }

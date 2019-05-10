@@ -255,7 +255,7 @@ void BackgroundSubtract::Subtract(const cv::UMat& image, cv::UMat& foreground)
         break;
     }
 
-    cv::imshow("before", foreground);
+    //cv::imshow("before", foreground);
 
     cv::medianBlur(foreground, foreground, 3);
 	//cv::threshold(foreground, foreground, 150, 255, cv::THRESH_BINARY);
@@ -265,7 +265,7 @@ void BackgroundSubtract::Subtract(const cv::UMat& image, cv::UMat& foreground)
 	//cv::dilate(foreground, foreground, dilateElement, cv::Point(-1, -1), 2);
 	cv::erode(foreground, foreground, dilateElement, cv::Point(-1,-1), 2);
 
-    cv::imshow("after", foreground);
-	cv::waitKey(1);
+    //cv::imshow("after", foreground);
+	//cv::waitKey(1);
 	preImg = image.clone();
 }

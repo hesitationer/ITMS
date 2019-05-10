@@ -220,7 +220,7 @@ bool CTrack::CheckStatic(int trajLen, cv::UMat currFrame, const CRegion& region)
             {
                 m_staticFrame = currFrame.clone();
                 m_staticRect = region.m_rect;
-#if 1
+#if 0
                 cv::namedWindow("m_staticFrame", cv::WINDOW_NORMAL);
                 cv::Mat img = m_staticFrame.getMat(cv::ACCESS_READ).clone();
                 cv::rectangle(img, m_staticRect, cv::Scalar(255, 0, 255), 1);
@@ -383,7 +383,7 @@ void CTrack::RectUpdate(
             cv::Rect2d newRect;
             if (!inited && !m_tracker.empty() && m_tracker->update(cv::UMat(currFrame, roiRect), newRect))
             {
-#if 1
+#if 0
                 cv::Mat tmp2 = cv::UMat(currFrame, roiRect).getMat(cv::ACCESS_READ).clone();
 				if (tmp2.channels() < 3)
 					cvtColor(tmp2, tmp2, CV_GRAY2BGR);
