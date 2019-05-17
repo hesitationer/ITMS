@@ -715,6 +715,7 @@ namespace itms {
 
   std::vector<cv::Point> getBlobUnderRect(const Config &_conf, const cv::Mat& _curImg, const cv::Rect& _prect, const itms::Blob& _curBlob);  // sangkny 20190404
   // get the new blob information including contour and etc under the new rect on the given image
+  bool doubleCheckStopObject(const Config& _conf, itms::Blob& _curBlob); // check the stop conditions
   bool doubleCheckBackwardMoving(const Config& _conf, itms::Blob& _curBlob);
   bool trackNewLocationFromPrevBlob(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);
   bool trackNewLocation(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);  

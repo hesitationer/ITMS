@@ -1604,10 +1604,24 @@ namespace itms {
 	  std::vector<Blob>::iterator blob = blobs.begin();
 	  while (blob != blobs.end()) {		  
 		  if (blob->blnStillBeingTracked == true && blob->totalVisibleCount >= _conf.minVisibleCount && blob->centerPositions.size() >= 2) {
+			  
+			  // check the validation of the blob which should be inside the boundary
+			  std::vector<cv::Point2f> blob_tlPt,blob_brPt;
+			  blob_tlPt.push_back(Point2f(blob->currentBoundingRect.tl()));
+			  blob_brPt.push_back(Point2f(blob->currentBoundingRect.br()));			  
+			  float tlDist = getDistanceInMeterFromPixels(blob_tlPt, _conf.transmtxH, _conf.lane_length, false); // need to modify when the driving direction changes
+			  float brDist = getDistanceInMeterFromPixels(blob_brPt, _conf.transmtxH, _conf.lane_length, false);
+			  // end validation check
+			  if (tlDist >= 20000 || brDist <= 50) {
+				  if (_conf.debugGeneralDetail)
+					  cout << " a blob: " << blob->id << " is eliminated at boundary due to distance condition !! in checkIfBlobsCrossedTheBoundary\n\n\n\n";
+				  blob = blobs.erase(blob);
+				  continue;
+			  }
+			  // Cross line checking
 			  int prevFrameIndex = (int)blob->centerPositions.size() - 2;
 			  int currFrameIndex = (int)blob->centerPositions.size() - 1;
 
-			  // Cross line checking
 			  bool tlFlag_pre = false, tlFlag_cur = false, brFlag_pre = false, brFlag_cur = false; // flag for crossing the boundary
 			  tlFlag_pre = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob->centerPositions[prevFrameIndex]);
 			  tlFlag_cur = isPointBelowLine(tlLine.at(0), tlLine.at(1), blob->centerPositions[currFrameIndex]); // top left line first
@@ -2308,6 +2322,7 @@ namespace itms {
 	int os_nt_center = updateBlob.os_notdetermined_cnter;
 	int os_numCSStoppted_center =updateBlob.os_NumOfConsecutiveStopped_cnter;  
 	int os_numCSForward_center = updateBlob.os_NumOfConsecutivemvForward_cnter;
+	int os_numCSBackward_center = updateBlob.os_NumOfConsecutivemvBackward_cnter;
 // ------------------------------
 
 	  int minConsecutiveFramesForOS = _conf.minConsecutiveFramesForOS;	// minConsecutiveFrames For OS // sangkny 20190404 according to the distance of the object
@@ -2346,7 +2361,19 @@ namespace itms {
 		  updateBlob.os_NumOfConsecutivemvBackward_cnter = 0;
 		  updateBlob.fos = (updateBlob.os_NumOfConsecutiveStopped_cnter >= minConsecutiveFramesForOS) ? OS_STOPPED : OS_NOTDETERMINED;
 		  if (updateBlob.oc != OC_HUMAN && updateBlob.fos == OS_STOPPED) {
-			  updateBlob.startPoint = updateBlob.centerPositions.back(); // sangkny 20190404 reset the stop position to determine the WWR
+			  if (!doubleCheckStopObject(_conf, updateBlob)) { // restore the previous settings
+				  updateBlob.fos = OS_NOTDETERMINED;
+				  updateBlob.os_stopped_cnter--;
+				  updateBlob.os_NumOfConsecutiveStopped_cnter = 0; // reset
+				  updateBlob.os_NumOfConsecutivemvBackward_cnter = os_numCSBackward_center; 				  
+				  updateBlob.os_NumOfConsecutivemvForward_cnter = os_numCSForward_center;
+				  updateBlob.os_notdetermined_cnter += 1;
+			  }
+			  else { // sangkny 20190517 to check the moving obeckt from the stopped condition because of BGround image
+				  if (updateBlob.os_stopped_cnter > std::max(updateBlob.os_mvBackward_cnter,updateBlob.os_mvForward_cnter)) {
+					  updateBlob.startPoint = updateBlob.centerPositions.back(); // sangkny 20190404 reset the stop position to determine the WWR
+				  }
+			  }
 		  }
 		  break;	  
 
@@ -3168,7 +3195,16 @@ namespace itms {
 	  }	  
 	  return _contour;
   }
+  bool doubleCheckStopObject(const Config & _conf, itms::Blob & _curBlob) {	  
 
+	  double refdist = (double)(_conf.minDistanceForBackwardMoving); // same condition with BackwardMoving in cm
+	  cv::Point2f sPt = cvtPx2RealPx(static_cast<cv::Point2f>(_curBlob.startPoint), _conf.transmtxH); // starting pt
+	  cv::Point2f ePt = cvtPx2RealPx(static_cast<cv::Point2f>(_curBlob.centerPositions.back()), _conf.transmtxH);                                  // end pt
+
+	  double dist = distanceBetweenPoints(sPt, ePt); // real distance (cm) in the ROI 	  
+
+	  return (dist >= refdist);
+  }
   bool doubleCheckBackwardMoving(const Config & _conf, itms::Blob & _curBlob)
   {	
 	  // check the condition with the starting points
