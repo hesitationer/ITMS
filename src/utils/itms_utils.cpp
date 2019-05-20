@@ -458,8 +458,8 @@ namespace itms {
 				  totalScore -= (existingBlobs[i].currentBoundingRect.width < minArea || existingBlobs[i].currentBoundingRect.width > MaxArea) ? 10 : 0;
 				  totalScore -= (abs(existingBlobs[i].currentBoundingRect.area() - currentFrameBlob.currentBoundingRect.area()) / max(existingBlobs[i].currentBoundingRect.width, currentFrameBlob.currentBoundingRect.width));
 				  */				  
-				  if (dblDistance < dblLeastDistance) { // 가장 좋은 방법은 object class를 일정 주기마다 조건에 따라 업데이트 하는 것이다. 2019. 04. 29  
-					  dblLeastDistance = dblDistance;
+				  if (dblDistance1 < dblLeastDistance) { // 가장 좋은 방법은 object class를 일정 주기마다 조건에 따라 업데이트 하는 것이다. 2019. 04. 29  
+					  dblLeastDistance = dblDistance1;
 					  intIndexOfLeastDistance = i;
 				  }
 				  /*if (maxTotalScore < totalScore) {
@@ -482,15 +482,14 @@ namespace itms {
 			  // lost object detection 
 			  //				assignment.at(intIndexOfLeastDistance) = 1;
 		  }
-		  else { // this routine contains new and unassigned track(blob)s
-				 // add new blob
+		  else { // add new blob: this routine contains new and unassigned track(blob)s				 
 			  vector<Point2f> blobCenterPxs;
 			  blobCenterPxs.push_back(currentFrameBlob.centerPositions.back());
 			  float distance = getDistanceInMeterFromPixels(blobCenterPxs, _conf.transmtxH, _conf.lane_length, false);
 			  if (0 && _conf.debugGeneralDetail)
 				  cout << " distance: " << distance / 100 << " meters from the starting point.\n";
 			  // do the inside
-			  if (distance >= 100.00/* 1m */ && distance < (_conf.lane_length -100)/*200m*/) {// between 1 meter and 200 meters
+			  if (distance >= _conf.min_obj_distance /* 1m */ && distance < _conf.max_obj_distance/*(_conf.lane_length -100)*//*200m*/) {// between 1 meter and 200 meters, overlapped
 				  ObjectClass objclass;
 				  float classProb = 0.f;
 				  classifyObjectWithDistanceRatio(_conf, currentFrameBlob, distance / 100, objclass, classProb); // 이미 했기에 다시 안하는 방법을 강구해야 함.
@@ -1188,6 +1187,12 @@ namespace itms {
 					  existingBlobs[intIndex].bNotifyMessage = false;
 					  existingBlobs[intIndex].oc_notified = itms::ObjectClass::OC_OTHER;
 					  existingBlobs[intIndex].os_notified = itms::ObjectStatus::OS_NOTDETERMINED;
+					  // 2019. 05. 19
+					  //if(currentFrameBlob.oc == ObjectClass::OC_HUMAN){
+						  existingBlobs[intIndex].age = 1;
+						  existingBlobs[intIndex].totalVisibleCount = 1;
+						  existingBlobs[intIndex].startPoint = currentFrameBlob.centerPositions.back();
+					  //}
 				  }
 			  if(_conf.debugGeneralDetail){
 				  std::cout << " --------- ************* Class Human & Vehicle **************** ----------- \n";
@@ -1200,7 +1205,20 @@ namespace itms {
 				  }
 			  }
 		  }
-		  else { // they have the same class
+		  else { // they have the same class 2019. 05. 20
+			  if(existingBlobs[intIndex].bNotifyMessage 
+			  &&  existingBlobs[intIndex].oc_notified != currentFrameBlob.oc
+			  && (currentFrameBlob.oc == itms::ObjectClass::OC_HUMAN || currentFrameBlob.oc == itms::ObjectClass::OC_VEHICLE)
+			  ){ // reset the status of notification and get ready to notice other object class such as human and vehicle			   
+			   existingBlobs[intIndex].bNotifyMessage = false;
+			   existingBlobs[intIndex].oc_notified = itms::ObjectClass::OC_OTHER;
+			   existingBlobs[intIndex].os_notified = itms::ObjectStatus::OS_NOTDETERMINED;			   
+			   
+			   existingBlobs[intIndex].age = 1;
+			   existingBlobs[intIndex].totalVisibleCount = 1;
+			   existingBlobs[intIndex].startPoint = currentFrameBlob.centerPositions.back();
+			   //}
+			  }
 			  existingBlobs[intIndex].oc = currentFrameBlob.oc; // do nothing because they are same
 			  existingBlobs[intIndex].oc_prob = (existingBlobs[intIndex].oc_prob > currentFrameBlob.oc_prob) ? existingBlobs[intIndex].oc_prob : currentFrameBlob.oc_prob;
 		  }
@@ -1605,6 +1623,7 @@ namespace itms {
 	  while (blob != blobs.end()) {		  
 		  if (blob->blnStillBeingTracked == true && blob->totalVisibleCount >= _conf.minVisibleCount && blob->centerPositions.size() >= 2) {
 			  
+			  // I think the below code is not neccessary please check it again later
 			  // check the validation of the blob which should be inside the boundary
 			  std::vector<cv::Point2f> blob_tlPt,blob_brPt;
 			  blob_tlPt.push_back(Point2f(blob->currentBoundingRect.tl()));
@@ -1612,7 +1631,7 @@ namespace itms {
 			  float tlDist = getDistanceInMeterFromPixels(blob_tlPt, _conf.transmtxH, _conf.lane_length, false); // need to modify when the driving direction changes
 			  float brDist = getDistanceInMeterFromPixels(blob_brPt, _conf.transmtxH, _conf.lane_length, false);
 			  // end validation check
-			  if (tlDist >= 20000 || brDist <= 50) {
+			  if (tlDist >= _conf.max_obj_distance || brDist <= _conf.min_obj_distance) {
 				  if (_conf.debugGeneralDetail)
 					  cout << " a blob: " << blob->id << " is eliminated at boundary due to distance condition !! in checkIfBlobsCrossedTheBoundary\n\n\n\n";
 				  blob = blobs.erase(blob);
@@ -1691,9 +1710,32 @@ namespace itms {
 
 	  return blnAtLeastOneBlobCrossedTheBoundary;
   }
+  
   bool checkIfPointInBoundary(const itms::Config& _conf, const cv::Point& p1, const std::vector<cv::Point> &_tboundaryPts) {
 	  //if(p1.inside())
 	  return cv::pointPolygonTest(_tboundaryPts, static_cast<cv::Point2f>(p1), false)>0; // + inside , - outside
+  }
+  
+  // this function checks the blob top-left and bottom-right points are within the boundary with corrent distance and returns the real distance of the center of the blob
+  bool checkIfBlobInBoundaryAndDistance(const itms::Config& _conf, const itms::Blob& _blob, const std::vector<cv::Point> &_tboundaryPts, float& _realDistance) {
+	  std::vector<cv::Point2f> blob_tlPt, blob_brPt, blob_ctPt;
+	  blob_tlPt.push_back(Point2f(_blob.currentBoundingRect.tl()));
+	  blob_brPt.push_back(Point2f(_blob.currentBoundingRect.br()));
+	  blob_ctPt.push_back(Point2f(_blob.centerPositions.back()));
+	  float tlDist = getDistanceInMeterFromPixels(blob_tlPt, _conf.transmtxH, _conf.lane_length, false); // need to modify when the driving direction changes
+	  float brDist = getDistanceInMeterFromPixels(blob_brPt, _conf.transmtxH, _conf.lane_length, false);
+	  float ctDist = getDistanceInMeterFromPixels(blob_ctPt, _conf.transmtxH, _conf.lane_length, false);
+	  float ctrDist = (tlDist+brDist)/2;
+	  _realDistance = ctDist;
+	  // end validation check
+	  bool bInBound = (!(tlDist >= _conf.max_obj_distance || brDist <= _conf.min_obj_distance))&&(checkIfPointInBoundary(_conf, blob_ctPt.back(), _tboundaryPts));
+	  if (!bInBound) {
+		  if (_conf.debugGeneralDetail){
+			  cout << " a blob: " << _blob.id << " is out of boundary !!\n\n\n\n";
+			  }
+		  
+	  }
+	  return bInBound;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1814,7 +1856,7 @@ namespace itms {
 	  if (1&& _conf.debugShowImages && _conf.debugShowImagesDetail) {
 		  imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);
-		  //waitKey(1);
+		  //cv::waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -1979,7 +2021,7 @@ namespace itms {
 				  }
 				  _new_rect = prect;
 
-				  if (_conf.debugShowImages && _conf.debugSpecial) { // local image debug
+				  if (_conf.debugShowImages&&_conf.debugShowImagesDetail) { // local image debug
 					  cv::Mat tmp2 = cv::Mat(_srcImg, roiRect).clone();
 					  if (tmp2.channels() < 3)
 						  cvtColor(tmp2, tmp2, CV_GRAY2BGR);
@@ -1996,7 +2038,7 @@ namespace itms {
 					  cv::imshow("local track", tmp2);
 					  //cv::waitKey(1);
 				  }
-				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
+				  if (_conf.debugShowImages&&_conf.debugShowImagesDetail) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
 					  if (tmp2.channels() < 3)
 						  cvtColor(tmp2, tmp2, CV_GRAY2BGR);
@@ -2061,7 +2103,7 @@ namespace itms {
 			  //}
 
 			  _new_rect = (success) ? newRoi : expRect;
-			  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
+			  if (_conf.debugShowImages&&_conf.debugShowImagesDetail) { // full image debug
 				  cv::Mat tmp2 = _srcImg.clone();
 				  cv::Rect prect = _new_rect;
 
@@ -2147,7 +2189,7 @@ namespace itms {
 					  cv::imshow("local track", tmp2);
 					  //cv::waitKey(1);
 				  }
-				  if (_conf.debugShowImages&&_conf.debugSpecial) { // full image debug
+				  if (_conf.debugShowImages&&_conf.debugShowImagesDetail) { // full image debug
 					  cv::Mat tmp2 = _srcImg.clone();
 					  if (tmp2.channels() < 3)
 						  cvtColor(tmp2, tmp2, CV_GRAY2BGR);
@@ -2168,6 +2210,18 @@ namespace itms {
 	  }
 
 	  return success;
+  }
+
+  bool compareContourAreasDes(std::vector<cv::Point> contour1, std::vector<cv::Point> contour2) {
+	  double i = fabs(contourArea(cv::Mat(contour1)));
+	  double j = fabs(contourArea(cv::Mat(contour2)));
+	  return (i > j); // descending order
+  }
+
+  bool compareContourAreasAsc(std::vector<cv::Point> contour1, std::vector<cv::Point> contour2) {
+	  double i = fabs(contourArea(cv::Mat(contour1)));
+	  double j = fabs(contourArea(cv::Mat(contour2)));
+	  return (i < j); // ascending order
   }
 
   float itmsFunctions::getNCC(itms::Config& _conf, cv::Mat &bgimg, cv::Mat &fgtempl, cv::Mat &fgmask, int match_method/* cv::TM_CCOEFF_NORMED*/, bool use_mask/*false*/) {
@@ -2196,7 +2250,7 @@ namespace itms {
 		  imshowBeforeAndAfter(bgimg_gray, fgtempl_gray, "NCC cur/template img", 2);
 		  /*imshow("img", bgimg_gray);
 		  imshow("template image", fgtempl_gray);*/
-		  //waitKey(1);
+		  //cv::waitKey(1);
 	  }
 	  if (use_mask && method_accepts_mask)
 	  {
@@ -2612,7 +2666,7 @@ namespace itms {
 					   }
 				  }
 			  }
-			  if(curBlob->totalVisibleCount<10){ // check if the given the object has enough visible counts
+			  if(curBlob->totalVisibleCount<_conf.minVisibleCountHuman){ // check if the given the object has enough visible counts
 				  if(_conf.debugGeneralDetail)
 					  std::cout << "The visible count is not enough : " << curBlob->totalVisibleCount << std::endl;
 				  ++curBlob;
@@ -2673,14 +2727,14 @@ namespace itms {
 					  itms::imshowBeforeAndAfter(BGImage(roi_rect_Ex), _curImg(roi_rect), "STOP<<NCC BG / Target>> ", 2);					  					  
 				  }
 				  float blobncc = getNCC(_conf, BGImage(roi_rect_Ex), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
-				  if (abs(blobncc) > _config->BlobNCC_Th) // background
+				  if (abs(blobncc) > _config->BlobNCC_Th) // background 와 템플릿 매칭에서 비슷한 결과가 나오면
 				  {
 					  if(_conf.debugGeneralDetail)
 						  std::cout<< " Stopped Object and NCC is not satisfiend !!!!!!!!!!!!!!: "<< (blobncc)<< std::endl;
 					  
 					  ++curBlob;
 					  continue;
-				  }else if ((abs(blobncc) > _config->BlobNCC_Th/5.)) { // 백그라운드와 유사시...stop 구분  (양쪽에 차량이 있으면 안됨)
+				  }else if ((abs(blobncc) > _config->BlobNCC_Th/2.)) { // 백그라운드와 유사시...stop 구분  (양쪽에 차량이 있으면 안됨)
 					  std::vector<cv::Rect> _cars;					  					  
 					  detectCascadeRoiVehicle(_conf, BGImage, roi_rect_Ex, _cars);
 					  if (_cars.size()!=0) { //  백그라운드에 오프젝트가 있으면 안된다.
@@ -2689,16 +2743,29 @@ namespace itms {
 								  std::cout << "Vehicle is in background !!! in detectCascadeRoiVehicle id:" << std::to_string(curBlob->id) << endl;
 							++curBlob;
 							continue;
-					 }
+					 } // 여기까지 배경에 차가 없으면 stop 이라고 보는 것이 좋을 것 같다. 그렇지 않으면 너무 강한 제한조건이 생긴다.
+					  // 다음의 #if 1은 강한 조건이다. 현재는 0으로 없애고 본다. 
+#if 0                 // 114411 에서 진행후 정지, 그리고 사람이 나오는 부분에서 stop이 안잡힐 수 있다.
 					  _cars.clear();
-					  detectCascadeRoiVehicle(_conf, _curImg, roi_rect_Ex, _cars);
+					  detectCascadeRoiVehicle(_conf, _curImg, roi_rect_Ex, _cars); // resized image first
 					  if (_cars.size() == 0) { //  백그라운드에 오프젝트가 있으면 안된다.
-						  curBlob->os = itms::ObjectStatus::OS_NOTDETERMINED;
-						  if (_conf.debugShowImagesDetail)
-							  std::cout << "Vehicle is not in the curBlob !!! in detectCascadeRoiVehicle id:" << std::to_string(curBlob->id) << endl;
-						  ++curBlob;
-						  continue;
+						  // one more time  in original image
+						  cv::Rect _roi_rect_org;
+						  float scaleBack = 1./_conf.scaleFactor;
+						  _roi_rect_org.x = roi_rect_Ex.x *scaleBack;
+						  _roi_rect_org.y = roi_rect_Ex.y *scaleBack;
+						  _roi_rect_org.width = roi_rect_Ex.width*scaleBack;
+						  _roi_rect_org.height = roi_rect_Ex.height*scaleBack;
+						  detectCascadeRoiVehicle(_conf, orgImage, _roi_rect_org, _cars);
+						  if(_cars.size() == 0){
+							  curBlob->os = itms::ObjectStatus::OS_NOTDETERMINED;
+							  if (_conf.debugShowImagesDetail)
+								  std::cout << "Vehicle is not in the curBlob !!! in detectCascadeRoiVehicle id:" << std::to_string(curBlob->id) << endl;
+							  ++curBlob;
+							  continue;
+						  }
 					  }
+#endif
 
 				}
 				
@@ -2711,7 +2778,7 @@ namespace itms {
 					 // continue;
 				  //}
 
-				  if (_conf.debugShowImagesDetail) {
+				  if (_conf.debugShowImages && _conf.debugSpecial) {
 					  cv::Mat debugImg = _curImg.clone();
 					  if (debugImg.channels() < 3)
 						  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
@@ -2721,14 +2788,14 @@ namespace itms {
 				  }
 					  
 			  }
-				  _itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, curBlob->oc));
-				  _itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
-				  _itmsRes.objRect.push_back(curBlob->currentBoundingRect);
-				  _itmsRes.objSpeed.push_back(curBlob->speed);
-				  checkStatus = true;
-				  curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce) ? true : false;
-				  curBlob->oc_notified = curBlob->oc;
-				  curBlob->os_notified = curBlob->fos;
+			_itmsRes.objClass.push_back(std::pair<int, int>(curBlob->id, curBlob->oc));
+			_itmsRes.objStatus.push_back(std::pair<int, int>(curBlob->id, curBlob->fos));
+			_itmsRes.objRect.push_back(curBlob->currentBoundingRect);
+			_itmsRes.objSpeed.push_back(curBlob->speed);
+			checkStatus = true;
+			curBlob->bNotifyMessage = (_conf.bNoitifyEventOnce) ? true : false;
+			curBlob->oc_notified = curBlob->oc;
+			curBlob->os_notified = curBlob->fos;
 				  
 			  }
 		  }
@@ -2796,7 +2863,7 @@ namespace itms {
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("cascade image", roiImg);
 		  imshow("hog", hogImg);
-		  //waitKey(1);
+		  //cv::waitKey(1);
 	  }
 
   }
@@ -2842,7 +2909,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("vehicle in detection", roiImg);
-		  //waitKey(1);
+		  //cv::waitKey(1);
 	  }
   }
   // find people in the given ROI
@@ -2929,7 +2996,7 @@ namespace itms {
 	  }
 	  if (_conf.debugShowImagesDetail) {
 		  imshow("human in HOG SVM", hogImg);
-		  //waitKey(1);
+		  //cv::waitKey(1);
 	  }
   }
 
@@ -3038,7 +3105,7 @@ namespace itms {
 		  for (int i = 0; i<points[1].size(); i++)
 			  circle(debugImg, points[1].at(i), 2, Scalar(0, 255, 0));
 		  imshow("calcOpticalFlowPyr", debugImg);
-		  //waitKey(1);
+		  //cv::waitKey(1);
 	  }
 	  size_t i = 0;
 	  for (auto track : tracks)
@@ -3117,7 +3184,7 @@ namespace itms {
 				  contours.push_back(contour);
 				  drawContours(debugImg, contours, -1, Scalar(0, 0, 255));
 				  imshow("contours_", debugImg);
-				  //waitKey(1);
+				  //cv::waitKey(1);
 			  }
 		  }
 	  }
@@ -3319,7 +3386,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  //waitKey(1);
+				  //cv::waitKey(1);
 			  }
 		  }
 	  }
@@ -3382,11 +3449,11 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  //waitKey(1);
+			  //cv::waitKey(1);
 		  }
 	  }
 	  // we have two blurred images, now process the two image 
-	  cv::Mat imgDifference, imgDifferenceBg; // difference images from  a previous and background images
+	  cv::Mat imgDifference, imgDifferenceBg; // difference images from  a previous and a background images (small image)
 	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT){
 		  //pBgSub->setVarThreshold(10);
@@ -3453,7 +3520,7 @@ namespace itms {
 		  else { // BGS_DIF
 			  cv::threshold(imgDifferenceBg, imgThreshBg, max((double)_config->img_dif_th, min(150., roi_brightness_difference*5. / 4. + 15/*50*/ + _config->img_dif_th)), 255.0, CV_THRESH_BINARY);
 		  }
-		  if (_config->zoomBG) { // sangkny 2019. 04. 30 -> 05. 09 =>
+		  if (_config->zoomBG) { // sangkny 2019. 04. 30 -> 05. 09 => 05. 19 ==>
 			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image			  
 			  cv::Rect zROI(zPmin, zPmax);
 			  cv::Rect ozRoi(ozPmin, ozPmax);// (zPmin*(1. / _config->scaleFactor), zPmax*(1. / _config->scaleFactor)); // original roi	=> init로		  
@@ -3469,15 +3536,100 @@ namespace itms {
 				  cv::cvtColor(orgPrePart, orgPrePart, CV_BGR2GRAY);
 			  }
 			  // background generation with original part image
-			  cv::Mat imgOrgDifferenceBg, imgOrgDifThres;
+			  cv::Mat imgOrgDifferenceBg /* bg generation*/, 
+			  imgOrgDifThres /* bg generation thresholded*/, 
+			  imgOrgPreDif /* pre-cur org*/, 
+			  imgOrgPreDifThres /* pre-cur org difference thresholded */;
 
 			  if (_config->bgsubtype == itms::BgSubType::BGS_CNT) {
 				  pBgOrgSub->apply(orgPart, imgOrgDifferenceBg, 1. / (double)(_config->intNumBGRefresh));
 				  cv::threshold(imgOrgDifferenceBg, imgOrgDifThres, _config->dblMOGShadowThr, 255.0, CV_THRESH_BINARY); // 90 부터 낮게
 				  medianBlur(imgOrgDifThres, imgOrgDifThres, 3);
+				  absdiff(orgPart, orgPrePart, imgOrgPreDif);
+				  cv::threshold(imgOrgPreDif, imgOrgPreDifThres, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
+				  medianBlur(imgOrgPreDifThres, imgOrgPreDifThres, 3); // consider more if neccessary 
+				  cv::dilate(imgOrgPreDifThres, imgOrgPreDifThres, structuringElement5x5);
+				  cv::erode(imgOrgPreDifThres, imgOrgPreDifThres, structuringElement5x5);
 				  if (_config->debugShowImagesDetail && _config->debugSpecial) {
-					  imshowBeforeAndAfter(orgPart, imgOrgDifferenceBg, "orgPart/ imgOrgDifBg", 2);					  
+					  imshowBeforeAndAfter(orgPart, imgOrgDifferenceBg, "orgPart/ imgOrgDifBg before thresholding !!", 2);	
+					  imshowBeforeAndAfter(imgOrgDifThres, imgOrgPreDifThres, " bg / pre-cur diff after thresholding !!", 2);
 				  }
+				  // birany image selection process // sangkny 20190519 to eliminated noisy binary image using contour 
+				  // compute ROI 
+				  cv::Mat org_mask(orgImage.size(), CV_8UC1, cv::Scalar(0, 0, 0)); // original size
+				  cv::Mat org_road_mask_intersection = org_mask.clone();
+				  cv::rectangle(org_mask, cv::Rect(this->ozPmin, this->ozPmax), 255, -1); // 흑생 바탕에 흰색으로 사각형을 채운다
+				  cv::Mat org_road_mask;
+				  cv::resize(road_mask, org_road_mask, org_mask.size());                  // original size 로 재 설정
+				  cv::bitwise_and(org_mask, org_road_mask, org_road_mask_intersection);
+				  if(0 && _config->debugShowImagesDetail){
+					  imshowBeforeAndAfter(org_mask, org_road_mask_intersection, "org mask / its intersection mask", 2);
+				  }
+				  // now apply it to the ROI image using org_mask_intersection
+				  cv::Mat org_ROI_mask = org_road_mask_intersection(ozRoi).clone();
+				  assert(org_ROI_mask.size() == imgOrgDifThres.size());
+				  cv::bitwise_and(imgOrgDifThres, org_ROI_mask, imgOrgDifThres);
+				  cv::bitwise_and(imgOrgPreDifThres, org_ROI_mask, imgOrgPreDifThres);
+				 
+				  if (_config->debugShowImagesDetail && _config->debugSpecial) {					  
+					  imshowBeforeAndAfter(imgOrgDifThres, imgOrgPreDifThres, " road_ROI_mask && bg / pre-cur diff after thresholding !!", 2);
+				  }
+#if 0
+				  // select better one (less nosy foreground image using computing the complexity of the given foreground iamge)
+				  cv::Mat imgOrgDifThresCopy = imgOrgDifThres.clone();
+				  cv::Mat imgOrgPreDifThresCopy = imgOrgPreDifThres.clone();
+
+				  std::vector<std::vector<cv::Point> > imgOrgcontours, imgOrgPrecontours;
+
+				  cv::findContours(imgOrgDifThresCopy, imgOrgcontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+				  cv::findContours(imgOrgPreDifThresCopy, imgOrgPrecontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+				  if (0||(_config->debugShowImages && _config->debugShowImagesDetail)) {
+					  drawAndShowContours(imgOrgDifThresCopy.size(), imgOrgcontours, "imgOrgcontours");
+					  drawAndShowContours(imgOrgPreDifThresCopy.size(), imgOrgPrecontours, "imgOrgPrecontours");
+					  cv::imshow("Org_ROI_mask", org_ROI_mask);
+					  cv::waitKey(1);
+				  }
+				  // sort the contours according to their areas
+				  std::sort(imgOrgcontours.begin(), imgOrgcontours.end(), compareContourAreasDes); // sorting descending order
+				  std::sort(imgOrgPrecontours.begin(), imgOrgPrecontours.end(), compareContourAreasDes); 
+				  // area sum upto the 4 largest ones
+				  double imgOrgArea = 0, imgOrgPreArea = 0;
+
+				  for(unsigned cnt_i=0; cnt_i<std::min((int)imgOrgcontours.size(), 4); cnt_i++){
+					  imgOrgArea += cv::contourArea(imgOrgcontours.at(cnt_i));
+				  }
+				  for (unsigned cnt_i = 0; cnt_i<std::min((int)imgOrgPrecontours.size(), 4); cnt_i++) {
+					  imgOrgPreArea += cv::contourArea(imgOrgPrecontours.at(cnt_i));
+				  }
+				  bool bselectBG = false;
+				  if(imgOrgArea> imgOrgPreArea){
+					  bselectBG = true;
+				  }
+				  else {
+					  bselectBG = false;
+				  }
+				  // end select one using contours and its area
+#endif
+#if 0             // need to check it again, because it is not working in 20180911_114811_cam_0.avi (WWR vor vehicle
+				  // bitwise_and and see if imgOrgDifThres is too big compared to imgOrgPreDifThres, then it is replaced with imgOrgDifThres
+				  cv::Mat imgOrgAndPreDifThres;
+				  cv::bitwise_and(imgOrgDifThres, imgOrgPreDifThres, imgOrgAndPreDifThres);
+				  int imgOrgAndPreNonZero = cv::countNonZero(imgOrgAndPreDifThres);
+				  if (imgOrgAndPreNonZero > 0) {
+					  int imgOrgDifThresNonZero = cv::countNonZero(imgOrgDifThres);
+					  int imgOrgPreDifThresNonZero = cv::countNonZero(imgOrgPreDifThres);
+					  int imgOrgMaskNonZero = cv::countNonZero(org_ROI_mask);
+					  float toOrgMaskThresPerc = 0.1, toBitAndThresTimes = 100,
+						  orgTomaskRatio = (float)imgOrgDifThresNonZero / (float)imgOrgMaskNonZero;
+					  if ((orgTomaskRatio > toOrgMaskThresPerc) && (imgOrgDifThresNonZero > toBitAndThresTimes * imgOrgAndPreNonZero)
+					  &&(imgOrgDifThresNonZero > imgOrgPreDifThresNonZero)) {
+						  imgOrgDifThres = imgOrgAndPreDifThres.clone();
+					  }
+				  }
+#endif
+				  // end selecting less noisy 
+
 			  }
 			  else { // BGS_DIF
 				  absdiff(orgPart, orgPrePart, imgOrgDifferenceBg);
@@ -3516,7 +3668,7 @@ namespace itms {
 	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor); // need to do somthing for noise environments 
 
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG -- >> imgThresh", 2);
+		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG <<-- >> imgThresh", 2);
 		  imshow("before erode dilation on imgThresh when DIF", imgThresh);
 	  }
 	  for (unsigned int i = 0; i < 1; i++) { // we need to this for the near distance regions, so before bit_wise_or with long distance regions
@@ -3551,7 +3703,7 @@ namespace itms {
 	  	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  imshow("after erode dilation and combine", imgThresh);
-		  //waitKey(1);
+		  //cv::waitKey(1);
 		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (after morphology on imgThresh (bit_OR)", 2);
 		  //itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
 	  }
@@ -3601,14 +3753,23 @@ namespace itms {
 			  // bg image
 			  // currnt image
 			  // blob correlation
-			  blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask); 
+			  //blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask); 
 			  // background image need to be updated periodically 
 			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
-			  if (blobncc <= abs(_config->BlobNCC_Th)  
-				  && checkIfPointInBoundary(*_config, blob_ntPts.back(), _config->Boundary_ROI_Pts)
+			  float realDistance = 0;
+			  if (checkIfBlobInBoundaryAndDistance(*_config, possibleBlob, _config->Boundary_ROI_Pts, realDistance) 
+			  &&((blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask)) <= abs(_config->BlobNCC_Th))
+			  /*&&*/  /*checkIfPointInBoundary(*_config, blob_ntPts.back(), _config->Boundary_ROI_Pts)*/
 				  /*realDistance >= 100 && realDistance <= 19900*//* distance constraint */)
 			  {// check the correlation with bgground, object detection/classification
-				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+				  /*realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+				  if(realDistance >= _config->max_obj_distance || realDistance <= _config->min_obj_distance){
+					  if (_config->debugGeneral && _config->debugGeneralDetail) {
+						  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
+						  cout << "The object candidate has been discarded due to out of the distance in the process !!\n";
+					  }
+					  continue;
+				  }*/
 				  if (_config->debugGeneral && _config->debugGeneralDetail) {
 					  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";					  
 				  }
@@ -3757,7 +3918,7 @@ namespace itms {
 		  //itms::imshowBeforeAndAfter(curTmp, accmImage, "cur/ acc image", 2);
 		  //pBgSub->apply(curTmp, accmImage, learningRate); // slower than the below method, accmImage will be the difference between bgimage and current image
 		  //cout << "accType after apply: " + type2str(accmImage.type()) << endl;
-		  //waitKey(1);
+		  //cv::waitKey(1);
 		  //pBgSub->getBackgroundImage(accmImage);
 		  //cv::Mat tmp;//(curImg.size(), CV_32FC1);
 		  //curTmp.convertTo(curTmp, CV_32FC1);
@@ -4130,7 +4291,7 @@ namespace itms {
 				  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 					  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 				  imshow("road mask", debugImg);
-				  //waitKey(1);
+				  //cv::waitKey(1);
 			  }
 		  }
 	  }
@@ -4236,7 +4397,7 @@ namespace itms {
 				  cvtColor(road_mask, road_mask, CV_BGR2GRAY);
 			  if (0) {
 				  imshow("road mask", road_mask);
-				  //waitKey(1);
+				  //cv::waitKey(1);
 			  }
 		  }
 		  if (!road_mask.empty()) // only one time setting
@@ -4358,7 +4519,7 @@ namespace itms {
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
 				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
 			  imshow("road mask", debugImg);
-			  //waitKey(1);
+			  //cv::waitKey(1);
 		  }
 	  }
 

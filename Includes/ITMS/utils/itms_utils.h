@@ -131,13 +131,16 @@ namespace itms {
 		float camera_height = 11.0 * 100;				// camera height 11 meter
 		float lane_length = 200.0 * 100;				// lane length
 		float lane2lane_width = 3.5 * 2 * 100;			// lane width
-
-														// road points settings
+		// road points settings
+		// object distance settings
+		float max_obj_distance = 200.0 * 100;          // maximum object distance in computation
+		float min_obj_distance = 0.5 * 100;             // minimum object distance in computation
 
 														// object tracking related 
 		bool bNoitifyEventOnce = true;                  // event notification flag: True -> notify once in its life, False -> Keep notifying events
 		bool bStrictObjEvent = true;                    // strictly determine the object events (serious determination, rare event and more accurate) 
 		int minVisibleCount = 3;						// minimum survival consecutive frame for noise removal effect
+		int minVisibleCountHuman = 10;                  // minimum visible counts for human detection
 		int minConsecutiveFramesForOS = 3;				// minimum consecutive frames for object status determination
 		int max_Center_Pts = 5 * 30;					// maximum number of center points (frames), about 5 sec.
 		int numberOfTracePoints = 15;					// # of tracking tracer in debug Image
@@ -259,6 +262,10 @@ namespace itms {
 			_conf.lane_length = cvReadRealByName(fs, 0, "lane_length", 200 * 100);
 			_conf.lane2lane_width = cvReadRealByName(fs, 0, "lane2lane_width", 3.5 * 2 * 100);
 
+			// object distance
+			_conf.max_obj_distance = cvReadRealByName(fs, 0, "max_obj_distance", 20000);
+			_conf.min_obj_distance = cvReadIntByName(fs, 0, "min_obj_distance", 50);
+
 			_conf.StartX = cvReadRealByName(fs, 0, "StartX", 0);
 			_conf.EndX = cvReadRealByName(fs, 0, "EndX", 0);
 			_conf.StartY = cvReadRealByName(fs, 0, "StartY", 0);
@@ -304,6 +311,7 @@ namespace itms {
 			_conf.bStrictObjEvent = cvReadIntByName(fs, 0, "bStrictObjEvent", true);
 			_conf.maxNumOfTrackers = cvReadIntByName(fs, 0, "maxNumOfTrackers", 100);
 			_conf.minVisibleCount = cvReadIntByName(fs, 0, "minVisibleCound", 3);
+			_conf.minVisibleCountHuman = cvReadIntByName(fs, 0, "minVisibleCountHuman", 10);
 			_conf.minConsecutiveFramesForOS = cvReadIntByName(fs, 0, "minConsecutiveFramesForOS", 3);
 			_conf.max_Center_Pts = cvReadIntByName(fs, 0, "max_Center_Pts", 150);
 			_conf.numberOfTracePoints = cvReadIntByName(fs, 0, "numberOfTracePoints", 15);
@@ -686,6 +694,7 @@ namespace itms {
   bool checkIfBlobsCrossedTheLine(itms::Config& _conf, std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy, cv::Point Pt1, cv::Point Pt2, int &carCount, int &truckCount, int &bikeCount);
   bool checkIfBlobsCrossedTheBoundary(itms::Config& _conf, std::vector<Blob> &blobs,/* cv::Mat &imgFrame2Copy,*/ itms::LaneDirection _laneDirection, std::vector<cv::Point> &_tboundaryPts);
   bool checkIfPointInBoundary(const itms::Config& _conf, const cv::Point& p1, const std::vector<cv::Point> &_tboundaryPts);
+  bool checkIfBlobInBoundaryAndDistance(const itms::Config& _conf, const itms::Blob& _blob, const std::vector<cv::Point> &_tboundaryPts, float& _realDistance);
   void drawBlobInfoOnImage(itms::Config& _conf, std::vector<Blob> &blobs, cv::Mat &imgFrame2Copy);
   void drawCarCountOnImage(int &carCount, cv::Mat &imgFrame2Copy);
   void drawRoadRoiOnImage(std::vector<std::vector<cv::Point>> &_roadROIPts, cv::Mat &_srcImg);
@@ -721,6 +730,10 @@ namespace itms {
   bool trackNewLocation(const itms::Config& _conf, const cv::Mat& _preImg, const cv::Mat& _srcImg, itms::Blob& _ref, cv::Rect& _new_rect, const int _expandY = 2);  
   
   // sangkny FDSSTTracker m_tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB); // initialze and update !!
+  // sort contour related
+  bool compareContourAreasDes(std::vector<cv::Point> contour1, std::vector<cv::Point> contour2);
+  bool compareContourAreasAsc(std::vector<cv::Point> contour1, std::vector<cv::Point> contour2);
+  
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   
   // for API class
