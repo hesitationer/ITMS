@@ -3444,6 +3444,27 @@ namespace itms {
 	  resize(curImg, curImg, cv::Size(), _config->scaleFactor, _config->scaleFactor);
 	  cv::GaussianBlur(curImg, curImg, cv::Size(5, 5), 0);
 
+	  // At first compute the brightness to determine the given environment is in day or night
+	  // and it needs to adjust img_dif_th
+	  if (_config->isAutoBrightness) {
+		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
+		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
+		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness)									// the size of vector is max_past_frames
+			  pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
+																														  //pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
+		  pastBrightnessLevels.push_back(cvRound(roiMean));
+		  // adj function for adjusting image difference thresholding
+		  int newTh = weightFnc(pastBrightnessLevels);
+		  _config->img_dif_th = newTh;
+		  if (_config->debugGeneral &&_config->debugGeneralDetail) {
+			  std::cout << "Brightness mean for Roi: " << roiMean << "\n";
+			  int m = mean(pastBrightnessLevels)[0];
+			  std::cout << "Brightness mean for Past Frames: " << m << "\n";
+			  std::cout << "New Dif Th : " << newTh << "\n";
+		  }
+
+	  }
+	  
 	  if (preImg.empty()) {
 		  preImg = curImg.clone();
 	  }
@@ -3469,6 +3490,7 @@ namespace itms {
 	  cv::Mat imgThresh, imgThreshBg;
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT){
 		  //pBgSub->setVarThreshold(10);
+		  //int shadowValue = pBgSub->getShadowValue();		  
 		  pBgSub->apply(curImg, imgDifferenceBg,1./(double)(_config->intNumBGRefresh));
 		  pBgSub->getBackgroundImage(BGImage);		// 이것을 하면 뒷부분의 addWeight 을 해제해야 함 (즉, 메모리 아낄 수 있음) // 2019. 04. 30.
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
@@ -3491,25 +3513,7 @@ namespace itms {
 		  cv::absdiff(BGImage, curImg, imgDifferenceBg);
 			
 	  }
-	  // if needs to adjust img_dif_th
-	  if (_config->isAutoBrightness) {
-		  //compute the roi brightness and then adjust the img_dif_th withe the past max_past_frames 
-		  float roiMean = mean(curImg(brightnessRoi)/*currentGray roi*/)[0];
-		  if (pastBrightnessLevels.size() >= _config->max_past_frames_autoBrightness)									// the size of vector is max_past_frames
-			  pop_front(pastBrightnessLevels, pastBrightnessLevels.size() - _config->max_past_frames_autoBrightness + 1); // keep the number of max_past_frames
-			//pop_front(pastBrightnessLevels); // remove an elemnt from the front of 			
-		  pastBrightnessLevels.push_back(cvRound(roiMean));
-		  // adj function for adjusting image difference thresholding
-		  int newTh = weightFnc(pastBrightnessLevels);
-		  _config->img_dif_th = newTh;
-		  if (_config->debugGeneral &&_config->debugGeneralDetail) {
-			  std::cout << "Brightness mean for Roi: " << roiMean << "\n";
-			  int m = mean(pastBrightnessLevels)[0];
-			  std::cout << "Brightness mean for Past Frames: " << m << "\n";
-			  std::cout << "New Dif Th : " << newTh << "\n";
-		  }
-
-	  }
+	  
 
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
@@ -3657,9 +3661,9 @@ namespace itms {
 				  }
 			  }
 			  cv::resize(imgOrgDifThres, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
-			  // mix with imgThresBg			  
+			  // mix with imgThresBg only when daytime //낮에만 한다 2019. 05. 21			  
 			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));
-			  //mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp; // it is not working
+			  //mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp; // it is not working, 이렇게 하면 동작 안함
 			  cv::Rect copyRoi = cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows));
 			  tmp.copyTo(mask(copyRoi));
 			  cv::bitwise_and(mask, road_mask, mask);
