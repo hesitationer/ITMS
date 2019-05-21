@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	//cv::waitKey(1);
+	cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -1769,6 +1769,18 @@ namespace itms {
 			  if(_conf.debugShowImagesDetail)
 				infostr =  std::to_string(blobs[i].id) + status + blobs[i].getBlobClass() +" " + std::to_string(blobs[i].speed) + " km/h";
 			  cv::putText(imgFrame2Copy, infostr/*std::to_string(blobs[i].id)*/, blobs[i].currentBoundingRect.tl()/*centerPositions.back()*/, intFontFace, dblFontScale, SCALAR_GREEN, intFontThickness);
+
+			  // DAY/NIGHT MODE 
+			  infostr.clear(); 
+			  infostr = "mode: ";
+			  if(_conf.img_dif_th >= _conf.nightBrightness_Th)
+				  infostr += "Night --> ";
+			  else
+				  infostr += "Day --> ";
+
+			  infostr += std::to_string(_conf.img_dif_th);
+			  cv::putText(imgFrame2Copy, infostr, cv::Point(10,50), intFontFace, 1 /* intFontScale */, SCALAR_BLUE, 2/* intFontThickness */);
+
 			  if (_conf.debugTrace) {
 				  // draw the trace of object
 				  std::vector<cv::Point> centroids2 = blobs[i].centerPositions;
@@ -3662,10 +3674,6 @@ namespace itms {
 	  }
 
 	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY);	  	  
-	  	  
-	  cv::Mat imgXor;
-	  
-	  cv::bitwise_xor(imgThresh, imgThreshBg, imgXor); // need to do somthing for noise environments 
 
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG <<-- >> imgThresh", 2);
@@ -3686,7 +3694,7 @@ namespace itms {
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 			  else {
-				  //cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
@@ -3694,7 +3702,7 @@ namespace itms {
 	  }
 
 	  // then combine only at daytime
-	  if(_config->img_dif_th <= _config->nightBrightness_Th/* 26 as of 20190510 */ ){ 
+	  if(_config->img_dif_th < _config->nightBrightness_Th/* 26 as of 20190510 */ ){ 
 		  // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
 		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  }else{ // under dark condition, only difference between pre and cur is used
@@ -3738,7 +3746,7 @@ namespace itms {
 		  Blob possibleBlob(convexHull);
 
 		  if (possibleBlob.currentBoundingRect.area() > (int)fmin_area &&
-			  possibleBlob.dblCurrentAspectRatio > 0.2 &&
+			  possibleBlob.dblCurrentAspectRatio > 0.02 &&
 			  possibleBlob.dblCurrentAspectRatio < 6.0 &&
 			  possibleBlob.currentBoundingRect.width > (int)fmin_obj_width &&
 			  possibleBlob.currentBoundingRect.height > (int)fmin_obj_height &&
@@ -3759,17 +3767,8 @@ namespace itms {
 			  float realDistance = 0;
 			  if (checkIfBlobInBoundaryAndDistance(*_config, possibleBlob, _config->Boundary_ROI_Pts, realDistance) 
 			  &&((blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask)) <= abs(_config->BlobNCC_Th))
-			  /*&&*/  /*checkIfPointInBoundary(*_config, blob_ntPts.back(), _config->Boundary_ROI_Pts)*/
-				  /*realDistance >= 100 && realDistance <= 19900*//* distance constraint */)
-			  {// check the correlation with bgground, object detection/classification
-				  /*realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
-				  if(realDistance >= _config->max_obj_distance || realDistance <= _config->min_obj_distance){
-					  if (_config->debugGeneral && _config->debugGeneralDetail) {
-						  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";
-						  cout << "The object candidate has been discarded due to out of the distance in the process !!\n";
-					  }
-					  continue;
-				  }*/
+			   )
+			  {// check the correlation with bgground, object detection/classification				  
 				  if (_config->debugGeneral && _config->debugGeneralDetail) {
 					  cout << "Candidate object:" << blob_ntPts.back() << "(W,H)" << cv::Size(roi_rect.width, roi_rect.height) << " is in(" << to_string(realDistance / 100.) << ") Meters ~(**)\n";					  
 				  }
