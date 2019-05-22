@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	cv::waitKey(1);
+	//cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
@@ -2716,29 +2716,56 @@ namespace itms {
 		  }
 		  else { // vehicle class
 			  // WWD
-			  // STOP
+			  // STOP			  
+
 			  if (curBlob->oc!= ObjectClass::OC_OTHER &&
 			  ((curBlob->fos == ObjectStatus::OS_MOVING_BACKWARD && curBlob->speed >= _conf.speedLimitForstopping) || 
 			  curBlob->fos == ObjectStatus::OS_STOPPED)) {
+			  // 야간모드에서는 밝기와 variance를 체크한다. 
+				std::vector<cv::Point2f> blob_ntPts;
+				blob_ntPts.push_back(Point2f(curBlob->centerPositions.back()));
+				float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
+				cv::Rect roi_rect = curBlob->currentBoundingRect;
+
+				if (realDistance / 100.f > 100.f) {
+					roi_rect = expandRect(roi_rect, 4, 4, BGImage.cols, BGImage.rows);
+				}
+				else {
+					roi_rect = expandRect(roi_rect, 8, 8, BGImage.cols, BGImage.rows);
+				}
+				cv::Rect roi_rect_Ex = expandRect(roi_rect, 2, 2, BGImage.cols, BGImage.rows);
+				//// 마지막으로 현재 ROI의 variance 가 0에서 멀어져야 한다. 초기 bg image가 제대로 만들어 지지 않으면 오검지 될 수 있음..
+				// 아래 부분은 너무 밝거나 어두운 부분에서도 밝은 곳 (200 <mean and 40> std, 그리고, 120 > mean  and 20 > std 곳에서는 물체라고 보기는 어렵다. 나중에 활용해 보도록
+				// 하지만 현재는 너무 제한을 하면 미검지가 많을 수 있으므로 일단 보류 
+				// 2019. 05. 22
+				if (_config->img_dif_th > _config->nightBrightness_Th ) { // only when at night
+					cv::Scalar mean, dev;
+					cv::meanStdDev(_curImg(roi_rect_Ex), mean, dev);
+					double _curROI_var = dev.val[0];
+					double _curROI_mean = mean.val[0];					
+					if (_config->debugGeneralDetail) {
+						std::cout << "mean: " << std::to_string(_curROI_mean) << ", std dev in STOP ROI: " << std::to_string(_curROI_var) << endl;
+						cv::imshow("WWR/Stop Object ROI", cv::Mat(_curImg(roi_rect_Ex)));
+					}
+					if ((_curROI_mean > 200 || _curROI_var < 50) && curBlob->fos == ObjectStatus::OS_MOVING_BACKWARD/*|| (_curROI_mean < 100 && _curROI_var < 30)*/) {
+						++curBlob;
+						continue;
+					}
+					if ((_curROI_mean > 200 || _curROI_var < 40) && curBlob->fos == ObjectStatus::OS_STOPPED/* because of break light, variance will be decreased */) {
+						++curBlob;
+						continue;
+					}
+				}
+
 			  // sangkny 20190331 check NCC when stopped 
 			  if(curBlob->fos == ObjectStatus::OS_STOPPED){
-				  std::vector<cv::Point2f> blob_ntPts;
-				  blob_ntPts.push_back(Point2f(curBlob->centerPositions.back()));
-				  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _config->transmtxH, _config->lane_length, false);
-				  cv::Rect roi_rect= curBlob->currentBoundingRect;
 				  
-				  if (realDistance/100.f > 100.f) {
-					  roi_rect = expandRect(roi_rect, 4, 4, BGImage.cols, BGImage.rows);
-				  }
-				  else {
-					  roi_rect = expandRect(roi_rect, 8, 8, BGImage.cols, BGImage.rows);
-				  }
-				  cv::Rect roi_rect_Ex = expandRect(roi_rect, 2, 2, BGImage.cols, BGImage.rows);
 				  // blob correlation debug
+				  // roi_rect_Ex 와 일부러 차이가 있게 하였음 
 				  if (_config->debugShowImagesDetail) {					  					  
 					  itms::imshowBeforeAndAfter(BGImage(roi_rect_Ex), _curImg(roi_rect), "STOP<<NCC BG / Target>> ", 2);					  					  
 				  }
-				  float blobncc = getNCC(_conf, BGImage(roi_rect_Ex), _curImg(roi_rect), Mat(), _config->match_method, _config->use_mask);
+				  float blobncc = getNCC(_conf, BGImage(roi_rect_Ex), _curImg(roi_rect)/*roi_rect_Ex 와 일부러 차이가 있게 하였음 */, Mat(), _config->match_method, _config->use_mask);
 				  if (abs(blobncc) > _config->BlobNCC_Th) // background 와 템플릿 매칭에서 비슷한 결과가 나오면
 				  {
 					  if(_conf.debugGeneralDetail)
@@ -2789,6 +2816,16 @@ namespace itms {
 					 // ++curBlob;
 					 // continue;
 				  //}
+				  //// 마지막으로 현재 ROI의 variance 가 0에서 멀어져야 한다. 초기 bg image가 제대로 만들어 지지 않으면 오검지 될 수 있음..
+				  // 아래 부분은 너무 밝거나 어두운 부분에서도 밝은 곳 (200 <mean and 40> std, 그리고, 120 > mean  and 20 > std 곳에서는 물체라고 보기는 어렵다. 나중에 활용해 보도록
+				  // 하지만 현재는 너무 제한을 하면 미검지가 많을 수 있으므로 일단 보류 
+				  // 2019. 05. 22
+				  //cv::Scalar mean, dev;
+				  //cv::meanStdDev(_curImg(roi_rect_Ex), mean, dev);
+				  //double _curROI_var = dev.val[0];
+				  //double _curROI_mean = mean.val[0];
+				  //std::cout << "mean: "<< std::to_string(_curROI_mean)<<", std dev in STOP ROI: " << std::to_string(_curROI_var) << endl;
+				  //cv::imshow("Stop Object ROI", cv::Mat(_curImg(roi_rect_Ex)));				  
 
 				  if (_conf.debugShowImages && _conf.debugSpecial) {
 					  cv::Mat debugImg = _curImg.clone();
@@ -3483,9 +3520,11 @@ namespace itms {
 			  cv::Mat debugImg = road_mask.clone();
 			  if (debugImg.channels() < 3)
 				  cvtColor(debugImg, debugImg, CV_GRAY2BGR);
+			  //draw lanes
 			  for (int i = 0; i < _config->Boundary_ROI_Pts.size(); i++)
-				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);
-			  imshow("road mask", debugImg);
+				  line(debugImg, _config->Boundary_ROI_Pts.at(i% _config->Boundary_ROI_Pts.size()), _config->Boundary_ROI_Pts.at((i + 1) % _config->Boundary_ROI_Pts.size()), SCALAR_BLUE, 2);			  
+
+			  imshow("road mask inside BGImage.empty loop", debugImg);
 			  //cv::waitKey(1);
 		  }
 	  }
@@ -3568,6 +3607,9 @@ namespace itms {
 				  cv::threshold(imgOrgPreDif, imgOrgPreDifThres, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
 				  medianBlur(imgOrgPreDifThres, imgOrgPreDifThres, 3); // consider more if neccessary 
 				  cv::dilate(imgOrgPreDifThres, imgOrgPreDifThres, structuringElement5x5);
+				  //if (!bDayMode) {
+					 // cv::dilate(imgOrgPreDifThres, imgOrgPreDifThres, structuringElement5x5); // sangkny 2019. 05. 22
+				  //}
 				  cv::erode(imgOrgPreDifThres, imgOrgPreDifThres, structuringElement5x5);
 				  if (_config->debugShowImagesDetail && _config->debugSpecial) {
 					  imshowBeforeAndAfter(orgPart, imgOrgDifferenceBg, "orgPart/ imgOrgDifBg before thresholding !!", 2);	
@@ -3649,11 +3691,12 @@ namespace itms {
 #endif            // end selecting less noisy
 				   
 				  // 밤이면 전프레임과의 차이로만 된 영상을 전달해줌, later if(_config->img_dif_th > _config->nightBrightness_Th || BGS_DIF)으로 외부에서 대체
-				  if(_config->img_dif_th > _config->nightBrightness_Th){
+				  if(!bDayMode /* _config->img_dif_th > _config->nightBrightness_Th */){
 					  imgOrgDifThres = imgOrgPreDifThres.clone();
 				  }
+				  //at day time, imgOrgDifThres will be preserved !!!
 			  }
-			  else { // BGS_DIF this mode does not have imgOrgDifferenceBg 
+			  else { // BGS_DIF, this mode does not have imgOrgDifferenceBg 
 				  absdiff(orgPart, orgPrePart, imgOrgPreDif);
 				  cv::threshold(imgOrgPreDif, imgOrgPreDifThres, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
 				  medianBlur(imgOrgPreDifThres, imgOrgPreDifThres, 3); // consider more if neccessary 
@@ -3676,10 +3719,16 @@ namespace itms {
 			  cv::Rect copyRoi = cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows));
 			  tmp.copyTo(mask(copyRoi));  // mask(축소된 전체영상)의 copyRoi 위치로 tmp(축소된 관심영역) 카피
 			  cv::bitwise_and(mask, road_mask, mask); // road_mask 마스킹
-			  bitwise_or(imgThreshBg, mask, imgThreshBg);	
+			  // bitwise_or or bitwise_and 는 CNT or DIF 에 따라 결정을 해야 한다. 아래는  dif 만 고려한 형태, 그리고 낮과 밤일때 고려
+			  // 밤일때는 DIF CNT모두 dif로 만들어진 mask만 고려, 낮에는 Zoom 상태 고려 해야함
+			  if (!bDayMode) {
+				  imgThreshBg = mask.clone();  // mask image will be the BG thresholded image 
+			  }
+			  else {
+				  bitwise_or(imgThreshBg, mask, imgThreshBg);
+			  }
 			  // 축소된 bground 영상과 현재프레임 차이로 생긴 영상에 zoom(원래크기) 옵션에 의한 영상을 논리합을 하면 
-			  // 축소된 imgThreshBg 영상의 잘안보이는 상단부분을 잘보이게 하는 효과가 있으나 자칫하면 노이즈가 더 낄 수 있으니 주의 바람.
-			  		  
+			  // 축소된 imgThreshBg 영상의 잘안보이는 상단부분을 잘보이게 하는 효과가 있으나 자칫하면 노이즈가 더 낄 수 있으니 주의 바람.			  		  
 			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
 				  cv::imshow("bitwise_or mask", mask);
 				  //cv::waitKey(1);
@@ -3690,11 +3739,20 @@ namespace itms {
 	  }
 	  // _config->zoomBG 에서 처리된 영상을 반영하기 위해서는 -->> imgThreshBg <<-- 영상을 참고해야 함.
 	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY); // 축소된 영상 전후 차이	  	  
-
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG <<-- >> imgThresh", 2);
-		  imshow("before erode dilation on imgThresh when DIF", imgThresh);
+		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG <<-- >> imgThresh before combine both", 2);
+		  imshow("before erode dilation on imgThresh when DIF ", imgThresh);
 	  }
+     // then combine both at daytime and night time // 낮 밤 구분없이 섞어야 하는 것 같은데... 그것도 위 루푸 앞에서...
+	  //if (bDayMode /*_config->img_dif_th < _config->nightBrightness_Th*//* 26 as of 20190510 */) {
+		  // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
+		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
+	  //}
+	  //else { // under dark condition, only difference between pre and cur is used
+		 // ; // doing for night condition
+	  //}
+
+	  
 	  for (unsigned int i = 0; i < 1; i++) { // we need to this for the near distance regions, so before bit_wise_or with long distance regions
 											 //if (_config->bgsubtype == BgSubType::BGS_CNT)
 											 //	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
@@ -3716,19 +3774,13 @@ namespace itms {
 			  }
 		  }
 	  }
-
-	  // then combine only at daytime
-	  if(bDayMode /*_config->img_dif_th < _config->nightBrightness_Th*//* 26 as of 20190510 */ ){ 
-		  // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
-		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
-	  }else{ // under dark condition, only difference between pre and cur is used
-		  ; // doing for night condition
-	  }  
+	  // after morphology we deed to threshold again otherwise, contours will have some connection with neighbors
+	  cv::threshold(imgThresh, imgThresh, 200, 255, CV_THRESH_BINARY); // sangkny 2019. 05. 22	  
 	  	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  imshow("after erode dilation and combine", imgThresh);
 		  //cv::waitKey(1);
-		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (after morphology on imgThresh (bit_OR)", 2);
+		  itms::imshowBeforeAndAfter(imgThreshBg, imgThresh, " imgThreshBg (after morphology on imgThresh and combine (bit_OR)", 2);
 		  //itms::imshowBeforeAndAfter(imgXor, imgXor, " (bit_XOR)", 2);
 	  }
 
@@ -3898,9 +3950,17 @@ namespace itms {
 		  if (_config->debugShowImagesDetail)
 			  drawAndShowContours(*_config, imgThresh.size(), blobs, "All imgBlobs");
 
+		  // draw blob information
 		  drawBlobInfoOnImage(*_config, blobs, debugImg);  // blob(tracked) information
-		  drawRoadRoiOnImage(_config->Road_ROI_Pts, debugImg);		  
-		  
+		  // draw lanes
+		  drawRoadRoiOnImage(_config->Road_ROI_Pts, debugImg);
+		  if (_config->debugShowImagesDetail) {
+			  //draw brightness checking area
+			  if (brightnessRoi.area() > 0) {
+				  cv::rectangle(debugImg, brightnessRoi, SCALAR_CYAN, 2, 8, 0);
+			  }
+		  }
+
 		  std::vector<cv::Point> crossingLine;
 		  crossingLine.push_back(cv::Point(0, _config->Boundary_ROI_Pts.at(3).y));
 		  crossingLine.push_back(cv::Point(curImg.cols - 1, _config->Boundary_ROI_Pts.at(2).y));

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<Road0 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>"2i"</dt>
+  <data>
+    939 105 950 105 437 1043 262 1032</data></Road0>
+<Road1 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>"2i"</dt>
+  <data>
+    948 106 1008 107 1090 1036 427 1041</data></Road1>
+<Road2 type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>1</cols>
+  <dt>"2i"</dt>
+  <data>
+    1006 108 1032 108 1360 1036 1088 1034</data></Road2>
+</opencv_storage>

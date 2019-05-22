@@ -4,49 +4,42 @@
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
 <debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
-<debugGeneral>1</debugGeneral>                      <!-- debug flag for printing the text information --> 
+<debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
 <debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
-<debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
-<debugSpecial>0</debugSpecial>                      <!-- debug flag for improving purpose only -->
-<debugSaveFile> 0 </debugSaveFile>                   <!-- for training object classifier with Ratio H/W -->
+<debugTime>1</debugTime>                            <!-- debug flag for processing time-related information
 
-<scaleFactor>0.5</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
-<zoomBG> 1 </zoomBG>                                <!-- long distance background zoom and background substraction ---->
+<scaleFactor>0.5</scaleFactor>                      <!-- processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
+
 <isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
 <img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
-<nightBrightness_Th> 24 </nightBrightness_Th>       <!-- day/night brightness threshold -->
+<nightBrightness_Th> 20 </nightBrightness_Th>       <!-- day/night brightness threshold -->
 <nightObjectProb_Th> 0.8 </nightObjectProb_Th>      <!-- night time object probability threshold -->
 
-<AutoBrightness_x>1419</AutoBrightness_x>           <!-- auto brightness rect [1162, 808, 110, 142] -->
-<AutoBrightness_y>205</AutoBrightness_y>            <!-- to determine the brightness level of the given scene -->
-<AutoBrightness_width>121</AutoBrightness_width>    <!-- with the rect  -->
-<AutoBrightness_height>56</AutoBrightness_height>  <!-- please select the correct region to help the system working perfectly -->
+<AutoBrightness_x>1162</AutoBrightness_x>           <!-- auto brightness rect [1162, 808, 110, 142] -->
+<AutoBrightness_y>808</AutoBrightness_y>            <!-- to determine the brightness level of the given scene -->
+<AutoBrightness_width>110</AutoBrightness_width>    <!-- with the rect  -->
+<AutoBrightness_height>142</AutoBrightness_height>  <!-- please select the correct region to help the system working perfectly -->
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_192457_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
-<VideoPath>"TrafficVideo\\20180912_192457_cam_0.avi"</VideoPath>    // -- 근접 순방향 2개 차량 주행 -> 정지가 안잡히네~
 <VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  주간 단독 보행 후 , 자동차 주행 
 <VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- 보행 2명 차량정차 실험 
 <VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
-<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- 트럭 야간 가다 서다    역주행이 결과로 나온다.. 문제 => 해결됨
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- 트럭 야간 가다 서다    
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- 오후 차량 3대 역주행   
-<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  X => 한대밖에 못 잡음
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  
 <VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- 역주행 2대 
-<VideoPath>"d:\\주간-일반-단독-보행\\20180911_114411_cam_0.avi"</VideoPath> //-- 진행 후 stop/ stop 후 진행(114311) 판단
 -->
 
 <!-- Road Configuration -->
 <camera_height> 1100</camera_height>                            <!-- camera height (unit: centimeter (cm) from the ground, it is useless now -->
-<lane_length> 21000 </lane_length>                              <!-- lane distance (cm) from the starting point (0), now 200 meters -->
+<lane_length> 20000 </lane_length>                              <!-- lane distance (cm) from the starting point (0), now 200 meters -->
 <lane2lane_width> 700 </lane2lane_width>                        <!-- 3.5 * 2 * 100 total road width -->
-
-<max_obj_distance> 19500 </max_obj_distance>                    <!-- to eliminate an object around boundary -->
-<min_obj_distance> 50</min_obj_distance>
 
 
 <StartX>0</StartX>                                              <!-- line crossing point for testing, it is not used at all -->
@@ -55,14 +48,12 @@
 <EndY>0.6</EndY>                                                <!-- will be removed later -->
 
 <!-- -- Detection - related : BackGround Lane Direction and etc -- -->
-<BGImagePath>"config\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
+<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
 <bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
-<intNumBGRefresh> 900 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh default: 60 -->
-<dblMOGVariance>32</dblMOGVariance>                             <!-- MOG2 variance : how much different between pixel's value and a BG model : high no sensitive 32 -->
-<dblMOGShadowThr> 200 </dblMOGShadowThr>                         <!-- MOG2 Shadow detection and Filtering Threshold 50 -->
+<intNumBGRefresh> 60 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh -->
 
 <ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
-<bgsubtype> 1 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
+<bgsubtype> 0 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
 <use_mask> 0 </use_mask>                                        <!-- // for template matching -->
 <match_method> 5 </match_method>                                <!-- // TM_CCOEFF_NORMED : 5 -->
 <max_Trackbar> 5 </max_Trackbar>    
@@ -83,33 +74,23 @@
 <bStrictObjEvent> 1 </bStrictObjEvent>                          <!-- Strict Object Event Determination --> 
 <maxNumOfTrackers> 100 </maxNumOfTrackers>                      <!-- max number of trackers (or blobs in the project -->
 <minVisibleCount> 3 </minVisibleCount>                          <!-- minimum Visible Count (after this number debugImage will be effective) -->
-<minVisibleCountHuman> 20</minVisibleCountHuman>                <!-- minimum Visible Count for Human -->
 <max_Center_Pts> 150 </max_Center_Pts>                          <!-- max number of tracking centers   -->
 <numberOfTracePoints> 15 </numberOfTracePoints>                 <!-- number of trace points, disply purpose only -->
 <maxNumOfConsecutiveInFramesWithoutAMatch> 50 </maxNumOfConsecutiveInFramesWithoutAMatch>   <!-- max number of consecutive frames without matching to be inactive or beTracking = false -->
 <maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>              <!-- max number of invisible frames, after this number, the object will be erased if the conditions are satisfied -->
-<minDistanceForBackwardMoving> 1000 </minDistanceForBackwardMoving>                         <!-- minimum distance for determining the right backward moving --      -->
-
 <movingThresholdInPixels> 0 </movingThresholdInPixels>          <!-- stop object determination threshold, now it is not used, instead the following parameters are used for this purpose -->
 
 <!-- Object speed limit related -- -->
-<lastMinimumPoints> 15 </lastMinimumPoints>                     <!--  20 the last minimum center points of the object to determine its speed using Linear Regression  -->
+<lastMinimumPoints> 30 </lastMinimumPoints>                     <!-- the last minimum center points of the object to determine its speed using Linear Regression  -->
 <fps> 30 </fps>                                                 <!-- frames per seconds, it is required to compute the object' speed -->
-<speedLimitForstopping> 5 </speedLimitForstopping>              <!-- 2 speed to be determined as "STOP", Km/Hour -->
-<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- 10 minimum consecutive frame for object status determination it will be increased according to the object's distance -->
+<speedLimitForstopping> 2 </speedLimitForstopping>              <!-- speed to be determined as "STOP", Km/Hour -->
 
-<BlobNCC_Th> 0.7 </BlobNCC_Th>
+<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- minimum consecutive frame for object status determination -->
 
-<!-- Object Tracking ---------------------------- -->
+<BlobNCC_Th> 0.5 </BlobNCC_Th>
 <m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
 <m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
 <isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
-<sTrackingDist> 500</sTrackingDist>                           <!-- tracking start distance from zero point default: 5 meters -->
-<isCorrectTrackerBlob>0</isCorrectTrackerBlob>                  <!-- correct blob property from tracker's correction --- -->
-<useTrackerMatching>1</useTrackerMatching>                      <!-- option: use tracker to match a block to the existing blobs -- -->
-<useTrackerMatchingThres>0.75</useTrackerMatchingThres>         <!-- Tracker matching threshold for different object determination  -->
-<useTrackerAllowedPercentage>0.25</useTrackerAllowedPercentage> <!-- Overlapped region percentage compared with Predicted Tracker's rect --> 
-
 <HOG>1</HOG>                                                    <!-- HOG feature flag, the proposed Tracker-related parameters -->
 <FIXEDWINDOW>1</FIXEDWINDOW>                                    <!-- flag for fixed window-size -->
 <MULTISCALE>1</MULTISCALE>                                      <!-- flag for multi scale approach -->

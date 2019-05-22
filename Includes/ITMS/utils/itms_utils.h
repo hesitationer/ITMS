@@ -111,7 +111,8 @@ namespace itms {
 		bool isAutoBrightness = true;
 		int AutoBrightness_x = 1162;
 		int  max_past_frames_autoBrightness = 15;
-		cv::Rect AutoBrightness_Rect=cv::Rect(1162, 808, 110, 142);// 1x, default[1162, 808, 110, 142] for darker region,
+		cv::Rect AutoBrightness_Rect= cv::Rect(1419, 205, 121, 56);// sangkny 2019. 05. 22 when night vision has some problem in the previous settings
+			// cv::Rect(1162, 808, 110, 142);// 1x, default[1162, 808, 110, 142] for darker region,
 														  // brighter region [938, 760, 124, 94]; // for a little brighter asphalt
 		char VideoPath[512];
 		

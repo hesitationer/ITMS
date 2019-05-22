@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "utils/BoxSelector/cv_ext/init_box_selector.hpp"
 
-#define _writeXml
+//#define _writeXml
 
 #define _sk_Memory_Leakag_Detector
 #ifdef _sk_Memory_Leakag_Detector

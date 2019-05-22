@@ -264,7 +264,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\utils\BoxSeletor\cv_ext\init_box_selector.cpp" />
-    <ClCompile Include="file_input_output_with_xml_yml_main.cpp" />
+    <ClCompile Include="PointSelector_main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
