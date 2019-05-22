@@ -3430,6 +3430,7 @@ namespace itms {
   bool itmsFunctions::process(const cv::Mat& curImg1, ITMSResult& _itmsRes) {
 	  Mat curImg = curImg1.clone();
 	  this->orgImage = curImg1.clone();
+	  bool bDayMode = true; // 
 	  if (!isInitialized) {
 		  cout << "itmsFunctions is not initialized (!)(!)\n";
 		  return false;
@@ -3465,6 +3466,9 @@ namespace itms {
 
 	  }
 	  
+	  // determine day or night
+	  bDayMode = (_config->img_dif_th<_config->nightBrightness_Th)? true : false;
+
 	  if (preImg.empty()) {
 		  preImg = curImg.clone();
 	  }
@@ -3487,7 +3491,10 @@ namespace itms {
 	  }
 	  // we have two blurred images, now process the two image 
 	  cv::Mat imgDifference, imgDifferenceBg; // difference images from  a previous and a background images (small image)
-	  cv::Mat imgThresh, imgThreshBg;
+	  cv::Mat imgThresh, imgThreshBg;          // the corresponding thresholding images
+
+	  cv::absdiff(preImg, curImg, imgDifference);
+
 	  if (_config->bgsubtype == itms::BgSubType::BGS_CNT){
 		  //pBgSub->setVarThreshold(10);
 		  //int shadowValue = pBgSub->getShadowValue();		  
@@ -3504,17 +3511,13 @@ namespace itms {
 				  cv::imwrite(filename, bgImage);
 				  std::cout << " background image has been generated (!!)\n";
 			  }*/
-		  }		  
-		  cv::absdiff(preImg, curImg, imgDifference);
+		  }		 
 	  }
-	  else {
-		  cv::absdiff(preImg, curImg, imgDifference);	  		  
+	  else {		  
 		  //std::cout <<" File BG type: " << type2str(BGImage.type()) << endl; // ==> 8UC1
-		  cv::absdiff(BGImage, curImg, imgDifferenceBg);
-			
+		  cv::absdiff(BGImage, curImg, imgDifferenceBg);			
 	  }
 	  
-
 	  if (!road_mask.empty()) {
 		  cv::bitwise_and(road_mask, imgDifference, imgDifference);	  		  
 		  cv::bitwise_and(road_mask, imgDifferenceBg, imgDifferenceBg);
@@ -3540,7 +3543,7 @@ namespace itms {
 			  // sangkny 2019. 04. 30 zooming and threshold for longDistance regions. For efficiency, I used resized imgDiffernceBG image			  
 			  cv::Rect zROI(zPmin, zPmax);
 			  cv::Rect ozRoi(ozPmin, ozPmax);// (zPmin*(1. / _config->scaleFactor), zPmax*(1. / _config->scaleFactor)); // original roi	=> init로		  
-			  cv::Mat tmp = imgDifferenceBg(zROI).clone();			  
+			  cv::Mat tmp = imgDifferenceBg(zROI).clone();	// 관심영역 절대좌표 축소된 이미지	=> 현재는 상관없네...	  
 			  if (orgPreImage.empty())
 				  orgPreImage = orgImage.clone();
 
@@ -3589,7 +3592,7 @@ namespace itms {
 				 
 				  if (_config->debugShowImagesDetail && _config->debugSpecial) {					  
 					  imshowBeforeAndAfter(imgOrgDifThres, imgOrgPreDifThres, " road_ROI_mask && bg / pre-cur diff after thresholding !!", 2);
-				  }
+				  }				  
 #if 0
 				  // select better one (less nosy foreground image using computing the complexity of the given foreground iamge)
 				  cv::Mat imgOrgDifThresCopy = imgOrgDifThres.clone();
@@ -3643,41 +3646,50 @@ namespace itms {
 						  imgOrgDifThres = imgOrgAndPreDifThres.clone();
 					  }
 				  }
-#endif
-				  // end selecting less noisy 
-
+#endif            // end selecting less noisy
+				   
+				  // 밤이면 전프레임과의 차이로만 된 영상을 전달해줌, later if(_config->img_dif_th > _config->nightBrightness_Th || BGS_DIF)으로 외부에서 대체
+				  if(_config->img_dif_th > _config->nightBrightness_Th){
+					  imgOrgDifThres = imgOrgPreDifThres.clone();
+				  }
 			  }
-			  else { // BGS_DIF
-				  absdiff(orgPart, orgPrePart, imgOrgDifferenceBg);
-				  cv::threshold(imgOrgDifferenceBg, imgOrgDifThres, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
-				  medianBlur(imgOrgDifThres, imgOrgDifThres, 3); // consider more if neccessary 
+			  else { // BGS_DIF this mode does not have imgOrgDifferenceBg 
+				  absdiff(orgPart, orgPrePart, imgOrgPreDif);
+				  cv::threshold(imgOrgPreDif, imgOrgPreDifThres, _config->img_dif_th, 255.0, CV_THRESH_BINARY); // 
+				  medianBlur(imgOrgPreDifThres, imgOrgPreDifThres, 3); // consider more if neccessary 
 				  if (0 && _config->debugShowImagesDetail && _config->debugSpecial) {
-					  cv::imshow("tmpZoom before dilation", imgOrgDifThres);
+					  cv::imshow("tmpZoom before dilation", imgOrgPreDifThres);
 				  }
 				  //cv::dilate(tmpZoom, tmpZoom, structuringElement3x3); // MORP_CLOSE
 				  //cv::erode(tmpZoom, tmpZoom, structuringElement3x3);  // MORP_CLOSE
 				  if (_config->debugShowImagesDetail && _config->debugSpecial) {
-					  imshowBeforeAndAfter(imgOrgDifferenceBg, imgOrgDifThres, "imgOrg Bg/Dif Thres", 2);
+					  imshowBeforeAndAfter(imgOrgPreDif, imgOrgPreDifThres, "imgOrgPre Dif / Thres", 2);
 				  }
+				  // imgOrgDifThres 는 원래 배경과의 차이인데 이 옵션은 전프레임과의 차이 모드 이므로
+				  imgOrgDifThres = imgOrgPreDifThres.clone(); // 2019. 05. 22
 			  }
-			  cv::resize(imgOrgDifThres, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor);
+
+			  cv::resize(imgOrgDifThres, tmp, cv::Size(), _config->scaleFactor, _config->scaleFactor); // 축소된 크기로 변환
 			  // mix with imgThresBg only when daytime //낮에만 한다 2019. 05. 21			  
-			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));
+			  cv::Mat mask(imgDifferenceBg.size(), CV_8UC1, cv::Scalar(0, 0, 0));      // 축소된 크기 마스크 만듬
 			  //mask(cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows))) = tmp; // it is not working, 이렇게 하면 동작 안함
 			  cv::Rect copyRoi = cv::Rect(static_cast<cv::Point>(zPmin), cv::Size(tmp.cols, tmp.rows));
-			  tmp.copyTo(mask(copyRoi));
-			  cv::bitwise_and(mask, road_mask, mask);
-			  bitwise_or(imgThreshBg, mask, imgThreshBg);			  
+			  tmp.copyTo(mask(copyRoi));  // mask(축소된 전체영상)의 copyRoi 위치로 tmp(축소된 관심영역) 카피
+			  cv::bitwise_and(mask, road_mask, mask); // road_mask 마스킹
+			  bitwise_or(imgThreshBg, mask, imgThreshBg);	
+			  // 축소된 bground 영상과 현재프레임 차이로 생긴 영상에 zoom(원래크기) 옵션에 의한 영상을 논리합을 하면 
+			  // 축소된 imgThreshBg 영상의 잘안보이는 상단부분을 잘보이게 하는 효과가 있으나 자칫하면 노이즈가 더 낄 수 있으니 주의 바람.
+			  		  
 			  if (_config->debugShowImagesDetail && _config->debugSpecial) {
 				  cv::imshow("bitwise_or mask", mask);
 				  //cv::waitKey(1);
-				  imshowBeforeAndAfter(mask, tmp,"mask tmp",2);				  
+				  imshowBeforeAndAfter(mask, tmp,"mask image(scaled size) tmp(zRoi)",2);				  
 			  }
 		  }
 		  
 	  }
-
-	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY);	  	  
+	  // _config->zoomBG 에서 처리된 영상을 반영하기 위해서는 -->> imgThreshBg <<-- 영상을 참고해야 함.
+	  cv::threshold(imgDifference, imgThresh, _config->img_dif_th/* +13(night) -3(day) */, 255.0, CV_THRESH_BINARY); // 축소된 영상 전후 차이	  	  
 
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  imshowBeforeAndAfter(imgThreshBg, imgThresh, "BG <<-- >> imgThresh", 2);
@@ -3686,7 +3698,7 @@ namespace itms {
 	  for (unsigned int i = 0; i < 1; i++) { // we need to this for the near distance regions, so before bit_wise_or with long distance regions
 											 //if (_config->bgsubtype == BgSubType::BGS_CNT)
 											 //	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
-		  if (_config->bgsubtype == BgSubType::BGS_DIF || (_config->bgsubtype == BgSubType::BGS_CNT && _config->img_dif_th<=_config->nightBrightness_Th/* night time */)) {
+		  if (_config->bgsubtype == BgSubType::BGS_DIF || (_config->bgsubtype == BgSubType::BGS_CNT && !bDayMode/*_config->img_dif_th<=_config->nightBrightness_Th*//* night time */)) {
 			  if (_config->scaleFactor > 0.75) {
 				  //cv::dilate(imgThresh, imgThresh, structuringElement3x3);
 				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
@@ -3706,7 +3718,7 @@ namespace itms {
 	  }
 
 	  // then combine only at daytime
-	  if(_config->img_dif_th < _config->nightBrightness_Th/* 26 as of 20190510 */ ){ 
+	  if(bDayMode /*_config->img_dif_th < _config->nightBrightness_Th*//* 26 as of 20190510 */ ){ 
 		  // under daytime condition, please refer night threshold in matchCurFrameBlobsToExistingBlobs
 		  cv::bitwise_or(imgThresh, imgThreshBg, imgThresh);
 	  }else{ // under dark condition, only difference between pre and cur is used
