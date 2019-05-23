@@ -679,6 +679,7 @@ namespace itms {
 
   // general : blob image processing (blob_imp)
   void mergeBlobsInCurrentFrameBlobs(itms::Config& _conf, std::vector<Blob> &currentFrameBlobs);
+  void SplitBlobsInCurrentFrameBlobs(itms::Config& _conf, std::vector<Blob> &currentFrameBlobs, const cv::Mat & srcImg);
   void mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(std::vector<Blob>& currentFrameBlobs, std::vector<Blob> &predBlobs);
   void matchCurrentFrameBlobsToExistingBlobs(itms::Config& _conf, const cv::Mat& orgImg, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int& id);
   void matchExistingBlobsToCurrentFrameBlobs(itms::Config& _conf, cv::Mat& preImg, const cv::Mat& srcImg, std::vector<Blob> &existingBlobs, std::vector<Blob> &currentFrameBlobs, int &id);
@@ -707,7 +708,7 @@ namespace itms {
 
   // cascade detector related
   void detectCascadeRoi(itms::Config& _conf, cv::Mat img, cv::Rect& rect);
-  void detectCascadeRoiVehicle(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars);
+  void detectCascadeRoiVehicle(itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars, std::vector<cv::Rect>&object);
   void detectCascadeRoiHuman(const itms::Config& _conf, /* put config file */const cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _people);
   // cascade detector related ends
 

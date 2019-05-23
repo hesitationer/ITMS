@@ -3,13 +3,13 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
-<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugShowImagesDetail>1</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
 <debugGeneral>1</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
 <debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
 <debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
 <debugSpecial>0</debugSpecial>                      <!-- debug flag for improving purpose only -->
-<debugSaveFile> 0 </debugSaveFile>                   <!-- for training object classifier with Ratio H/W -->
+<debugSaveFile> 0 </debugSaveFile>                  <!-- for training object classifier with Ratio H/W -->
 
 <scaleFactor>0.5</scaleFactor>                      <!--  processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
 <zoomBG> 1 </zoomBG>                                <!-- long distance background zoom and background substraction ---->
@@ -21,11 +21,11 @@
 <AutoBrightness_x>1419</AutoBrightness_x>           <!-- auto brightness rect [1162, 808, 110, 142] -->
 <AutoBrightness_y>205</AutoBrightness_y>            <!-- to determine the brightness level of the given scene -->
 <AutoBrightness_width>121</AutoBrightness_width>    <!-- with the rect  -->
-<AutoBrightness_height>56</AutoBrightness_height>  <!-- please select the correct region to help the system working perfectly -->
+<AutoBrightness_height>56</AutoBrightness_height>   <!-- please select the correct region to help the system working perfectly -->
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_192457_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_114311_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -37,6 +37,7 @@
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- 오후 차량 3대 역주행   
 <VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  X => 한대밖에 못 잡음
 <VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- 역주행 2대 
+<VideoPath>"TrafficVideo\\20180911_114011_cam_0.avi"</VideoPath>    //-- 가짜 차량 검지, 정지 미검지 영상
 <VideoPath>"d:\\주간-일반-단독-보행\\20180911_114411_cam_0.avi"</VideoPath> //-- 진행 후 stop/ stop 후 진행(114311) 판단
 -->
 

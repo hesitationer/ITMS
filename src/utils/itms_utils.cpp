@@ -142,10 +142,10 @@ namespace itms {
 		  double dblLeastDistance = 100000.0;
 		  cv::Point2f sPt = cvtPx2RealPx(static_cast<cv::Point2f>(currentBlob->centerPositions.back()), _conf.transmtxH); // starting pt
 
-		  for (unsigned int i = 0; i < currentFrameBlobs.size(); i++) {			  
+		  for (unsigned int i = 0; i < currentFrameBlobs.size(); i++) {
 			  cv::Point2f ePt = cvtPx2RealPx(static_cast<cv::Point2f>(currentFrameBlobs[i].centerPositions.back()), _conf.transmtxH);                                  // end pt
 			  double realdist = distanceBetweenPoints(sPt, ePt); // real distance (cm) in the ROI 
-			  
+
 			  double dblDistance = distanceBetweenPoints(currentBlob->centerPositions.back(), currentFrameBlobs[i].centerPositions.back());
 
 			  if (realdist < 500/* 5 meters */ && dblDistance > 1/* same object */ && dblDistance < dblLeastDistance) { // center locations should be in the range
@@ -177,7 +177,6 @@ namespace itms {
 			  if (flagMerge) {
 				  if (_conf.debugGeneralDetail)
 					  cout << "mergeing with " << to_string(intIndexOfLeastDistance) << " in blob" << currentBlob->centerPositions.back() << endl;
-
 				  // countour merging
 				  std::vector<cv::Point> points, contour;
 				  points.insert(points.end(), currentBlob->currentContour.begin(), currentBlob->currentContour.end());
@@ -195,7 +194,39 @@ namespace itms {
 		  }
 		  ++currentBlob;
 	  }
+  }
 
+  // put the split logic as well on 2019
+  void SplitBlobsInCurrentFrameBlobs(itms::Config& _conf, std::vector<Blob> &currentFrameBlobs, const cv::Mat & srcImg) {	  
+	  // split a blob into two
+	  std::vector<Blob>::iterator currentBlob = currentFrameBlobs.begin();
+	  while (currentBlob != currentFrameBlobs.end()) {		  
+		  // condition, distance around top boundary and height/width ratio > 1 and cars.size()>1
+		  if (currentBlob->oc == itms::ObjectClass::OC_VEHICLE && currentBlob->dblCurrentAspectRatio <=1.0) { // width/height
+			  std::vector<cv::Point2f> blob_ntPts;
+			  blob_ntPts.push_back(Point2f(currentBlob->centerPositions.back()));			  
+			  float realDistance = getDistanceInMeterFromPixels(blob_ntPts, _conf.transmtxH, _conf.lane_length, false);
+			  if (realDistance / 100 > 100) { // 100 meters 위에서만 한다 경계를 이미 통화해서 왔으니...
+				  // vehicle detection
+				  float scaleRect = 1.5;										// put it to the config parameters
+				  cv::Rect roi_rect(currentBlob->currentBoundingRect);	// copy the current Rect and expand it
+				  cv::Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, srcImg.cols, srcImg.rows);
+				  // verify it
+					std::vector<cv::Rect> cars, allcars;
+				    detectCascadeRoiVehicle(_conf, srcImg, expRect, cars, allcars);
+					if (cars.size()>0 && allcars.size()>1) {
+						// come this loop and see
+						int kkk = allcars.size();		
+						// split
+
+					  }
+
+			  }
+			  ;
+		  }
+
+		  ++currentBlob;
+	  }
 
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -430,6 +461,7 @@ namespace itms {
 		// with data, kalman or other tracking will be more accurate
 	  // 2019. 04. 05, option: applying tracker-based matching option to match blobs
 	  // 2019. 04. 29, 
+	  // 2019. 05. 23 먼거리 자동차 분리 하기 
 	  // --------------------------------------------------------------------------------------------------------------------------------
 	  for (auto &currentFrameBlob : currentFrameBlobs) {
 		  int intIndexOfLeastDistance = -1;
@@ -503,8 +535,8 @@ namespace itms {
 					  cv::Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, srcImg.cols, srcImg.rows);
 					  if (currentFrameBlob.oc == itms::ObjectClass::OC_VEHICLE) {
 						  // verify it
-						  std::vector<cv::Rect> cars;
-						  detectCascadeRoiVehicle(_conf, srcImg, expRect, cars);
+						  std::vector<cv::Rect> cars, allcars;
+						  detectCascadeRoiVehicle(_conf, srcImg, expRect, cars, allcars);
 						  if (cars.size())
 							  currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
 						  //else if (distance >= 10000 && _conf.scaleFactor < 1.0) {       // sangkny 2019. 04. 28
@@ -976,8 +1008,8 @@ namespace itms {
 					  cv::Rect expRect = expandRect(roi_rect, scaleRect*roi_rect.width, scaleRect*roi_rect.height, srcImg.cols, srcImg.rows);
 					  if (currentFrameBlob.oc == itms::ObjectClass::OC_VEHICLE) {
 						  // verify it
-						  std::vector<cv::Rect> cars;
-						  detectCascadeRoiVehicle(_conf, srcImg, expRect, cars);
+						  std::vector<cv::Rect> cars, allcars;
+						  detectCascadeRoiVehicle(_conf, srcImg, expRect, cars, allcars);
 						  if (cars.size())
 							  currentFrameBlob.oc_prob = 1.0;							// set the probability to 1, and it goes forever after.
 						  else if (_conf.img_dif_th >= _conf.nightBrightness_Th &&/* at night */ classProb >= _conf.nightObjectProb_Th)
@@ -2774,8 +2806,8 @@ namespace itms {
 					  ++curBlob;
 					  continue;
 				  }else if ((abs(blobncc) > _config->BlobNCC_Th/2.)) { // 백그라운드와 유사시...stop 구분  (양쪽에 차량이 있으면 안됨)
-					  std::vector<cv::Rect> _cars;					  					  
-					  detectCascadeRoiVehicle(_conf, BGImage, roi_rect_Ex, _cars);
+					  std::vector<cv::Rect> _cars, _allcars;					  					  
+					  detectCascadeRoiVehicle(_conf, BGImage, roi_rect_Ex, _cars, _allcars);
 					  if (_cars.size()!=0) { //  백그라운드에 오프젝트가 있으면 안된다.
 							curBlob->os = itms::ObjectStatus::OS_NOTDETERMINED;
 							if (_conf.debugShowImagesDetail)
@@ -2916,7 +2948,7 @@ namespace itms {
 	  }
 
   }
-  void detectCascadeRoiVehicle(itms::Config& _conf,/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars)
+  void detectCascadeRoiVehicle(itms::Config& _conf,/* put config file */cv::Mat img, cv::Rect& rect, std::vector<cv::Rect>& _cars, std::vector<cv::Rect>&object)
   { /* please see more details in Object_Detector_Cascade Project */
 	  Mat roiImg = img(rect).clone();
 
@@ -2930,7 +2962,7 @@ namespace itms {
 	  resize(roiImg, roiImg, Size(), casRatio, casRatio);	  
 
 	  Size img_size = roiImg.size();
-	  vector<Rect> object;
+	  //vector<Rect> object;
 	  _conf.cascade.detectMultiScale(roiImg, object, 1.1, 5/*1  cascadG */, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(0, 0), img_size); // detectio objects (car)
 																															 //cascade.detectMultiScale(img, object, 1.04, 5, 0 | CV_HAAR_DO_CANNY_PRUNING, cvSize(3, 8), img_size); // detectio objects (people)
 	  if (_conf.debugGeneralDetail) {
@@ -3756,7 +3788,7 @@ namespace itms {
 	  for (unsigned int i = 0; i < 1; i++) { // we need to this for the near distance regions, so before bit_wise_or with long distance regions
 											 //if (_config->bgsubtype == BgSubType::BGS_CNT)
 											 //	  cv::erode(imgThresh, imgThresh, structuringElement3x3);
-		  if (_config->bgsubtype == BgSubType::BGS_DIF || (_config->bgsubtype == BgSubType::BGS_CNT && !bDayMode/*_config->img_dif_th<=_config->nightBrightness_Th*//* night time */)) {
+		  if (_config->bgsubtype == BgSubType::BGS_DIF || (_config->bgsubtype == BgSubType::BGS_CNT /*&& !bDayMode*//*_config->img_dif_th<=_config->nightBrightness_Th*//* night time */)) {
 			  if (_config->scaleFactor > 0.75) {
 				  //cv::dilate(imgThresh, imgThresh, structuringElement3x3);
 				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
@@ -3767,15 +3799,17 @@ namespace itms {
 				  cv::dilate(imgThresh, imgThresh, structuringElement7x7);
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
-			  else {
-				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
+			  else {				  
+				  if (!bDayMode) {
+					  cv::dilate(imgThresh, imgThresh, structuringElement5x5);					  
+				  }				  
 				  cv::dilate(imgThresh, imgThresh, structuringElement5x5);
 				  cv::erode(imgThresh, imgThresh, structuringElement5x5);
 			  }
 		  }
 	  }
 	  // after morphology we deed to threshold again otherwise, contours will have some connection with neighbors
-	  cv::threshold(imgThresh, imgThresh, 200, 255, CV_THRESH_BINARY); // sangkny 2019. 05. 22	  
+	  cv::threshold(imgThresh, imgThresh, 200, 255, CV_THRESH_BINARY); // sangkny 2019. 05. 22
 	  	  
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 		  imshow("after erode dilation and combine", imgThresh);
@@ -3901,6 +3935,7 @@ namespace itms {
 	  // 남북 이동시는 가로가 세로보다 커야 한다.
 	  //     
 	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
+	  SplitBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs, curImg);
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");			  
