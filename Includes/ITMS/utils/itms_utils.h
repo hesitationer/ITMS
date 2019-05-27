@@ -177,6 +177,7 @@ namespace itms {
 		LaneDirection ldirection = LD_NORTH;			// vertical lane
 		BgSubType bgsubtype = BgSubType::BGS_DIF;
 
+        bool split_blob = true;
 		// template matching algorithm implementation, demo
 		bool use_mask = false;
 		int match_method = cv::TM_CCOEFF_NORMED;
@@ -291,6 +292,7 @@ namespace itms {
 
 			_conf.ldirection = LaneDirection(cvReadIntByName(fs, 0, "ldirection", LaneDirection::LD_NORTH));
 			_conf.bgsubtype = BgSubType(cvReadIntByName(fs, 0, "bgsubtype", BgSubType::BGS_DIF));
+            _conf.split_blob = cvReadIntByName(fs, 0, "split_blob", true);
 			_conf.use_mask = cvReadIntByName(fs, 0, "use_mask", 0);
 			_conf.match_method = cvReadIntByName(fs, 0, "match_method", cv::TM_CCOEFF_NORMED);
 			_conf.max_Trackbar = cvReadIntByName(fs, 0, "max_Trackbar", 5);

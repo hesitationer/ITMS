@@ -3,8 +3,8 @@
 <!-- debuging parameters: -->
 
 <debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
-<debugShowImagesDetail>1</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
-<debugGeneral>1</debugGeneral>                      <!-- debug flag for printing the text information --> 
+<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
 <debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
 <debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
 <debugTime>1</debugTime>                            <!-- debug flag for processing time-related information -->
@@ -25,7 +25,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180911_114311_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -64,6 +64,7 @@
 
 <ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
 <bgsubtype> 1 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
+<split_blob> 1 </split_blob>                                    <!-- // splitting a blob into two blobs around top boundary -->
 <use_mask> 0 </use_mask>                                        <!-- // for template matching -->
 <match_method> 5 </match_method>                                <!-- // TM_CCOEFF_NORMED : 5 -->
 <max_Trackbar> 5 </max_Trackbar>    

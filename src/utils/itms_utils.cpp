@@ -200,7 +200,8 @@ namespace itms {
   void SplitBlobsInCurrentFrameBlobs(itms::Config& _conf, std::vector<Blob> &currentFrameBlobs, const cv::Mat & srcImg) {	  
 	  // split a blob into two
 	  std::vector<Blob>::iterator currentBlob = currentFrameBlobs.begin();
-	  while (currentBlob != currentFrameBlobs.end()) {		  
+      size_t blobidx = 0;
+	  while (currentBlob != currentFrameBlobs.end()) {		            
 		  // condition, distance around top boundary and height/width ratio > 1 and cars.size()>1
 		  if (currentBlob->oc == itms::ObjectClass::OC_VEHICLE && currentBlob->dblCurrentAspectRatio <=1.0) { // width/height
 			  std::vector<cv::Point2f> blob_ntPts;
@@ -214,20 +215,66 @@ namespace itms {
 				  // verify it
 					std::vector<cv::Rect> cars, allcars;
 				    detectCascadeRoiVehicle(_conf, srcImg, expRect, cars, allcars);
-					if (cars.size()>0 && allcars.size()>1) {
-						// come this loop and see
-						int kkk = allcars.size();		
-						// split
+					if (cars.size()>0 && allcars.size()>1) {// come this loop and see  // 일단 무조건 반으로 나눈다.
+                        cv::Rect r = roi_rect;
+                        itms::LineSegment ls(cv::Point(expRect.x, expRect.y + expRect.height / 2), cv::Point(expRect.x + expRect.width, expRect.y + expRect.height / 2)); // rect 중심에 라인을 긋고
 
-					  }
+                        std::vector<cv::Point> topContour, bottomContour; // 상단/하단 경계선으로 구분
+                        std::vector<cv::Point> _contourPts= currentBlob->currentContour;                        
+                                                                       
+                        const int yStep = 1; // 간격 조절 step = 2로 하면 작아 질 수 있다. 
+                        const int xStep = 1;  
+                        // contour 내의 한점 Point pt(x,y)를 구하여 ls (직선) 상하로 구분하여 담는다. (convexhull 처리된 contour 로 인해) 채워진 다각형이 구해짐 
+                        for (int y = r.y; y < r.y + r.height; y += yStep)
+                        {
+                            cv::Point2f pt(0, static_cast<float>(y));
+                            for (int x = r.x; x < r.x + r.width; x += xStep)
+                            {
+                                pt.x = static_cast<float>(x);
+                                if (cv::pointPolygonTest(_contourPts, pt, false) >= 0)
+                                {
+                                    if (ls.isPointBelowLine(pt)) {
+                                        bottomContour.push_back(pt);
+                                    }
+                                    else {
+                                        topContour.push_back(pt);
+                                    }
+                                    
+                                }
+                            }
+                        }
+                        if (0&&_conf.debugShowImagesDetail) {
+                            std::vector<std::vector<cv::Point>> _contours;
+                            _contours.push_back(topContour);
+                            drawAndShowContours(srcImg.size(), _contours, "top contour in split blob", SCALAR_YELLOW);
+                            _contours.clear();
+                            _contours.push_back(bottomContour);
+                            drawAndShowContours(srcImg.size(), _contours, "bottom contour in split blob", SCALAR_MAGENTA);                          
+                        }
+                        // insert two blobs, one for original , one for new one                        
+                        itms::Blob _blob(bottomContour);
+                                               
+                        *currentBlob = _blob;     // 이곳 다음 에 blobidx++ 해도 된다. 그러면 되에서는 blobidx++로 마무리
 
-			  }
-			  ;
-		  }
-
+                        itms::Blob _blob1(topContour);                        
+                        currentBlob = currentFrameBlobs.insert(currentFrameBlobs.begin() + blobidx , _blob1); 
+                        // 언제나 분리하기전 blob 앞으로 들어간다. +1은 뒤에 들어가고 횟수는 한번 줄인다. 하지만, 검출이 뒤에 것부터 먼저 되다가 바뀌게 되어 보기 좋지 않다.                        
+                        blobidx += 2; // 1 for current, 1 for added one                        
+                        if ( _conf.debugShowImagesDetail) {
+                            std::vector<std::vector<cv::Point>> _contours;
+                            _contours.push_back(_blob.currentContour);
+                            drawAndShowContours(srcImg.size(), _contours, "bottom contour in split blob and assign", SCALAR_YELLOW);
+                            _contours.clear();
+                            _contours.push_back(_blob1.currentContour);
+                            drawAndShowContours(srcImg.size(), _contours, "top contour in split blob and assign", SCALAR_MAGENTA);
+                        }
+                        continue;
+                    } // end if (cars.size()
+			  } // if(Distance/100 > 100) 			  
+		  } // if(currentBlob->oc) loop
 		  ++currentBlob;
+          blobidx++;
 	  }
-
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -412,8 +459,7 @@ namespace itms {
 					  }
 					  ++existBlob;
 					  continue; // can be removed this
-								// ---------------------------------------------------------------
-
+					// ---------------------------------------------------------------
 				  }
 				  else {
 					  existBlob = existingBlobs.erase(existBlob);
@@ -1506,7 +1552,7 @@ namespace itms {
 	  cv::drawContours(image, contours, -1, _color/*SCALAR_WHITE*/, -1);
 
 	  cv::imshow(strImageName, image);
-	  //cv::waitKey(1);
+	  cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1515,14 +1561,14 @@ namespace itms {
 	  cv::Mat image(imageSize, CV_8UC3, SCALAR_BLACK);
 
 	  std::vector<std::vector<cv::Point> > contours, contours_bg;
-
-	  for (auto &blob : blobs) {
+      
+	  for (auto &blob : blobs) {      
 		  if (blob.blnStillBeingTracked == true /*&& blob.totalVisibleCount>= minVisibleCount*/) {
 			  contours.push_back(blob.currentContour);
 		  }
 		  else {
 			  contours_bg.push_back(blob.currentContour);
-		  }
+		  }      
 	  }
 
 	  cv::drawContours(image, contours, -1, SCALAR_WHITE, -1);
@@ -1540,7 +1586,7 @@ namespace itms {
 	  }
 
 	  cv::imshow(strImageName, image);
-	  //cv::waitKey(1);
+	  cv::waitKey(1);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3932,10 +3978,8 @@ namespace itms {
 	  }
 	  // merge assuming
 	  // blobs are in the ROI because of ROI map
-	  // 남북 이동시는 가로가 세로보다 커야 한다.
-	  //     
-	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance
-	  SplitBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs, curImg);
+	  // 남북 이동시는 가로가 세로보다 커야 한다.	  
+	  mergeBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs);			// need to consider the distance	  
 	  if (m_collectPoints) {
 		  if (_config->debugShowImages && _config->debugShowImagesDetail) {
 			  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "before merging predictedBlobs into currentFrameBlobs");			  
@@ -3949,20 +3993,15 @@ namespace itms {
 		  // 2. merge them into currentFrameBlbos
 		  std::vector<itms::Blob> predictedBlobs;
 		  predictBlobs(*_config, blobs/* existing blbos */, preImg.getUMat(cv::ACCESS_READ)/* prevFrame */, curImg.getUMat(cv::ACCESS_READ)/* curFrame */, predictedBlobs);
-		  if (predictedBlobs.size()) {
-			  /*	imshow("imgFrame1CopyGray", imgFrame1Copy);
-			  imshow("imgFrame2CopyGray", imgFrame2Copy);
-			  Mat temp= Mat::zeros(imgFrame1Copy.size(), imgFrame1Copy.type());
-			  absdiff(imgFrame1Copy, imgFrame2Copy, temp);
-			  threshold(temp, temp, 10, 255,THRESH_BINARY);
-			  imshow("diffFrame", temp);*/
-			  /*for(auto prdBlob:predictedBlobs)
-			  currentFrameBlobs.push_back(prdBlob);*/
+		  if (predictedBlobs.size()) {			  
 			  mergeBlobsInCurrentFrameBlobsWithPredictedBlobs(currentFrameBlobs, predictedBlobs);
 		  }
 	  }
+      if (_config->split_blob) {
+          SplitBlobsInCurrentFrameBlobs(*_config, currentFrameBlobs, curImg);
+      }
 	  if (_config->debugShowImages && _config->debugShowImagesDetail) {
-		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "after merging currentFrameBlobs");		  
+		  drawAndShowContours(*_config, imgThresh.size(), currentFrameBlobs, "after merging and spliting currentFrameBlobs");		  
 	  }
 	  if (blnFirstFrame == true) {
 		  for (auto &currentFrameBlob : currentFrameBlobs) {
