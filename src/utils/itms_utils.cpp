@@ -50,7 +50,7 @@ namespace itms {
       resize(canvas, canvas, Size(canvas.cols / 2, canvas.rows / 2));
     }
     imshow(windowtitle, canvas);
-	//cv::waitKey(1);
+	cv::waitKey(1);
   }
 
   ITMSVideoWriter::ITMSVideoWriter(bool writeToFile, const char* filename, int codec, double fps, Size frameSize, bool color) {
