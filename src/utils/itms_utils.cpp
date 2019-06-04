@@ -1271,6 +1271,8 @@ namespace itms {
 						  existingBlobs[intIndex].totalVisibleCount = 1;
 						  existingBlobs[intIndex].startPoint = currentFrameBlob.centerPositions.back();
 					  //}
+					  // 야간일 때.. human으로 되고 안바뀌어 Vehicle인데 계속 human으로 남는 경우가 있네.. 
+					  // 수정 요함...
 				  }
 			  if(_conf.debugGeneralDetail){
 				  std::cout << " --------- ************* Class Human & Vehicle **************** ----------- \n";
@@ -2698,6 +2700,7 @@ namespace itms {
 			  if (((RefRatio - minMax_threshold) > h_w_ratio)
 				  || (h_w_ratio > (RefRatio + minMax_threshold))) { // need to change the status of object class???? 
 				  objClass = ObjectClass::OC_OTHER;
+				  fprobability -= 0.1;			// panelty 2019. 06.04
 				  if (_conf.debugGeneralDetail)
 					  cout << "Human detection condition is not matched in detectCascadeRoiHuman.\n  with rect : " << srcBlob.currentBoundingRect << endl;				  
 			  }
