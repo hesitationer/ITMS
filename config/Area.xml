@@ -25,7 +25,7 @@
 
 <max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
 
-<VideoPath>"TrafficVideo\\20180912_202357_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
 
 <!--
 <VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- 순방향 저녁 3대 차량 주행
@@ -37,7 +37,8 @@
 <VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- 오후 차량 3대 역주행   
 <VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- 단순 역주행으로 잘 안보임  X => 한대밖에 못 잡음
 <VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- 역주행 2대 
-<VideoPath>"TrafficVideo\\20180911_114011_cam_0.avi"</VideoPath>    //-- 가짜 차량 검지, 정지 미검지 영상
+<VideoPath>"TrafficVideo\\20180911_114011_cam_0.avi"</VideoPath>    //-- 가짜 차량 검지, 정지 미검지 영상 => 해결
+<VideoPath>"TrafficVideo\\20180912_202357_cam_0.avi"</VideoPath>    //-- 야간 역주행 후 정주행 == 역주행시 차량에서 - 사람으로 바뀌어 이벤트 발생...
 <VideoPath>"d:\\주간-일반-단독-보행\\20180911_114411_cam_0.avi"</VideoPath> //-- 진행 후 stop/ stop 후 진행(114311) 판단
 -->
 

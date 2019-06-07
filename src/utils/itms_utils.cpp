@@ -1273,6 +1273,7 @@ namespace itms {
 					  //}
 					  // 야간일 때.. human으로 되고 안바뀌어 Vehicle인데 계속 human으로 남는 경우가 있네.. 
 					  // 수정 요함...
+
 				  }
 			  if(_conf.debugGeneralDetail){
 				  std::cout << " --------- ************* Class Human & Vehicle **************** ----------- \n";
