@@ -3918,7 +3918,7 @@ namespace itms {
 			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
 			  float realDistance = 0;
 			  if (checkIfBlobInBoundaryAndDistance(*_config, possibleBlob, _config->Boundary_ROI_Pts, realDistance) 
-			  &&((blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask)) <= abs(_config->BlobNCC_Th))
+			  &&((blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask)) <= abs(_config->BlobNCC_Th/2))
 			   )
 			  {// check the correlation with bgground, object detection/classification				  
 				  if (_config->debugGeneral && _config->debugGeneralDetail) {
