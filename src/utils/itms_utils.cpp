@@ -3917,8 +3917,9 @@ namespace itms {
 			  // background image need to be updated periodically 
 			  // option double d3 = matchShapes(BGImage(roi_rect), imgFrame2Copy(roi_rect), CONTOURS_MATCH_I3, 0);
 			  float realDistance = 0;
+			  float blobNCC_threshold = (bDayMode) ? abs(_config->BlobNCC_Th) : abs(_config->BlobNCC_Th / 2);
 			  if (checkIfBlobInBoundaryAndDistance(*_config, possibleBlob, _config->Boundary_ROI_Pts, realDistance) 
-			  &&((blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask)) <= abs(_config->BlobNCC_Th/2))
+			  &&((blobncc = getNCC(*_config, BGImage(roi_rect), curImg(roi_rect), Mat(), _config->match_method, _config->use_mask)) <= blobNCC_threshold)
 			   )
 			  {// check the correlation with bgground, object detection/classification				  
 				  if (_config->debugGeneral && _config->debugGeneralDetail) {

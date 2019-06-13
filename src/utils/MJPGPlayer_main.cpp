@@ -3,13 +3,15 @@ MJPG Player Main
 
 */
 
-#include <opencv2/opencv.hpp>
+
 #include <iostream>
 #include <cassert>
 #include <cmath>
 #include <fstream>
 
-#include "MJPG\MjpgFile.h"
+
+#include "MJPG/mjpgfile.h"
+#include "opencv2/opencv.hpp"
 //#include "itms_utils.h"
 
 using namespace std;
@@ -137,7 +139,7 @@ int main(int argc, char **argv)
   long start_frame_number = 0;
   long max_frame_numbers = 1800; // end frame
   mjpgEmul->SeekFrame(start_frame_number);       
-  while (mjpgEmul->GetFramePosition() <min(mjpgEmul->GetFrameLength(),max_frame_numbers) && chCheckForEscKey != 27)
+  while (mjpgEmul->GetFramePosition() <std::min((long)mjpgEmul->GetFrameLength(),(long)max_frame_numbers) && chCheckForEscKey != 27)
   {
     char* pRGB = mjpgEmul->ReadFrame();
     //memcpy(pRGB24, pRGB, iWidth * iHeight * iChannels);
