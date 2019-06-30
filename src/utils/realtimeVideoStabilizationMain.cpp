@@ -10,8 +10,8 @@
 #include <cmath>
 #include <fstream>
 #include <time.h>
-#include "realtimeVideoStabilization.h"
-#include "itms_utils.h"
+#include "./utils/realtimeVideoStabilization.h"
+#include "./utils/itms_utils.h"
 
 using namespace std;
 using namespace cv;
@@ -31,13 +31,19 @@ int main(int argc, char **argv)
 
 	//Initialize the VideoCapture object
 	
-	// std::string filename = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/20180912_134130_cam_0.avi";
-	std::string filename = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/ITMS/TrafficVideo/Relaxinghighwaytraffic.mp4";
+	//std::string filename = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/20180912_134130_cam_0.avi";
+	std::string filename = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/ITMS/TrafficVideo/Relaxinghighwaytraffic.mp4";
+	
+	if (!itms::existFileTest(filename)) {
+		cout << "there is no file : " << filename << endl;
+		getchar();
+		return -1;
+	}
 	//VideoCapture cap(0);
 	VideoCapture cap(filename);
 	if (!cap.isOpened()) {
-		std::cout << " the video file does not exist!!\n"; // iostream
-		return 0;
+		std::cout << " the video file can not be opened !!\n"; // iostream
+		return -1;
 	}
 
 	Mat frame_2, frame2;
@@ -45,7 +51,7 @@ int main(int argc, char **argv)
 
 	cap >> frame_1;
 	cvtColor(frame_1, frame1, COLOR_BGR2GRAY);
-
+	
 	Mat smoothedMat(2, 3, CV_64F);
 
 	VideoWriter outputVideo;
@@ -54,7 +60,7 @@ int main(int argc, char **argv)
 	double t1, t2, t3;
 	double frameCount = 0;
 	
-	while (true && chCheckForEscKey!= ESC_KEY/* ESC */)
+	while (chCheckForEscKey!= ESC_KEY/* ESC */)
 	{
 
 		cap >> frame_2;
@@ -86,6 +92,7 @@ int main(int argc, char **argv)
 		if (debugImshows) {
 			itms::imshowBeforeAndAfter(frame_2, smoothedFrame, "stabilized image", 5);
 			imshow("Stabilized Video", smoothedFrame);
+			cv::waitKey(1);
 		}
 
 		chCheckForEscKey =waitKey(10);

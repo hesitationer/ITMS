@@ -1,4 +1,4 @@
-#include "realtimeVideoStabilization.h"
+#include "./utils/realtimeVideoStabilization.h"
 #include <cmath>
 
 //Parameters for Kalman Filter
@@ -6,7 +6,7 @@
 #define R1 0.5
 
 //To see the results of before and after stabilization simultaneously
-#define test 0
+#define test 1
 
 VideoStab::VideoStab()
 {

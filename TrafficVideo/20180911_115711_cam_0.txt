@@ -1,0 +1,2 @@
+scale factor 	0.500000
+class 	 Width 	 Height 	 realDistance 	 Probability

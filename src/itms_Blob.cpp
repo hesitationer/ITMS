@@ -1,11 +1,12 @@
 // Blob.cpp
 
 #include "itms_Blob.h"
+#include "./psrdsst/dsst_tracker.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 namespace itms {
 
-  Blob::Blob(std::vector<cv::Point> _contour) {
+  Blob::Blob(std::vector<cv::Point> _contour){
 
     currentContour = _contour;
 
@@ -16,10 +17,11 @@ namespace itms {
     currentCenter.x = (currentBoundingRect.x + currentBoundingRect.x + currentBoundingRect.width) / 2;
     currentCenter.y = (currentBoundingRect.y + currentBoundingRect.y + currentBoundingRect.height) / 2;
 
-    // object start center point to save the starting distance from the starting point later
-    startPoint = currentCenter;
+	//	object start center point to save the starting distance from the starting point later
+    startPoint = currentCenter;	
 
-    centerPositions.push_back(currentCenter);
+    centerPositions.push_back(currentCenter);	
+	predictNextPosition();		// should be after assining the center Position
 
     dblCurrentDiagonalSize = sqrt(pow(currentBoundingRect.width, 2) + pow(currentBoundingRect.height, 2));
 
@@ -31,14 +33,16 @@ namespace itms {
     intNumOfConsecutiveFramesWithoutAMatch = 0;
 
     age = 1;
-    totalVisibleCount = 1;
-    id = 0; // track id
-    showId = 0;
+	totalVisibleCount = 1;
+	id = 0; //track id
+	//showId = 0;
+	speed = 0;
     
 
     // object status information
     oc = OC_OTHER;
     os = OS_NOTDETERMINED;
+	fos = OS_NOTDETERMINED;
     od = OD_ND; // lane direction will affect the result, and the lane direction will be given
 
 	// counters
@@ -61,7 +65,17 @@ namespace itms {
 	oc_notified = OC_OTHER; // final notified object class
 	os_notified = OS_NOTDETERMINED; // final notified object status
   }
-
+  Blob::~Blob() {	  
+	/*if (m_tracker) {
+		m_tracker.release();	
+		m_tracker_initialized = false;	
+	}	  */
+	  if (m_tracker_psr) {
+		  m_tracker_psr.release();
+		  m_tracker_initialized = false;
+	  }
+	
+ }
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   void Blob::predictNextPosition(void) {
 
@@ -141,17 +155,39 @@ namespace itms {
     }
 
   }
-  void Blob::operator=(const Blob &rhBlob) { 
-	  currentContour.clear();
-	  for (int i = 0; i < rhBlob.currentContour.size(); i++)
-		  currentContour.push_back(rhBlob.currentContour.at(i));
+  bool Blob::resetBlobContourWithCenter(const cv::Point& _newCtrPt) { // move the center of the blob to a new center point
+	  
+	  cv::Point curCtrPt = centerPositions.back();	  
+	  if (curCtrPt == _newCtrPt)
+		  return false; // no changes
+		// move current center to a new center for contour
+	  for (size_t i = 0; i < currentContour.size(); i++)
+		  currentContour.at(i) -= (curCtrPt - _newCtrPt);
 
+	  return true;
+  }
+  bool Blob::resetBlobContourWithCenter(const cv::Point2f& _newCtrPt) { // move the center of the blob to a new center point	  	  
+	  cv::Point newCtrPt = static_cast<cv::Point>(_newCtrPt + cv::Point2f(0.5, 0.5));
+	  return resetBlobContourWithCenter(newCtrPt);
+  }
+
+  void Blob::operator = (const Blob &rhBlob) {
+	  currentContour.clear();
+	  /*for (int i = 0; i < rhBlob.currentContour.size(); i++)
+	  	  currentContour.push_back(rhBlob.currentContour.at(i));*/
+	  currentContour = rhBlob.currentContour;
+
+	  m_points.clear();
+	  /*for (int i = 0; i < rhBlob.m_points.size(); i++)
+	  	  m_points.push_back(rhBlob.m_points.at(i));*/
+	  m_points = rhBlob.m_points;
+	  
 	  currentBoundingRect = rhBlob.currentBoundingRect;
 
 	  centerPositions.clear();
-	  for(int i = 0; i<rhBlob.centerPositions.size();i++)
-		centerPositions.push_back(rhBlob.centerPositions.at(i)); // bug fix on 2018. 12. 17
-
+	 // for(int i = 0; i<rhBlob.centerPositions.size();i++)
+		//centerPositions.push_back(rhBlob.centerPositions.at(i)); // bug fix on 2018. 12. 17
+	  centerPositions = rhBlob.centerPositions;
 
 	  dblCurrentDiagonalSize = rhBlob.dblCurrentDiagonalSize;
 
@@ -164,13 +200,20 @@ namespace itms {
 
 	  age = rhBlob.age;
 	  totalVisibleCount = rhBlob.totalVisibleCount;
-	  showId = rhBlob.showId;
+	  //showId	= rhBlob.showId;
+	  id		= rhBlob.id;
+	  speed = rhBlob.speed;
+
     // starting point
     startPoint = rhBlob.startPoint; // start in Y direction, it will initiated at adding new blob
+
+	// prediction point
+	predictedNextPosition = rhBlob.predictedNextPosition;
     
 	  // object status information
 	  oc = rhBlob.oc;
 	  os = rhBlob.os;
+	  fos = rhBlob.fos;
 	 od = rhBlob.od; // lane direction will affect the result, and the lane direction will be given
 
 					 // counters
@@ -203,11 +246,10 @@ namespace itms {
 	if (bWeighted < 0/* -1 */) { // updated on 2018. 12. 18
 		int intPastMax = 5;
 		//int deltaX, deltaY;
-		wpa = (numPositions < intPastMax) ? centerPositions[0] : centerPositions[intPastMax - 1];		
+		wpa = (numPositions <= intPastMax) ? centerPositions[0] : centerPositions[numPositions - intPastMax];	// bug fix on 2019. 01. 18
 	}
 	else {
 		if (numPositions == 1) {
-
 			wpa.x = centerPositions.back().x;
 			wpa.y = centerPositions.back().y;
 
@@ -297,5 +339,18 @@ namespace itms {
 
     return status;
   }
-    
+  
+  void Blob::CreateExternalTracker(void)
+  {
+	  if (!m_tracker_psr) {
+		  /*bool HOG = true;
+		  bool FIXEDWINDOW = false;
+		  bool MULTISCALE = true;
+		  bool SILENT = false;
+		  bool LAB = true;*/
+		  //m_tracker = std::make_unique<FDSSTTracker>(HOG, FIXEDWINDOW, MULTISCALE, LAB);					 // unique_ptr option 2
+		  cf_tracking::DsstParameters dsstprameters;
+		   m_tracker_psr = cv::makePtr<cf_tracking::DsstTracker>(dsstprameters);					 // unique_ptr option 2
+	  }
+  }
 } // end of namespace itms

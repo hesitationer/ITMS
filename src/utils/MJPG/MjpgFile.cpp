@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////
 
 
-//#include <afx.h>  // CFile class by sangkny
+//#include <afx.h>  // CFile class by sangkny MFC related
 //#include "afx.h"
 #include "MjpgFile.h"
 

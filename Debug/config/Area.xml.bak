@@ -1,0 +1,101 @@
+<?xml version = "1.0"?>
+<opencv_storage>
+<!-- debuging parameters: -->
+
+<debugShowImages>1</debugShowImages>                <!-- debug flag for displaying the general images (results) -->
+<debugShowImagesDetail>0</debugShowImagesDetail>    <!-- debug flag for displaying the intermediate images in detail -->
+<debugGeneral>0</debugGeneral>                      <!-- debug flag for printing the text information --> 
+<debugGeneralDetail>0</debugGeneralDetail>          <!-- debug flag for printing the specific information during the process -->
+<debugTrace>0</debugTrace>                          <!-- debug flag to determine if we display the trace symbols on images -->
+<debugTime>1</debugTime>                            <!-- debug flag for processing time-related information  -->
+
+<scaleFactor>1.0</scaleFactor>                      <!-- processing image scale factor, processing using resized images (original size: 1, default: 0.5) -->
+
+<isAutoBrightness>1</isAutoBrightness>              <!-- auto brightness and apply to threshold -->
+<img_dif_th> 15 </img_dif_th>                       <!-- Frame Difference Threshold  -->
+<nightBrightness_Th> 20 </nightBrightness_Th>       <!-- day/night brightness threshold -->
+<nightObjectProb_Th> 0.8 </nightObjectProb_Th>      <!-- night time object probability threshold -->
+
+<AutoBrightness_x>1162</AutoBrightness_x>           <!-- auto brightness rect [1162, 808, 110, 142] -->
+<AutoBrightness_y>808</AutoBrightness_y>            <!-- to determine the brightness level of the given scene -->
+<AutoBrightness_width>110</AutoBrightness_width>    <!-- with the rect  -->
+<AutoBrightness_height>142</AutoBrightness_height>  <!-- please select the correct region to help the system working perfectly -->
+
+<max_past_frames_autoBrightness> 15 </max_past_frames_autoBrightness>   <!-- maximum (last) past frames for authoBrightness determination -->
+
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>        <!-- video file location and its name to conduct the algorithm -->
+
+<!--
+<VideoPath>"TrafficVideo\\20180912_201357_cam_0.avi"</VideoPath>    //-- ?쒕갑?????3? 李⑤웾 二쇳뻾
+<VideoPath>"TrafficVideo\\20180911_113611_cam_0.avi"</VideoPath>    //--  二쇨컙 ?⑤룆 蹂댄뻾 ??, ?먮룞李?二쇳뻾 
+<VideoPath>"TrafficVideo\\20180912_112338_cam_0.avi"</VideoPath>    //-- 蹂댄뻾 2紐?李⑤웾?뺤감 ?ㅽ뿕 
+<VideoPath>"TrafficVideo\\Relaxinghighwaytraffic.mp4"</VideoPath>
+<VideoPath>"TrafficVideo\\20180912_184308_cam_0.avi"</VideoPath>    //-- ?몃윮 ?쇨컙 媛???쒕떎    
+<VideoPath>"TrafficVideo\\20180911_172930_cam_0.avi"</VideoPath>    //-- ?ㅽ썑 李⑤웾 3? ??＜??  
+<VideoPath>"TrafficVideo\\20180912_192157_cam_0.avi"</VideoPath>    //-- ?⑥닚 ??＜?됱쑝濡????덈낫?? 
+<VideoPath>"TrafficVideo\\20180911_160340_cam_0.avi"</VideoPath>    //-- ??＜??2? 
+-->
+
+<!-- Road Configuration -->
+<camera_height> 1100</camera_height>                            <!-- camera height (unit: centimeter (cm) from the ground, it is useless now -->
+<lane_length> 20000 </lane_length>                              <!-- lane distance (cm) from the starting point (0), now 200 meters -->
+<lane2lane_width> 700 </lane2lane_width>                        <!-- 3.5 * 2 * 100 total road width -->
+
+
+<StartX>0</StartX>                                              <!-- line crossing point for testing, it is not used at all -->
+<StartY>0.6</StartY>                                            <!-- it is not used at all -->
+<EndX>1</EndX>                                                  <!-- useless -->
+<EndY>0.6</EndY>                                                <!-- will be removed later -->
+
+<!-- -- Detection - related : BackGround Lane Direction and etc -- -->
+<BGImagePath>"TrafficVideo\\Daytime_BG1x.jpg"</BGImagePath>     <!-- background image path -->
+<bGenerateBG>1</bGenerateBG>                                    <!-- flag for generating background -->
+<intNumBGRefresh> 60 </intNumBGRefresh>                         <!-- refresh the background every intNumBGRefresh -->
+
+<ldirection> 1 </ldirection>                                    <!-- // Vehicle driving direction -->
+<bgsubtype> 0 </bgsubtype>                                      <!-- // BGS_DIF: 0, BGS_CNT: 1 -->
+<use_mask> 0 </use_mask>                                        <!-- // for template matching -->
+<match_method> 5 </match_method>                                <!-- // TM_CCOEFF_NORMED : 5 -->
+<max_Trackbar> 5 </max_Trackbar>    
+<confThreshold> 0.1 </confThreshold>                            <!-- // deep neural net related parameters  from here, this version does not use dnn, but this option is used as suppress the overlapped blob  --> 
+<nmsThreshold> 0.4 </nmsThreshold>                              <!-- // non maximum supression threshold to remove the redundant candidate boxes -->
+<inpWidthorg> 52 </inpWidthorg>                                 <!-- // not used. it should be 416x416  -->
+<inpHeightorg> 37 </inpHeightorg>                               <!-- // not used.   -->
+
+
+<!-- -- Road Map Points (12) -- -->
+<!--    File Loading            -->
+
+<!----- LUT for objects -- --> 
+<!--    File Loading       -->
+
+<!--    Object Tracking related -- -->
+<bNoitifyEventOnce> 1 </bNoitifyEventOnce>                      <!-- Notify object's event once in its whole life -->
+<bStrictObjEvent> 1 </bStrictObjEvent>                          <!-- Strict Object Event Determination --> 
+<maxNumOfTrackers> 100 </maxNumOfTrackers>                      <!-- max number of trackers (or blobs in the project -->
+<minVisibleCount> 3 </minVisibleCount>                          <!-- minimum Visible Count (after this number debugImage will be effective) -->
+<max_Center_Pts> 150 </max_Center_Pts>                          <!-- max number of tracking centers   -->
+<numberOfTracePoints> 15 </numberOfTracePoints>                 <!-- number of trace points, disply purpose only -->
+<maxNumOfConsecutiveInFramesWithoutAMatch> 50 </maxNumOfConsecutiveInFramesWithoutAMatch>   <!-- max number of consecutive frames without matching to be inactive or beTracking = false -->
+<maxNumOfConsecutiveInvisibleCounts> 100 </maxNumOfConsecutiveInvisibleCounts>              <!-- max number of invisible frames, after this number, the object will be erased if the conditions are satisfied -->
+<movingThresholdInPixels> 0 </movingThresholdInPixels>          <!-- stop object determination threshold, now it is not used, instead the following parameters are used for this purpose -->
+
+<!-- Object speed limit related -- -->
+<lastMinimumPoints> 30 </lastMinimumPoints>                     <!-- the last minimum center points of the object to determine its speed using Linear Regression  -->
+<fps> 30 </fps>                                                 <!-- frames per seconds, it is required to compute the object' speed -->
+<speedLimitForstopping> 2 </speedLimitForstopping>              <!-- speed to be determined as "STOP", Km/Hour -->
+
+<minConsecutiveFramesForOS> 10 </minConsecutiveFramesForOS>     <!-- minimum consecutive frame for object status determination -->
+
+<BlobNCC_Th> 0.5 </BlobNCC_Th>
+<m_useLocalTracking> 0 </m_useLocalTracking>                    <!-- local region tracking to track the object using sub points in a given region, I applied pyramid gaussian filter based feature tracking algorithm -->
+<m_externalTrackerForLost> 1 </m_externalTrackerForLost>        <!-- lost object global searching flag ---->
+<isSubImgTracking>1</isSubImgTracking>                          <!-- loast object local searching flag -->
+<HOG>1</HOG>                                                    <!-- HOG feature flag, the proposed Tracker-related parameters -->
+<FIXEDWINDOW>1</FIXEDWINDOW>                                    <!-- flag for fixed window-size -->
+<MULTISCALE>1</MULTISCALE>                                      <!-- flag for multi scale approach -->
+<SILENT>0</SILENT>                                              <!-- flag for displaying the inter mediate values -->
+<LAB>0</LAB>                                                    <!-- flag if we use LAB-color-space conversion or not -->
+
+
+</opencv_storage>

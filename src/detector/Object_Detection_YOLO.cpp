@@ -53,8 +53,8 @@ typedef std::vector<CRegion> regions_t;
 // Initialize the parameters
 float confThreshold = 0.1; // Confidence threshold
 float nmsThreshold = 0.4;  // Non-maximum suppression threshold
-int inpWidthorg = 52;
-int inpHeightorg = 37;
+int inpWidthorg = 416;
+int inpHeightorg = 416;
 int inpWidth = (inpWidthorg) %32 == 0 ? inpWidthorg : inpWidthorg + (32 - (inpWidthorg %32));// 1280 / 4;  //min(416, int(1280. / 720.*64.*3.) + 1);// 160; //1920 / 2;// 416;  // Width of network's input image
 int inpHeight = (inpHeightorg) % 32 == 0 ? inpHeightorg : inpHeightorg + (32 - (inpHeightorg % 32));// 720 / 4;  //64;// 160;// 1080 / 2;// 416; // Height of network's input image
 vector<string> classes;
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
   config_t config;
         //config["modelConfiguration"] = "../data/tiny-yolo.cfg";
         //config["modelBinary"] = "../data/tiny-yolo.weights";
-        std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";
+        std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/Multitarget-tracker-master/data/";
         config["modelConfiguration"] = runtime_data_dir + "yolov3-tiny.cfg";
         config["modelBinary"] = runtime_data_dir + "yolov3-tiny.weights";
         config["classNames"] = runtime_data_dir + "coco.names";
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
         config["confidenceThreshold"] = "0.5";
         config["maxCropRatio"] = "3.0";
   */
-  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/도로-기상-유고-토페스/code/Multitarget-tracker-master/data/";  
+  std::string runtime_data_dir = "D:/LectureSSD_rescue/project-related/road-weather-topes/code/Multitarget-tracker-master/data/";  
   string classesFile = runtime_data_dir + "coco.names";
   ifstream ifs(classesFile.c_str());
   // Load names of classes
@@ -218,7 +218,7 @@ regions_t DetectInCrop(Net& net, cv::Mat& colorMat, cv::Size crop, vector<Mat>& 
 	imagesFromBlob(blob, Blobs);
 	for (int ii = 0; ii < Blobs.size(); ii++) {
 		imshow(format("blob image: %d", ii), Blobs[ii]);
-		waitKey(1);
+		//waitKey(1);
 	}
 	//Sets the input to the network
 	net.setInput(blob);
