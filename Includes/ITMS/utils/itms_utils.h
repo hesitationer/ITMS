@@ -13,6 +13,8 @@
 #include "detector/BaseDetector.h"
 #include "Tracker/Ctracker.h"
 
+// sangkny 2019. 06. 30 CTrack will be added to ITMS
+
 using namespace cv;
 using namespace std;
 
